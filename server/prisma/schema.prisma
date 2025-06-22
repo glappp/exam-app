@@ -20,7 +20,11 @@ model User {
   role             String           // 'admin', 'teacher', 'student'
   studentProfiles  StudentProfile[]
   createdAt        DateTime         @default(now())
+
+  // ⬇️ เพิ่มความสัมพันธ์กลับจาก Result
+  results          Result[]
 }
+
 
 model StudentProfile {
   id            Int              @id @default(autoincrement())
@@ -78,7 +82,13 @@ model Result {
   id         Int      @id @default(autoincrement())
   question   Question @relation(fields: [questionId], references: [id])
   questionId String
+
+  userId     Int?     // ⬅ ทำเป็น optional
+  user       User?    @relation(fields: [userId], references: [id]) // ⬅ optional เช่นกัน
+
   selected   String
   correct    Boolean
   createdAt  DateTime @default(now())
 }
+
+

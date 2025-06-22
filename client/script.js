@@ -3,15 +3,20 @@ let currentQuestion = null;
 let currentLang = 'th'; // 🌐 รองรับหลายภาษา
 
 // ตรวจสอบว่า login แล้ว
-function checkLogin() {
-  const user = JSON.parse(localStorage.getItem("user") || "null");
-  if (!user || !user.id) {
-    alert("กรุณาเข้าสู่ระบบก่อนทำข้อสอบ");
+async function checkLogin() {
+  const res = await fetch("/api/me", { credentials: "include" });
+  if (!res.ok) {
+    alert("กรุณาเข้าสู่ระบบก่อนใช้งาน");
     window.location.href = "login.html";
+    return;
   }
+
+  const data = await res.json();
+  document.getElementById("greeting").innerText = `👋 สวัสดี, ${data.firstName || "ผู้ใช้"}`;
 }
 
-checkLogin(); // เรียกทันทีเมื่อโหลด script
+checkLogin();
+
 
 function getText(q) {
   return currentLang === 'th' ? q.textTh || q.text : q.textEn || q.text;
@@ -175,10 +180,14 @@ function showExplanation(question) {
 }
 
 
-function logout() {
-  localStorage.removeItem("user");
-  window.location.href = "login.html"; // หรือชื่อไฟล์หน้า login ของคุณ
+async function logout() {
+  await fetch("/api/logout", {
+    method: "POST",
+    credentials: "include"
+  });
+  window.location.href = "login.html";
 }
+
 
 function loadNextQuestion() {
   startExam();  // หรือ logic อื่นที่สุ่มข้อใหม่

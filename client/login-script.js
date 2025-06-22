@@ -8,7 +8,9 @@ async function login() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username, password }),
-    });
+      credentials: "include"  // ✅ เพิ่มบรรทัดนี้เพื่อให้ส่ง cookie ไปด้วย
+  });
+
 
     const data = await res.json();
 

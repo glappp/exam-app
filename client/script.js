@@ -74,17 +74,6 @@ function renderCurrentQuestion() {
   `;
 }
 
-function getChoiceText(choice) {
-  const lang = document.getElementById("language")?.value || "th";
-  if (typeof choice === "string") return choice;
-  return lang === "en" ? choice.textEn : choice.textTh;
-}
-
-function getText(q) {
-  const lang = document.getElementById("language")?.value || "th";
-  return lang === "en" ? q.textEn : q.textTh;
-}
-
 
 function checkAnswer(choiceIndex) {
   const result = document.getElementById('result');

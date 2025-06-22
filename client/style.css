@@ -1,0 +1,16 @@
+body {
+  font-family: sans-serif;
+  margin: 2rem;
+  background-color: #f7f7f7;
+}
+
+h1 {
+  color: #333;
+}
+
+#question-area {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: white;
+  border: 1px solid #ccc;
+}

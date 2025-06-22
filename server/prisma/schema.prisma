@@ -1,0 +1,84 @@
+// 📁 server/prisma/schema.prisma
+// ✅ Prisma schema รวมของเดิมกับ StudentProfile รายปี
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id               Int              @id @default(autoincrement())
+  username         String           @unique
+  password         String
+  firstName        String
+  lastName         String
+  email            String
+  role             String           // 'admin', 'teacher', 'student'
+  studentProfiles  StudentProfile[]
+  createdAt        DateTime         @default(now())
+}
+
+model StudentProfile {
+  id            Int              @id @default(autoincrement())
+  user          User             @relation(fields: [userId], references: [id])
+  userId        Int
+
+  academicYear  String           // เช่น "2567"
+  school        String
+  district      String
+  province      String
+  grade         String           // เช่น "ป.4"
+  classroom     String?
+  studentCode   String?
+
+  examResults   ExamResult[]
+  createdAt     DateTime         @default(now())
+}
+
+model ExamResult {
+  id                Int              @id @default(autoincrement())
+  studentProfile    StudentProfile   @relation(fields: [studentProfileId], references: [id])
+  studentProfileId  Int
+
+  mode              String           // 'practice', 'adaptive', 'targeted'
+  topicTagsJson     Json             // เดิมเป็น String[] แต่ SQLite ไม่รองรับ primitive list
+  score             Int
+  total             Int
+  durationSec       Int
+  weakAttributes    Json?
+  createdAt         DateTime         @default(now())
+}
+
+model Question {
+  id                String     @id @default(cuid())
+  textTh            String
+  textEn            String
+  image             String?
+  choices           Json       // array of { textTh, textEn, image }
+  answer            Int
+  attributes        Json       // { topic:[], skill:[], trap:[], difficulty }
+  difficulty        String?    // [deprecated] ใช้ใน attributes แทน
+  source            String?
+  derivedFrom       String?
+  estimatedTimeSec  Int?
+  ownerOrg          String
+  createdBy         String
+  updatedBy         String
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  results           Result[]
+}
+
+
+model Result {
+  id         Int      @id @default(autoincrement())
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId String
+  selected   String
+  correct    Boolean
+  createdAt  DateTime @default(now())
+}

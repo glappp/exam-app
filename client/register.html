@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>ลงทะเบียนนักเรียน</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; }
+    input, select { width: 100%; padding: 8px; margin-bottom: 12px; }
+    button { padding: 10px 20px; }
+    .success { color: green; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h2>ลงทะเบียนนักเรียน</h2>
+
+  <form id="registerForm">
+    <input name="firstName" placeholder="ชื่อ" required />
+    <input name="lastName" placeholder="นามสกุล" required />
+    <input name="username" placeholder="ชื่อผู้ใช้" required />
+    <input type="password" name="password" placeholder="รหัสผ่าน" required />
+    <input name="email" placeholder="อีเมล" type="email" />
+
+    <input name="academicYear" placeholder="ปีการศึกษา (เช่น 2567)" required />
+    <input name="school" placeholder="โรงเรียน" required />
+    <input name="district" placeholder="อำเภอ" required />
+    <input name="province" placeholder="จังหวัด" required />
+    <input name="grade" placeholder="ระดับชั้น (เช่น ป.6)" required />
+    <input name="classroom" placeholder="ห้อง (เช่น 6/1)" />
+    <input name="studentCode" placeholder="รหัสนักเรียน (ถ้ามี)" />
+
+    <input type="hidden" name="role" value="student" />
+
+    <button type="submit">สมัครสมาชิก</button>
+  </form>
+
+  <div id="message"></div>
+
+  <script>
+    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const data = Object.fromEntries(new FormData(form).entries());
+
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      const result = await res.json();
+      const msgBox = document.getElementById("message");
+
+      if (res.ok) {
+        msgBox.innerHTML = `<p class="success">✅ สมัครสำเร็จ! (userId: ${result.userId})</p>`;
+        form.reset();
+      } else {
+        msgBox.innerHTML = `<p class="error">❌ ${result.error || "สมัครไม่สำเร็จ"}</p>`;
+      }
+    });
+  </script>
+</body>
+</html>

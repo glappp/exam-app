@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <script src="topicMap.js"></script>
+  <meta charset="UTF-8">
+  <title>คลังข้อสอบออนไลน์</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>ยินดีต้อนรับสู่คลังข้อสอบออนไลน์</h1>
+  <button onclick="logout()">ออกจากระบบ</button>
+
+
+  <div>
+    <label for="chapter">เลือกบทเรียน:</label>
+    <select id="chapter">
+      <option value="พื้นที่">พื้นที่</option>
+      <option value="สมการ">สมการ</option>
+    </select>
+  </div>
+
+<button onclick="startExam()">เริ่มทำข้อสอบ</button>
+
+<button onclick="showResults()">ดูผลการทำข้อสอบ</button>
+<div id="results"></div>
+
+<button onclick="analyzeWeakness()">วิเคราะห์จุดอ่อน</button>
+<div id="analysis"></div>
+
+
+
+  <div id="question-area"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>คลังข้อสอบออนไลน์</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>ยินดีต้อนรับสู่คลังข้อสอบออนไลน์</h1>
+
+  <div>
+    <label for="chapter">เลือกบทเรียน:</label>
+    <select id="chapter">
+      <option value="area">พื้นที่</option>
+      <option value="equation">สมการ</option>
+    </select>
+  </div>
+
+  <button onclick="startExam()">เริ่มทำข้อสอบ</button>
+
+  <div id="question-area"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>

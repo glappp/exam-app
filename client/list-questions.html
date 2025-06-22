@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>📋 รายการโจทย์</title>
+  <style>
+    body { font-family: sans-serif; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f0f0f0; }
+    .modal {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;
+    }
+    .modal-content {
+      background: white; padding: 20px; border-radius: 5px; max-width: 600px; width: 90%;
+      max-height: 80vh; overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <h2>📋 รายการโจทย์</h2>
+
+  <div>
+    <label>🌐 ภาษา (Language):</label>
+    <select onchange="changeLang(this.value)">
+      <option value="th">🇹🇭 ไทย</option>
+      <option value="en">🇬🇧 English</option>
+    </select>
+  </div>
+
+  <form id="filter-form">
+    <label>ประเภท attribute:</label>
+    <select id="attrType" required onchange="updateAttrValueOptions()">
+      <option value="">-- กรุณาเลือก --</option>
+      <option value="topic">topic</option>
+      <option value="subtopic">subtopic</option>
+      <option value="skill">skill</option>
+      <option value="trap">trap</option>
+    </select>
+
+    <label>ค่า attribute:</label>
+    <select id="attrValue" disabled>
+      <option value="all">-- ทั้งหมด --</option>
+    </select>
+
+    <label>ระดับความยาก:</label>
+    <select id="difficulty">
+      <option value="all">-- ทุกระดับ --</option>
+      <option value="easy">ง่าย</option>
+      <option value="medium">ปานกลาง</option>
+      <option value="hard">ยาก</option>
+    </select>
+
+    <label>คำค้นหา (โจทย์):</label>
+    <input type="text" id="keyword" placeholder="พิมพ์คำค้นหา">
+
+    <button type="submit">🔍 ค้นหา</button>
+    <button type="button" onclick="resetFilters()">♻️ รีเซ็ต</button>
+  </form>
+
+  <div id="question-table"></div>
+  <div id="pagination" style="margin-top: 20px;"></div>
+
+  <div id="modal" class="modal" style="display: none;">
+    <div class="modal-content" id="modal-content"></div>
+  </div>
+
+  <script>
+    let currentPage = 1;
+    let currentQuestions = [];
+    let currentLang = "th";
+
+    const attrOptions = {
+      topic: ["addition", "subtraction", "algebra"],
+      subtopic: ["rounding", "2-digit", "factoring"],
+      skill: ["mental-math", "visual-reasoning"],
+      trap: ["confusing-choice", "wrong-unit"]
+    };
+
+    function getText(q) {
+      return currentLang === "th" ? q.textTh : q.textEn;
+    }
+
+    function getChoiceText(c) {
+      return currentLang === "th" ? c.textTh : c.textEn;
+    }
+
+    function changeLang(lang) {
+      currentLang = lang;
+      fetchQuestions(currentPage);
+    }
+
+    document.getElementById("filter-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      fetchQuestions(1);
+    });
+
+    function updateAttrValueOptions() {
+      const type = document.getElementById("attrType").value;
+      const valSelect = document.getElementById("attrValue");
+      valSelect.innerHTML = `<option value="all">-- ทั้งหมด --</option>`;
+      valSelect.disabled = !type;
+
+      if (type && attrOptions[type]) {
+        attrOptions[type].forEach(val => {
+          const opt = document.createElement("option");
+          opt.value = val;
+          opt.textContent = val;
+          valSelect.appendChild(opt);
+        });
+      }
+    }
+
+    function resetFilters() {
+      document.getElementById("attrType").value = "";
+      document.getElementById("attrValue").innerHTML = `<option value="all">-- ทั้งหมด --</option>`;
+      document.getElementById("attrValue").disabled = true;
+      document.getElementById("difficulty").value = "all";
+      document.getElementById("keyword").value = "";
+      fetchQuestions(1);
+    }
+
+    async function fetchQuestions(page = 1) {
+      const params = new URLSearchParams();
+      const attrType = document.getElementById("attrType").value;
+      const attrValue = document.getElementById("attrValue").value;
+      const difficulty = document.getElementById("difficulty").value;
+      const keyword = document.getElementById("keyword").value;
+
+      if (attrType) params.append("attrType", attrType);
+      if (attrValue) params.append("attrValue", attrValue);
+      if (difficulty) params.append("difficulty", difficulty);
+      if (keyword) params.append("keyword", keyword);
+      params.append("page", page);
+
+      const res = await fetch(`http://localhost:3001/questions?${params}`);
+      const data = await res.json();
+
+      currentQuestions = data.questions;
+
+      const tableDiv = document.getElementById("question-table");
+      let html = `<table><thead><tr>
+        <th>ID</th><th>โจทย์</th><th>ภาพ</th><th>ระดับ</th><th>วันที่เพิ่ม</th><th>ดู</th>
+      </tr></thead><tbody>`;
+
+      data.questions.forEach(q => {
+        html += `<tr>
+          <td>${q.id}</td>
+          <td>${getText(q)}</td>
+          <td>${q.image ? `<img src="/uploads/${q.image}" height="40">` : '-'}</td>
+          <td>${q.difficulty || '-'}</td>
+          <td>${new Date(q.createdAt).toLocaleString()}</td>
+          <td><button class="view-btn" data-id="${q.id}">▶</button></td>
+        </tr>`;
+      });
+
+      html += `</tbody></table>`;
+      tableDiv.innerHTML = html;
+
+      // View buttons
+      document.querySelectorAll('.view-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-id');
+          const q = currentQuestions.find(q => q.id == id);
+          if (q) showQuestion(q);
+        });
+      });
+
+      const pagDiv = document.getElementById("pagination");
+      let pagHTML = '';
+      if (data.currentPage > 1) {
+        pagHTML += `<button onclick="fetchQuestions(${data.currentPage - 1})">⬅️ ก่อนหน้า</button> `;
+      }
+      pagHTML += `หน้า ${data.currentPage} / ${data.totalPages} `;
+      if (data.currentPage < data.totalPages) {
+        pagHTML += `<button onclick="fetchQuestions(${data.currentPage + 1})">ถัดไป ➡️</button>`;
+      }
+      pagDiv.innerHTML = pagHTML;
+
+      currentPage = data.currentPage;
+    }
+
+    function showQuestion(q) {
+      let html = `<h3>🔍 โจทย์: ${getText(q)}</h3>`;
+      if (q.image) html += `<p><img src="/uploads/${q.image}" height="120"></p>`;
+
+      const choices = q.choices;
+      html += `<h4>📝 ตัวเลือก:</h4><ul style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">`;
+      choices.forEach((c, i) => {
+        const correct = q.answer === i ? "✔️ " : "";
+        const text = getChoiceText(c) || "-";
+        const imgHTML = c.image ? `<br><img src="/uploads/${c.image}" height="120">` : "";
+        html += `<li>${correct}${text}${imgHTML}</li>`;
+      });
+      html += `</ul>`;
+
+      if (q.attributes) {
+        html += `<h4>🏷️ Attributes:</h4><ul>`;
+        for (const [key, arr] of Object.entries(q.attributes)) {
+          if (Array.isArray(arr) && arr.length > 0) {
+            arr.forEach(val => html += `<li>${key}: ${val}</li>`);
+          }
+        }
+        html += `</ul>`;
+      }
+
+      document.getElementById("modal-content").innerHTML = html + `<br><button onclick="closeModal()">❌ ปิด</button>`;
+      document.getElementById("modal").style.display = "flex";
+    }
+
+    function closeModal() {
+      document.getElementById("modal").style.display = "none";
+    }
+
+    fetchQuestions(1);
+  </script>
+</body>
+</html>

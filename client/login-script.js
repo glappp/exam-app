@@ -16,7 +16,7 @@ async function login() {
     if (res.ok) {
       status.innerText = "✅ เข้าสู่ระบบสำเร็จ";
       setTimeout(() => {
-        window.location.href = "practice.html";
+        window.location.href = "dashboard.html";
       }, 1000);
     } else {
       status.innerText = "❌ " + (data.message || "เข้าสู่ระบบไม่สำเร็จ");

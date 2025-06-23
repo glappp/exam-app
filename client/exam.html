@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เลือกโหมดทำข้อสอบ</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    body {
+      font-family: sans-serif;
+      background-color: #f5f5f5;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    select, button {
+      width: 100%;
+      padding: 0.6rem;
+      margin: 0.5rem 0;
+      font-size: 1rem;
+    }
+    label {
+      margin-top: 1rem;
+      font-weight: bold;
+      display: block;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>เลือกโหมดทำข้อสอบ</h2>
+
+    <label for="mode">โหมด:</label>
+    <select id="mode" onchange="onModeChange()">
+      <option value="official">ข้อสอบจริง</option>
+      <option value="practice">ฝึกฝน</option>
+    </select>
+
+    <div id="common-options">
+      <label for="grade">ระดับชั้น:</label>
+      <select id="grade"></select>
+
+      <label for="examType">สนามสอบ:</label>
+      <select id="examType"></select>
+    </div>
+
+    <div id="official-only">
+      <label for="year">ปีที่สอบ:</label>
+      <select id="year"></select>
+    </div>
+
+    <label>
+      <input type="checkbox" id="timed"> จับเวลา
+    </label>
+
+    <button onclick="startExam()">เริ่มทำข้อสอบ</button>
+  </div>
+
+  <script>
+    async function fetchOptions(mode) {
+      const res = await fetch(`/api/exam-options?mode=${mode}`);
+      const data = await res.json();
+
+      const gradeSelect = document.getElementById('grade');
+      const examTypeSelect = document.getElementById('examType');
+      const yearSelect = document.getElementById('year');
+
+      gradeSelect.innerHTML = '';
+      examTypeSelect.innerHTML = '';
+      yearSelect.innerHTML = '';
+
+      data.grades.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g;
+        opt.textContent = gradeLabel(g);
+        gradeSelect.appendChild(opt);
+      });
+
+      data.examTypes.forEach(e => {
+        const opt = document.createElement('option');
+        opt.value = e;
+        opt.textContent = examLabel(e);
+        examTypeSelect.appendChild(opt);
+      });
+
+      (data.years || []).forEach(y => {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        yearSelect.appendChild(opt);
+      });
+    }
+
+    function onModeChange() {
+      const mode = document.getElementById('mode').value;
+      document.getElementById('official-only').classList.toggle('hidden', mode !== 'official');
+      fetchOptions(mode);
+    }
+
+    function gradeLabel(g) {
+      return { p4: 'ป.4', p5: 'ป.5', p6: 'ป.6', m1: 'ม.1', m3: 'ม.3' }[g] || g;
+    }
+
+    function examLabel(e) {
+      return {
+        chulabhorn: 'จุฬาภรณ์',
+        suankularb: 'สวนกุหลาบ',
+        muengnont: 'เมืองนนท์'
+      }[e] || e;
+    }
+
+    function startExam() {
+      const mode = document.getElementById('mode').value;
+      const grade = document.getElementById('grade').value;
+      const examType = document.getElementById('examType').value;
+      const timed = document.getElementById('timed').checked ? '1' : '0';
+
+      let url = '';
+      if (mode === 'official') {
+        const year = document.getElementById('year').value;
+        url = `exam-official.html?grade=${grade}&examType=${examType}&year=${year}&timed=${timed}`;
+      } else {
+        url = `exam-practice.html?grade=${grade}&examType=${examType}&timed=${timed}`;
+      }
+      window.location.href = url;
+    }
+
+    window.onload = onModeChange;
+  </script>
+</body>
+</html>

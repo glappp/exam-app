@@ -11,6 +11,7 @@ const app = express();
 const upload = multer({ dest: 'uploads/' });
 const bcrypt = require('bcrypt');
 
+app.use(express.static(path.join(__dirname, '..', 'client'))); // สำหรับไฟล์ static
 
 
 
@@ -23,6 +24,9 @@ app.use(session({
   saveUninitialized: false,
   cookie: { secure: false } // สำหรับ dev, ใช้ true พร้อม HTTPS
 }));
+
+
+
 
 // ✅ Static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -37,6 +41,8 @@ app.use('/questions', questionsRoute);
 
 const resultsRoute = require('./routes/results');
 app.use('/results', resultsRoute);
+
+app.use('/api', require('./routes/exam-options'));
 
 // ✅ Auth APIs
 app.post('/api/login', async (req, res) => {

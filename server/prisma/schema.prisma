@@ -91,4 +91,26 @@ model Result {
   createdAt  DateTime @default(now())
 }
 
+model ExamSetMetadata {
+  id             String   @id @default(cuid())
+  examType       String   // เช่น "chulabhorn", "suankularb", "onet"
+  year           String?  // null หมายถึงใช้ได้กับทุกปี (สุ่ม)
+  grade          String   // เช่น "p6", "m1", "m3"
+  questionCount  Int      // จำนวนข้อสอบทั้งหมด
+  timeLimitSec   Int      // เวลาที่ใช้ทำข้อสอบหน่วยเป็นวินาที
+  isOfficial     Boolean  // true = ข้อสอบจริง, false = mock/synthetic/random
+  label          String?  // (แนะนำ) ป้ายแสดง เช่น "จุฬาภรณ์ ป.6 ปี 2565"
+  isActive       Boolean  @default(true) // (แนะนำ) ใช้ soft delete หรือเปิดปิดชุดสอบ
+
+  // ในอนาคตอาจเชื่อมกับชุดคำถามจริงได้
+  // questions      Question[] @relation(...)
+}
+
+
+// ตัวอย่างข้อมูลที่อาจจะบันทึกในตารางนี้:
+// | examType    | year  | grade | questionCount | timeLimitSec | isOfficial |
+// |-------------|-------|--------|----------------|----------------|-------------|
+// | chulabhorn  | 2566  | p6     | 40             | 3600           | true        |
+// | chulabhorn  | null  | p6     | 20             | 1800           | false       |
+// | suankularb  | 2565  | m1     | 50             | 4500           | true        |
 

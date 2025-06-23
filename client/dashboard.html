@@ -1,0 +1,52 @@
+<!-- client/dashboard.html -->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>แดชบอร์ด</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      background-color: #f7f9fa;
+    }
+    h1 {
+      margin-bottom: 2rem;
+    }
+    .mode-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      max-width: 400px;
+    }
+    .mode-list button {
+      padding: 1.2rem;
+      font-size: 1.1rem;
+      background-color: #007acc;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    .mode-list button:hover {
+      background-color: #005fa3;
+    }
+  </style>
+</head>
+<body>
+  <h1>เลือกโหมดที่ต้องการ</h1>
+
+  <div class="mode-list">
+    <button onclick="goTo('practice')">🟢 โหมดฝึกหัด</button>
+    <button onclick="goTo('adaptive')">🔵 โหมดปรับตามจุดอ่อน</button>
+    <button onclick="goTo('exam')">🟠 โหมดสอบแข่งขัน</button>
+  </div>
+
+  <script>
+    function goTo(mode) {
+      window.location.href = mode + '.html';
+    }
+  </script>
+</body>
+</html>

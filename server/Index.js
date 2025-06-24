@@ -44,6 +44,9 @@ app.use('/results', resultsRoute);
 
 app.use('/api', require('./routes/exam-options'));
 
+app.use('/api/exam-set', require('./routes/api/exam-set-random'));
+app.use('/api/submit-exam', require('./routes/api/submit-exam'));
+
 // ✅ Auth APIs
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
@@ -65,6 +68,7 @@ app.post('/api/login', async (req, res) => {
 
   res.json({ user: { id: user.id, username: user.username, role: user.role, firstName: user.firstName } });
 });
+
 
 app.get('/api/me', (req, res) => {
   if (req.session.userId) {

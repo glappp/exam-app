@@ -1,0 +1,431 @@
+[
+  {
+    "id": "e1e7750c-4152-4c29-98e3-936cf6a5979c",
+    "code": "p6-chula-2022-o-q002",
+    "textTh": "กำหนดให้ A = 2 − 3/4 + 3/7, B = 6/8 − 4/7, C = 7/21 ÷ 8/18 ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEn": "Given A = 2 − 3/4 + 3/7, B = 6/8 − 4/7, C = 7/21 ÷ 8/18. What is the difference between the largest and smallest value?",
+    "textThHtml": "กำหนดให้ A = 2 − <sup>3</sup>&frasl;<sub>4</sub> + <sup>3</sup>&frasl;<sub>7</sub>, B = <sup>6</sup>&frasl;<sub>8</sub> − <sup>4</sup>&frasl;<sub>7</sub>, C = <sup>7</sup>&frasl;<sub>21</sub> ÷ <sup>8</sup>&frasl;<sub>18</sub> ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEnHtml": "Given A = 2 − <sup>3</sup>&frasl;<sub>4</sub> + <sup>3</sup>&frasl;<sub>7</sub>, B = <sup>6</sup>&frasl;<sub>8</sub> − <sup>4</sup>&frasl;<sub>7</sub>, C = <sup>7</sup>&frasl;<sub>21</sub> ÷ <sup>8</sup>&frasl;<sub>18</sub>. What is the difference between the largest and smallest value?",
+    "image": null,
+    "choices": [],
+    "answer": null,
+    "shortAnswer": [
+      "2"
+    ],
+    "attributes": {
+      "year": "2022",
+      "topic": [
+        "topic:fraction",
+        "topic:comparison"
+      ],
+      "skill": [
+        "skill:calculate-fractions",
+        "skill:compare-numbers"
+      ],
+      "trap": [
+        "trap:order-of-ops",
+        "trap:compare-mistake"
+      ],
+      "difficulty": 2,
+      "source": "source:chulabhorn",
+      "examSet": "chula-p6-2022"
+    },
+    "source": "Chulabhorn Science Math Test 2022",
+    "derivedFrom": null,
+    "estimatedTimeSec": 90,
+    "score": 1,
+    "ownerOrg": "me",
+    "createdBy": "chatgpt",
+    "updatedBy": "chatgpt"
+  },
+  {
+    "id": "eb952cc6-171a-4609-abad-5cb200e0b630",
+    "code": "p6-chula-2022-v-q002-001",
+    "textTh": "กำหนดให้ A = 1 − 1/5 + 1/6, B = 3/7 − 4/8, C = 5/9 ÷ 6/10 ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEn": "Given A = 1 − 1/5 + 1/6, B = 3/7 − 4/8, C = 5/9 ÷ 6/10. What is the difference between the largest and smallest value?",
+    "textThHtml": "กำหนดให้ A = 1 − <sup>1</sup>&frasl;<sub>5</sub> + <sup>1</sup>&frasl;<sub>6</sub>, B = <sup>3</sup>&frasl;<sub>7</sub> − <sup>4</sup>&frasl;<sub>8</sub>, C = <sup>5</sup>&frasl;<sub>9</sub> ÷ <sup>6</sup>&frasl;<sub>10</sub> ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEnHtml": "Given A = 1 − <sup>1</sup>&frasl;<sub>5</sub> + <sup>1</sup>&frasl;<sub>6</sub>, B = <sup>3</sup>&frasl;<sub>7</sub> − <sup>4</sup>&frasl;<sub>8</sub>, C = <sup>5</sup>&frasl;<sub>9</sub> ÷ <sup>6</sup>&frasl;<sub>10</sub>. What is the difference between the largest and smallest value?",
+    "image": null,
+    "choices": [],
+    "answer": null,
+    "shortAnswer": [
+      "2"
+    ],
+    "attributes": {
+      "year": "2022",
+      "topic": [
+        "topic:fraction",
+        "topic:comparison"
+      ],
+      "skill": [
+        "skill:calculate-fractions",
+        "skill:compare-numbers"
+      ],
+      "trap": [
+        "trap:order-of-ops",
+        "trap:compare-mistake"
+      ],
+      "difficulty": 2,
+      "source": "source:chulabhorn",
+      "examSet": "chula-p6-2022"
+    },
+    "source": "Chulabhorn Science Math Test 2022",
+    "derivedFrom": "p6-chula-2022-o-q002",
+    "estimatedTimeSec": 90,
+    "score": 1,
+    "ownerOrg": "me",
+    "createdBy": "chatgpt",
+    "updatedBy": "chatgpt"
+  },
+  {
+    "id": "de73b388-5ea1-4795-83a9-026d6eb2dc26",
+    "code": "p6-chula-2022-v-q002-002",
+    "textTh": "กำหนดให้ A = 1 − 2/5 + 2/6, B = 4/7 − 5/8, C = 6/9 ÷ 7/10 ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEn": "Given A = 1 − 2/5 + 2/6, B = 4/7 − 5/8, C = 6/9 ÷ 7/10. What is the difference between the largest and smallest value?",
+    "textThHtml": "กำหนดให้ A = 1 − <sup>2</sup>&frasl;<sub>5</sub> + <sup>2</sup>&frasl;<sub>6</sub>, B = <sup>4</sup>&frasl;<sub>7</sub> − <sup>5</sup>&frasl;<sub>8</sub>, C = <sup>6</sup>&frasl;<sub>9</sub> ÷ <sup>7</sup>&frasl;<sub>10</sub> ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEnHtml": "Given A = 1 − <sup>2</sup>&frasl;<sub>5</sub> + <sup>2</sup>&frasl;<sub>6</sub>, B = <sup>4</sup>&frasl;<sub>7</sub> − <sup>5</sup>&frasl;<sub>8</sub>, C = <sup>6</sup>&frasl;<sub>9</sub> ÷ <sup>7</sup>&frasl;<sub>10</sub>. What is the difference between the largest and smallest value?",
+    "image": null,
+    "choices": [],
+    "answer": null,
+    "shortAnswer": [
+      "2"
+    ],
+    "attributes": {
+      "year": "2022",
+      "topic": [
+        "topic:fraction",
+        "topic:comparison"
+      ],
+      "skill": [
+        "skill:calculate-fractions",
+        "skill:compare-numbers"
+      ],
+      "trap": [
+        "trap:order-of-ops",
+        "trap:compare-mistake"
+      ],
+      "difficulty": 2,
+      "source": "source:chulabhorn",
+      "examSet": "chula-p6-2022"
+    },
+    "source": "Chulabhorn Science Math Test 2022",
+    "derivedFrom": "p6-chula-2022-o-q002",
+    "estimatedTimeSec": 90,
+    "score": 1,
+    "ownerOrg": "me",
+    "createdBy": "chatgpt",
+    "updatedBy": "chatgpt"
+  },
+  {
+    "id": "c4a9336f-669d-43a0-b9f5-74fe28c10e13",
+    "code": "p6-chula-2022-v-q002-003",
+    "textTh": "กำหนดให้ A = 1 − 3/5 + 3/6, B = 5/7 − 6/8, C = 7/9 ÷ 8/10 ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEn": "Given A = 1 − 3/5 + 3/6, B = 5/7 − 6/8, C = 7/9 ÷ 8/10. What is the difference between the largest and smallest value?",
+    "textThHtml": "กำหนดให้ A = 1 − <sup>3</sup>&frasl;<sub>5</sub> + <sup>3</sup>&frasl;<sub>6</sub>, B = <sup>5</sup>&frasl;<sub>7</sub> − <sup>6</sup>&frasl;<sub>8</sub>, C = <sup>7</sup>&frasl;<sub>9</sub> ÷ <sup>8</sup>&frasl;<sub>10</sub> ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEnHtml": "Given A = 1 − <sup>3</sup>&frasl;<sub>5</sub> + <sup>3</sup>&frasl;<sub>6</sub>, B = <sup>5</sup>&frasl;<sub>7</sub> − <sup>6</sup>&frasl;<sub>8</sub>, C = <sup>7</sup>&frasl;<sub>9</sub> ÷ <sup>8</sup>&frasl;<sub>10</sub>. What is the difference between the largest and smallest value?",
+    "image": null,
+    "choices": [],
+    "answer": null,
+    "shortAnswer": [
+      "2"
+    ],
+    "attributes": {
+      "year": "2022",
+      "topic": [
+        "topic:fraction",
+        "topic:comparison"
+      ],
+      "skill": [
+        "skill:calculate-fractions",
+        "skill:compare-numbers"
+      ],
+      "trap": [
+        "trap:order-of-ops",
+        "trap:compare-mistake"
+      ],
+      "difficulty": 2,
+      "source": "source:chulabhorn",
+      "examSet": "chula-p6-2022"
+    },
+    "source": "Chulabhorn Science Math Test 2022",
+    "derivedFrom": "p6-chula-2022-o-q002",
+    "estimatedTimeSec": 90,
+    "score": 1,
+    "ownerOrg": "me",
+    "createdBy": "chatgpt",
+    "updatedBy": "chatgpt"
+  },
+  {
+    "id": "9e3f86ba-b758-4573-86f1-22d1355c2261",
+    "code": "p6-chula-2022-v-q002-004",
+    "textTh": "กำหนดให้ A = 1 − 4/5 + 4/6, B = 6/7 − 7/8, C = 8/9 ÷ 9/10 ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEn": "Given A = 1 − 4/5 + 4/6, B = 6/7 − 7/8, C = 8/9 ÷ 9/10. What is the difference between the largest and smallest value?",
+    "textThHtml": "กำหนดให้ A = 1 − <sup>4</sup>&frasl;<sub>5</sub> + <sup>4</sup>&frasl;<sub>6</sub>, B = <sup>6</sup>&frasl;<sub>7</sub> − <sup>7</sup>&frasl;<sub>8</sub>, C = <sup>8</sup>&frasl;<sub>9</sub> ÷ <sup>9</sup>&frasl;<sub>10</sub> ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEnHtml": "Given A = 1 − <sup>4</sup>&frasl;<sub>5</sub> + <sup>4</sup>&frasl;<sub>6</sub>, B = <sup>6</sup>&frasl;<sub>7</sub> − <sup>7</sup>&frasl;<sub>8</sub>, C = <sup>8</sup>&frasl;<sub>9</sub> ÷ <sup>9</sup>&frasl;<sub>10</sub>. What is the difference between the largest and smallest value?",
+    "image": null,
+    "choices": [],
+    "answer": null,
+    "shortAnswer": [
+      "2"
+    ],
+    "attributes": {
+      "year": "2022",
+      "topic": [
+        "topic:fraction",
+        "topic:comparison"
+      ],
+      "skill": [
+        "skill:calculate-fractions",
+        "skill:compare-numbers"
+      ],
+      "trap": [
+        "trap:order-of-ops",
+        "trap:compare-mistake"
+      ],
+      "difficulty": 2,
+      "source": "source:chulabhorn",
+      "examSet": "chula-p6-2022"
+    },
+    "source": "Chulabhorn Science Math Test 2022",
+    "derivedFrom": "p6-chula-2022-o-q002",
+    "estimatedTimeSec": 90,
+    "score": 1,
+    "ownerOrg": "me",
+    "createdBy": "chatgpt",
+    "updatedBy": "chatgpt"
+  },
+  {
+    "id": "9cf9cd1d-0bf2-495e-af68-371184ded07c",
+    "code": "p6-chula-2022-v-q002-005",
+    "textTh": "กำหนดให้ A = 1 − 5/5 + 5/6, B = 7/7 − 8/8, C = 9/9 ÷ 10/10 ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEn": "Given A = 1 − 5/5 + 5/6, B = 7/7 − 8/8, C = 9/9 ÷ 10/10. What is the difference between the largest and smallest value?",
+    "textThHtml": "กำหนดให้ A = 1 − <sup>5</sup>&frasl;<sub>5</sub> + <sup>5</sup>&frasl;<sub>6</sub>, B = <sup>7</sup>&frasl;<sub>7</sub> − <sup>8</sup>&frasl;<sub>8</sub>, C = <sup>9</sup>&frasl;<sub>9</sub> ÷ <sup>10</sup>&frasl;<sub>10</sub> ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEnHtml": "Given A = 1 − <sup>5</sup>&frasl;<sub>5</sub> + <sup>5</sup>&frasl;<sub>6</sub>, B = <sup>7</sup>&frasl;<sub>7</sub> − <sup>8</sup>&frasl;<sub>8</sub>, C = <sup>9</sup>&frasl;<sub>9</sub> ÷ <sup>10</sup>&frasl;<sub>10</sub>. What is the difference between the largest and smallest value?",
+    "image": null,
+    "choices": [],
+    "answer": null,
+    "shortAnswer": [
+      "2"
+    ],
+    "attributes": {
+      "year": "2022",
+      "topic": [
+        "topic:fraction",
+        "topic:comparison"
+      ],
+      "skill": [
+        "skill:calculate-fractions",
+        "skill:compare-numbers"
+      ],
+      "trap": [
+        "trap:order-of-ops",
+        "trap:compare-mistake"
+      ],
+      "difficulty": 2,
+      "source": "source:chulabhorn",
+      "examSet": "chula-p6-2022"
+    },
+    "source": "Chulabhorn Science Math Test 2022",
+    "derivedFrom": "p6-chula-2022-o-q002",
+    "estimatedTimeSec": 90,
+    "score": 1,
+    "ownerOrg": "me",
+    "createdBy": "chatgpt",
+    "updatedBy": "chatgpt"
+  },
+  {
+    "id": "8956d22a-7c98-45a0-b7f9-b55fffab5a6c",
+    "code": "p6-chula-2022-v-q002-006",
+    "textTh": "กำหนดให้ A = 1 − 6/5 + 6/6, B = 8/7 − 9/8, C = 10/9 ÷ 11/10 ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEn": "Given A = 1 − 6/5 + 6/6, B = 8/7 − 9/8, C = 10/9 ÷ 11/10. What is the difference between the largest and smallest value?",
+    "textThHtml": "กำหนดให้ A = 1 − <sup>6</sup>&frasl;<sub>5</sub> + <sup>6</sup>&frasl;<sub>6</sub>, B = <sup>8</sup>&frasl;<sub>7</sub> − <sup>9</sup>&frasl;<sub>8</sub>, C = <sup>10</sup>&frasl;<sub>9</sub> ÷ <sup>11</sup>&frasl;<sub>10</sub> ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEnHtml": "Given A = 1 − <sup>6</sup>&frasl;<sub>5</sub> + <sup>6</sup>&frasl;<sub>6</sub>, B = <sup>8</sup>&frasl;<sub>7</sub> − <sup>9</sup>&frasl;<sub>8</sub>, C = <sup>10</sup>&frasl;<sub>9</sub> ÷ <sup>11</sup>&frasl;<sub>10</sub>. What is the difference between the largest and smallest value?",
+    "image": null,
+    "choices": [],
+    "answer": null,
+    "shortAnswer": [
+      "2"
+    ],
+    "attributes": {
+      "year": "2022",
+      "topic": [
+        "topic:fraction",
+        "topic:comparison"
+      ],
+      "skill": [
+        "skill:calculate-fractions",
+        "skill:compare-numbers"
+      ],
+      "trap": [
+        "trap:order-of-ops",
+        "trap:compare-mistake"
+      ],
+      "difficulty": 2,
+      "source": "source:chulabhorn",
+      "examSet": "chula-p6-2022"
+    },
+    "source": "Chulabhorn Science Math Test 2022",
+    "derivedFrom": "p6-chula-2022-o-q002",
+    "estimatedTimeSec": 90,
+    "score": 1,
+    "ownerOrg": "me",
+    "createdBy": "chatgpt",
+    "updatedBy": "chatgpt"
+  },
+  {
+    "id": "fc6004ba-7b81-4d4d-b0b3-e888495ca6d7",
+    "code": "p6-chula-2022-v-q002-007",
+    "textTh": "กำหนดให้ A = 1 − 7/5 + 7/6, B = 9/7 − 10/8, C = 11/9 ÷ 12/10 ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEn": "Given A = 1 − 7/5 + 7/6, B = 9/7 − 10/8, C = 11/9 ÷ 12/10. What is the difference between the largest and smallest value?",
+    "textThHtml": "กำหนดให้ A = 1 − <sup>7</sup>&frasl;<sub>5</sub> + <sup>7</sup>&frasl;<sub>6</sub>, B = <sup>9</sup>&frasl;<sub>7</sub> − <sup>10</sup>&frasl;<sub>8</sub>, C = <sup>11</sup>&frasl;<sub>9</sub> ÷ <sup>12</sup>&frasl;<sub>10</sub> ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEnHtml": "Given A = 1 − <sup>7</sup>&frasl;<sub>5</sub> + <sup>7</sup>&frasl;<sub>6</sub>, B = <sup>9</sup>&frasl;<sub>7</sub> − <sup>10</sup>&frasl;<sub>8</sub>, C = <sup>11</sup>&frasl;<sub>9</sub> ÷ <sup>12</sup>&frasl;<sub>10</sub>. What is the difference between the largest and smallest value?",
+    "image": null,
+    "choices": [],
+    "answer": null,
+    "shortAnswer": [
+      "2"
+    ],
+    "attributes": {
+      "year": "2022",
+      "topic": [
+        "topic:fraction",
+        "topic:comparison"
+      ],
+      "skill": [
+        "skill:calculate-fractions",
+        "skill:compare-numbers"
+      ],
+      "trap": [
+        "trap:order-of-ops",
+        "trap:compare-mistake"
+      ],
+      "difficulty": 2,
+      "source": "source:chulabhorn",
+      "examSet": "chula-p6-2022"
+    },
+    "source": "Chulabhorn Science Math Test 2022",
+    "derivedFrom": "p6-chula-2022-o-q002",
+    "estimatedTimeSec": 90,
+    "score": 1,
+    "ownerOrg": "me",
+    "createdBy": "chatgpt",
+    "updatedBy": "chatgpt"
+  },
+  {
+    "id": "d5f7640e-3432-4a65-aba4-2e5f3eeb3434",
+    "code": "p6-chula-2022-v-q002-008",
+    "textTh": "กำหนดให้ A = 1 − 8/5 + 8/6, B = 10/7 − 11/8, C = 12/9 ÷ 13/10 ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEn": "Given A = 1 − 8/5 + 8/6, B = 10/7 − 11/8, C = 12/9 ÷ 13/10. What is the difference between the largest and smallest value?",
+    "textThHtml": "กำหนดให้ A = 1 − <sup>8</sup>&frasl;<sub>5</sub> + <sup>8</sup>&frasl;<sub>6</sub>, B = <sup>10</sup>&frasl;<sub>7</sub> − <sup>11</sup>&frasl;<sub>8</sub>, C = <sup>12</sup>&frasl;<sub>9</sub> ÷ <sup>13</sup>&frasl;<sub>10</sub> ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEnHtml": "Given A = 1 − <sup>8</sup>&frasl;<sub>5</sub> + <sup>8</sup>&frasl;<sub>6</sub>, B = <sup>10</sup>&frasl;<sub>7</sub> − <sup>11</sup>&frasl;<sub>8</sub>, C = <sup>12</sup>&frasl;<sub>9</sub> ÷ <sup>13</sup>&frasl;<sub>10</sub>. What is the difference between the largest and smallest value?",
+    "image": null,
+    "choices": [],
+    "answer": null,
+    "shortAnswer": [
+      "2"
+    ],
+    "attributes": {
+      "year": "2022",
+      "topic": [
+        "topic:fraction",
+        "topic:comparison"
+      ],
+      "skill": [
+        "skill:calculate-fractions",
+        "skill:compare-numbers"
+      ],
+      "trap": [
+        "trap:order-of-ops",
+        "trap:compare-mistake"
+      ],
+      "difficulty": 2,
+      "source": "source:chulabhorn",
+      "examSet": "chula-p6-2022"
+    },
+    "source": "Chulabhorn Science Math Test 2022",
+    "derivedFrom": "p6-chula-2022-o-q002",
+    "estimatedTimeSec": 90,
+    "score": 1,
+    "ownerOrg": "me",
+    "createdBy": "chatgpt",
+    "updatedBy": "chatgpt"
+  },
+  {
+    "id": "7a8bcba0-7766-467e-9759-58172a5de16a",
+    "code": "p6-chula-2022-v-q002-009",
+    "textTh": "กำหนดให้ A = 1 − 9/5 + 9/6, B = 11/7 − 12/8, C = 13/9 ÷ 14/10 ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEn": "Given A = 1 − 9/5 + 9/6, B = 11/7 − 12/8, C = 13/9 ÷ 14/10. What is the difference between the largest and smallest value?",
+    "textThHtml": "กำหนดให้ A = 1 − <sup>9</sup>&frasl;<sub>5</sub> + <sup>9</sup>&frasl;<sub>6</sub>, B = <sup>11</sup>&frasl;<sub>7</sub> − <sup>12</sup>&frasl;<sub>8</sub>, C = <sup>13</sup>&frasl;<sub>9</sub> ÷ <sup>14</sup>&frasl;<sub>10</sub> ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEnHtml": "Given A = 1 − <sup>9</sup>&frasl;<sub>5</sub> + <sup>9</sup>&frasl;<sub>6</sub>, B = <sup>11</sup>&frasl;<sub>7</sub> − <sup>12</sup>&frasl;<sub>8</sub>, C = <sup>13</sup>&frasl;<sub>9</sub> ÷ <sup>14</sup>&frasl;<sub>10</sub>. What is the difference between the largest and smallest value?",
+    "image": null,
+    "choices": [],
+    "answer": null,
+    "shortAnswer": [
+      "2"
+    ],
+    "attributes": {
+      "year": "2022",
+      "topic": [
+        "topic:fraction",
+        "topic:comparison"
+      ],
+      "skill": [
+        "skill:calculate-fractions",
+        "skill:compare-numbers"
+      ],
+      "trap": [
+        "trap:order-of-ops",
+        "trap:compare-mistake"
+      ],
+      "difficulty": 2,
+      "source": "source:chulabhorn",
+      "examSet": "chula-p6-2022"
+    },
+    "source": "Chulabhorn Science Math Test 2022",
+    "derivedFrom": "p6-chula-2022-o-q002",
+    "estimatedTimeSec": 90,
+    "score": 1,
+    "ownerOrg": "me",
+    "createdBy": "chatgpt",
+    "updatedBy": "chatgpt"
+  },
+  {
+    "id": "480ff6ab-bb3b-4fc8-874c-cf67b0bdc43f",
+    "code": "p6-chula-2022-v-q002-010",
+    "textTh": "กำหนดให้ A = 1 − 10/5 + 10/6, B = 12/7 − 13/8, C = 14/9 ÷ 15/10 ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEn": "Given A = 1 − 10/5 + 10/6, B = 12/7 − 13/8, C = 14/9 ÷ 15/10. What is the difference between the largest and smallest value?",
+    "textThHtml": "กำหนดให้ A = 1 − <sup>10</sup>&frasl;<sub>5</sub> + <sup>10</sup>&frasl;<sub>6</sub>, B = <sup>12</sup>&frasl;<sub>7</sub> − <sup>13</sup>&frasl;<sub>8</sub>, C = <sup>14</sup>&frasl;<sub>9</sub> ÷ <sup>15</sup>&frasl;<sub>10</sub> ผลต่างของจำนวนที่มากที่สุดกับจำนวนน้อยที่สุดเท่ากับเท่าใด",
+    "textEnHtml": "Given A = 1 − <sup>10</sup>&frasl;<sub>5</sub> + <sup>10</sup>&frasl;<sub>6</sub>, B = <sup>12</sup>&frasl;<sub>7</sub> − <sup>13</sup>&frasl;<sub>8</sub>, C = <sup>14</sup>&frasl;<sub>9</sub> ÷ <sup>15</sup>&frasl;<sub>10</sub>. What is the difference between the largest and smallest value?",
+    "image": null,
+    "choices": [],
+    "answer": null,
+    "shortAnswer": [
+      "2"
+    ],
+    "attributes": {
+      "year": "2022",
+      "topic": [
+        "topic:fraction",
+        "topic:comparison"
+      ],
+      "skill": [
+        "skill:calculate-fractions",
+        "skill:compare-numbers"
+      ],
+      "trap": [
+        "trap:order-of-ops",
+        "trap:compare-mistake"
+      ],
+      "difficulty": 2,
+      "source": "source:chulabhorn",
+      "examSet": "chula-p6-2022"
+    },
+    "source": "Chulabhorn Science Math Test 2022",
+    "derivedFrom": "p6-chula-2022-o-q002",
+    "estimatedTimeSec": 90,
+    "score": 1,
+    "ownerOrg": "me",
+    "createdBy": "chatgpt",
+    "updatedBy": "chatgpt"
+  }
+]

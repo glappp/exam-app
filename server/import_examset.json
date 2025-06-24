@@ -1,0 +1,11 @@
+{
+  "id": "chula-p6-2022",
+  "examType": "chulabhorn",
+  "year": "2022",
+  "grade": "p6",
+  "questionCount": 25,
+  "timeLimitSec": 5400,
+  "isOfficial": true,
+  "label": "จุฬาภรณ์ ป.6 ปี 2565",
+  "isActive": true
+}

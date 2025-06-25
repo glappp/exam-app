@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ผลสอบ</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>📄 ผลสอบ: Competitive Practice</h1>
+    <div id="summary"></div>
+    <div id="recommendations"></div>
+    <div id="details"></div>
+    <button onclick="window.print()">🖨️ พิมพ์ผลสอบ</button>
+  </div>
+
+  <script>
+    const result = JSON.parse(localStorage.getItem("examResult"));
+
+    document.getElementById('summary').innerHTML = `
+      <h2>สรุปคะแนน</h2>
+      <p>ตอบถูก <strong>${result.correctCount}</strong> / ${result.total} ข้อ</p>
+      <p>ได้ <strong>${result.score}</strong> / ${result.fullScore} คะแนน</p>
+    `;
+
+    document.getElementById('recommendations').innerHTML = `
+      <h2>📌 หัวข้อที่ควรทบทวน</h2>
+      <ul>
+        ${(result.recommendations || []).map(t => `<li>${getTopicLabel(t)}</li>`).join('')}
+      </ul>
+    `;
+
+    const qna = result.questions || [];
+    const userAnswers = result.answers || [];
+    const details = qna.map((q, i) => {
+      const userAns = userAnswers[i];
+      const isCorrect = isAnswerCorrect(userAns, q);
+
+      return `
+        <div class="question-box ${isCorrect ? 'correct' : 'wrong'}">
+          <p><strong>ข้อ ${i + 1}</strong>: ${q.textTh}</p>
+          ${q.image ? `<img src="${q.image}" style="max-width:100px;">` : ''}
+          <ul>
+            ${q.choices.map((c, idx) => `
+              <li style="${idx === q.answer ? 'font-weight:bold;' : ''}">
+                ${idx === userAns ? '👉' : ''} ${c.textTh}
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      `;
+    });
+
+    document.getElementById('details').innerHTML = `
+      <h2>🧾 รายละเอียดข้อสอบ</h2>
+      ${details.join('')}
+    `;
+
+    function getTopicLabel(key) {
+      const map = {
+        'topic:addition': 'บวก',
+        'topic:subtraction': 'ลบ',
+        'topic:multiplication': 'คูณ',
+        'topic:division': 'หาร',
+        'topic:fraction': 'เศษส่วน',
+        'topic:area': 'พื้นที่',
+        'topic:equation': 'สมการ',
+        'topic:number-pattern': 'ลำดับตัวเลข',
+        'topic:order-of-operations': 'ลำดับการคำนวณ',
+        'topic:expression': 'นิพจน์'
+      };
+      return map[key] || key;
+    }
+
+    function isAnswerCorrect(ans, q) {
+      if (q.answer != null) return ans === q.answer;
+      if (Array.isArray(q.shortAnswer)) {
+        const clean = (a) => String(a).trim().toLowerCase().replace(/\s+/g, '');
+        return q.shortAnswer.some(sa => clean(sa) === clean(ans));
+      }
+      return false;
+    }
+  </script>
+</body>
+</html>

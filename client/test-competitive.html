@@ -95,30 +95,49 @@
       }
     });
 
-    document.getElementById('next-btn').addEventListener('click', () => {
-      if (currentIndex < questions.length - 1) {
-        currentIndex++;
-        renderQuestion();
-        updateProgress();
-      } else {
-        document.getElementById('submit-section').style.display = 'block';
-        document.getElementById('navigation').style.display = 'none';
+document.getElementById('next-btn').addEventListener('click', () => {
+  if (currentIndex < questions.length - 1) {
+    currentIndex++;
+    renderQuestion();
+    updateProgress();
+  } else {
+    const unanswered = [];
+    for (let i = 0; i < answers.length; i++) {
+      if (answers[i] === null || answers[i] === '') {
+        unanswered.push(i + 1);
       }
-    });
+    }
 
-    document.getElementById('submit-btn').addEventListener('click', async () => {
-      const res = await fetch('/api/submit-exam', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode,
-          questions: questions.map(q => q.id),
-          answers,
-        })
-      });
-      const result = await res.json();
-      showResult(result);
-    });
+    if (unanswered.length > 0) {
+      alert(`คุณยังไม่ได้ตอบข้อ: ${unanswered.join(', ')}\nกรุณาตอบให้ครบก่อนส่ง`);
+      return;
+    }
+
+    const ok = confirm("คุณแน่ใจหรือไม่ว่าต้องการส่งคำตอบทั้งหมด?");
+    if (!ok) return;
+
+    document.getElementById('submit-section').style.display = 'block';
+    document.getElementById('navigation').style.display = 'none';
+  }
+});
+
+
+document.getElementById('submit-btn').addEventListener('click', async () => {
+  const res = await fetch('/api/submit-exam', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      mode,
+      questions: questions.map(q => q.id),
+      answers,
+    })
+  });
+  const result = await res.json();
+  localStorage.setItem("examResult", JSON.stringify(result));
+  window.location.href = "result-competitive.html";
+});
+
+
 
     function showResult(result) {
       const box = document.getElementById('result-section');

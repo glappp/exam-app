@@ -14,7 +14,7 @@ const bcrypt = require('bcrypt');
 app.use(express.static(path.join(__dirname, '..', 'client'))); // สำหรับไฟล์ static
 
 const attributeDictRoute = require('./routes/api/attributeDictRoute');
-app.use('/api', attributeDictRoute);
+app.use('/api', attributeDictRoute); // ✅ เส้นทางจะเป็น /api/attributeDict.json
 
 
 // ✅ Middleware
@@ -32,7 +32,7 @@ app.use(session({
 
 // ✅ Static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/client', express.static(path.join(__dirname, '../client')));
+
 
 // ✅ Import route
 const registerRoute = require('./routes/register');

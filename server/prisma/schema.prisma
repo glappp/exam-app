@@ -48,14 +48,21 @@ model ExamResult {
   studentProfile    StudentProfile   @relation(fields: [studentProfileId], references: [id])
   studentProfileId  Int
 
-  mode              String           // 'practice', 'adaptive', 'targeted'
-  topicTagsJson     Json             // เดิมเป็น String[] แต่ SQLite ไม่รองรับ primitive list
+  mode              String           // 'practice', 'adaptive', 'targeted', 'competitive'
+  examSetCode       String?          // 🔸 ถ้ามีรหัสชุดข้อสอบ เช่น 'mock-p6-set001'
+
+  topicTagsJson     Json             // เช่น ["topic:addition", "topic:area"]
+  questionIds       Json             // เช่น [101, 102, 103]
+  userAnswers       Json             // เช่น [2, 0, 1]
+
   score             Int
   total             Int
   durationSec       Int
   weakAttributes    Json?
+
   createdAt         DateTime         @default(now())
 }
+
 
 model Question {
   id                String   @id @default(cuid()) // ✅ ใช้ UUID/cuid เท่านั้น ห้ามใช้ code มาใส่

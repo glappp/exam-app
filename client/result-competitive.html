@@ -78,7 +78,7 @@
     // แสดงชื่อ attribute ภาษาไทย (สามารถใช้ fetch ในอนาคต)
 let attributeDict = {};
 
-fetch('/data/attributeDict.json')
+fetch('/api/attributeDict.json')
   .then(res => res.json())
   .then(data => attributeDict = data)
   .catch(err => console.error("โหลด attributeDict ไม่สำเร็จ", err));

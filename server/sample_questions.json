@@ -1,429 +1,59 @@
 [
   {
-    "id": "40a1e9b3-8f83-42d5-bb63-879e1db0288e",
-    "code": "p6-chula-2022-o-q003",
-    "textTh": "พิจารณาแบบรูปดังต่อไปนี้\nแบบรูปที่ 1: 1.1, 2.2, A, 26.4, 132, B\nแบบรูปที่ 2: 4.8, 2.4, C, 0.6, 0.3, D\nผลลัพธ์ของ (10 × A) + (B ÷ 2) + (100 × C) − (1,000 × D) เท่ากับเท่าใด",
-    "textEn": "Consider the following patterns:\nPattern 1: 1.1, 2.2, A, 26.4, 132, B\nPattern 2: 4.8, 2.4, C, 0.6, 0.3, D\nWhat is the result of (10 × A) + (B ÷ 2) + (100 × C) − (1,000 × D)?",
-    "textThHtml": null,
-    "textEnHtml": null,
-    "image": null,
-    "choices": [],
-    "answer": null,
-    "shortAnswer": [
-      "0"
+    "code": "p6-chula-2022-o-q004",
+    "textTh": "กำหนดให้ เส้นตรง PQ ขนานกับ เส้นตรง RS\nเส้นตรง ℓ₁ และ เส้นตรง ℓ₂ ตัดกับเส้นคู่ขนาน ดังรูป\n\nขนาดของมุม A เท่ากับกี่องศา",
+    "textEn": "Let line PQ be parallel to line RS. Lines ℓ₁ and ℓ₂ intersect the parallel lines as shown.\n\nWhat is the measure of angle A?",
+    "image": "/images/questions/p6-chula-2022-o-q004.jpg",
+    "choices": [
+      { "textTh": "65°", "textEn": "65°", "image": null },
+      { "textTh": "70°", "textEn": "70°", "image": null },
+      { "textTh": "110°", "textEn": "110°", "image": null },
+      { "textTh": "160°", "textEn": "160°", "image": null }
     ],
+    "answer": 3,
     "attributes": {
       "year": "2022",
-      "topic": [
-        "topic:number-pattern",
-        "topic:expression"
-      ],
-      "skill": [
-        "skill:algebra",
-        "skill:logical-reasoning"
-      ],
-      "trap": [
-        "trap:pattern-misread",
-        "trap:decimal-mix"
-      ],
+      "topic": ["topic:parallel-lines"],
+      "skill": ["skill:angle-reasoning"],
+      "trap": ["trap:angle-confusion"],
       "difficulty": 2,
-      "questionNo": "003",
+      "questionNo": "004",
       "source": "source:chulabhorn",
       "examSet": "chula-p6-2022"
     },
-    "source": "Chulabhorn Science Math Test 2022",
+    "source": "ข้อสอบจริง ป.6 จุฬาภรณ์ ปี 2022",
     "derivedFrom": null,
-    "estimatedTimeSec": 90,
+    "estimatedTimeSec": 60,
     "score": 1,
     "ownerOrg": "me",
     "createdBy": "chatgpt",
     "updatedBy": "chatgpt"
   },
   {
-    "id": "ffb82829-c499-4734-b7df-3400196ff615",
-    "code": "p6-chula-2022-v-q003-001",
-    "textTh": "พิจารณาแบบรูปดังต่อไปนี้\nแบบรูปที่ 1: 1.1, 2.2, A, 26.4, 132, B\nแบบรูปที่ 2: 4.8, 2.4, C, 0.6, 0.3, D\nผลลัพธ์ของ (10 × 1.1) + (132 ÷ 2) + (100 × 2.1) − (1,000 × 0.1) เท่ากับเท่าใด",
-    "textEn": "Consider the following patterns:\nPattern 1: 1.1, 2.2, A, 26.4, 132, B\nPattern 2: 4.8, 2.4, C, 0.6, 0.3, D\nWhat is the result of (10 × 1.1) + (132 ÷ 2) + (100 × 2.1) − (1,000 × 0.1)?",
-    "textThHtml": null,
-    "textEnHtml": null,
-    "image": null,
-    "choices": [],
-    "answer": null,
-    "shortAnswer": [
-      "187.0"
+    "code": "p6-chula-2022-o-q005",
+    "textTh": "แผนภูมิวงกลม แสดงการใช้น้ำในแต่ละวันโดยเฉลี่ยของครอบครัวหนึ่งที่มีสมาชิก 5 คน\n\nจากแผนภูมิวงกลม ครอบครัวนี้ใช้น้ำโดยเฉลี่ยวันละกี่ลิตร",
+    "textEn": "The pie chart shows the average daily water usage of a family with 5 members.\n\nBased on the pie chart, how many liters of water does this family use per day on average?",
+    "image": "/images/questions/p6-chula-2022-o-q005.jpg",
+    "choices": [
+      { "textTh": "480 ลิตร", "textEn": "480 liters", "image": null },
+      { "textTh": "600 ลิตร", "textEn": "600 liters", "image": null },
+      { "textTh": "720 ลิตร", "textEn": "720 liters", "image": null },
+      { "textTh": "960 ลิตร", "textEn": "960 liters", "image": null }
     ],
+    "answer": 1,
     "attributes": {
       "year": "2022",
-      "topic": [
-        "topic:number-pattern",
-        "topic:expression"
-      ],
-      "skill": [
-        "skill:algebra",
-        "skill:logical-reasoning"
-      ],
-      "trap": [
-        "trap:pattern-misread",
-        "trap:decimal-mix"
-      ],
+      "topic": ["topic:pie-chart"],
+      "skill": ["skill:percentage-to-quantity"],
+      "trap": ["trap:scale-misuse"],
       "difficulty": 2,
+      "questionNo": "005",
       "source": "source:chulabhorn",
       "examSet": "chula-p6-2022"
     },
-    "source": "Chulabhorn Science Math Test 2022",
-    "derivedFrom": "p6-chula-2022-o-q003",
-    "estimatedTimeSec": 90,
-    "score": 1,
-    "ownerOrg": "me",
-    "createdBy": "chatgpt",
-    "updatedBy": "chatgpt"
-  },
-  {
-    "id": "8c8fbc94-4577-4d3c-80cd-087a253001e0",
-    "code": "p6-chula-2022-v-q003-002",
-    "textTh": "พิจารณาแบบรูปดังต่อไปนี้\nแบบรูปที่ 1: 1.1, 2.2, A, 26.4, 132, B\nแบบรูปที่ 2: 4.8, 2.4, C, 0.6, 0.3, D\nผลลัพธ์ของ (10 × 1.2) + (134 ÷ 2) + (100 × 2.2) − (1,000 × 0.2) เท่ากับเท่าใด",
-    "textEn": "Consider the following patterns:\nPattern 1: 1.1, 2.2, A, 26.4, 132, B\nPattern 2: 4.8, 2.4, C, 0.6, 0.3, D\nWhat is the result of (10 × 1.2) + (134 ÷ 2) + (100 × 2.2) − (1,000 × 0.2)?",
-    "textThHtml": null,
-    "textEnHtml": null,
-    "image": null,
-    "choices": [],
-    "answer": null,
-    "shortAnswer": [
-      "99.0"
-    ],
-    "attributes": {
-      "year": "2022",
-      "topic": [
-        "topic:number-pattern",
-        "topic:expression"
-      ],
-      "skill": [
-        "skill:algebra",
-        "skill:logical-reasoning"
-      ],
-      "trap": [
-        "trap:pattern-misread",
-        "trap:decimal-mix"
-      ],
-      "difficulty": 2,
-      "source": "source:chulabhorn",
-      "examSet": "chula-p6-2022"
-    },
-    "source": "Chulabhorn Science Math Test 2022",
-    "derivedFrom": "p6-chula-2022-o-q003",
-    "estimatedTimeSec": 90,
-    "score": 1,
-    "ownerOrg": "me",
-    "createdBy": "chatgpt",
-    "updatedBy": "chatgpt"
-  },
-  {
-    "id": "4e31ac63-7f5f-4275-96ec-39a51755d733",
-    "code": "p6-chula-2022-v-q003-003",
-    "textTh": "พิจารณาแบบรูปดังต่อไปนี้\nแบบรูปที่ 1: 1.1, 2.2, A, 26.4, 132, B\nแบบรูปที่ 2: 4.8, 2.4, C, 0.6, 0.3, D\nผลลัพธ์ของ (10 × 1.3) + (136 ÷ 2) + (100 × 2.3) − (1,000 × 0.3) เท่ากับเท่าใด",
-    "textEn": "Consider the following patterns:\nPattern 1: 1.1, 2.2, A, 26.4, 132, B\nPattern 2: 4.8, 2.4, C, 0.6, 0.3, D\nWhat is the result of (10 × 1.3) + (136 ÷ 2) + (100 × 2.3) − (1,000 × 0.3)?",
-    "textThHtml": null,
-    "textEnHtml": null,
-    "image": null,
-    "choices": [],
-    "answer": null,
-    "shortAnswer": [
-      "11.0"
-    ],
-    "attributes": {
-      "year": "2022",
-      "topic": [
-        "topic:number-pattern",
-        "topic:expression"
-      ],
-      "skill": [
-        "skill:algebra",
-        "skill:logical-reasoning"
-      ],
-      "trap": [
-        "trap:pattern-misread",
-        "trap:decimal-mix"
-      ],
-      "difficulty": 2,
-      "source": "source:chulabhorn",
-      "examSet": "chula-p6-2022"
-    },
-    "source": "Chulabhorn Science Math Test 2022",
-    "derivedFrom": "p6-chula-2022-o-q003",
-    "estimatedTimeSec": 90,
-    "score": 1,
-    "ownerOrg": "me",
-    "createdBy": "chatgpt",
-    "updatedBy": "chatgpt"
-  },
-  {
-    "id": "0c4dfbc2-d85a-4fa3-8805-5135b6aac1d0",
-    "code": "p6-chula-2022-v-q003-004",
-    "textTh": "พิจารณาแบบรูปดังต่อไปนี้\nแบบรูปที่ 1: 1.1, 2.2, A, 26.4, 132, B\nแบบรูปที่ 2: 4.8, 2.4, C, 0.6, 0.3, D\nผลลัพธ์ของ (10 × 1.4) + (138 ÷ 2) + (100 × 2.4) − (1,000 × 0.4) เท่ากับเท่าใด",
-    "textEn": "Consider the following patterns:\nPattern 1: 1.1, 2.2, A, 26.4, 132, B\nPattern 2: 4.8, 2.4, C, 0.6, 0.3, D\nWhat is the result of (10 × 1.4) + (138 ÷ 2) + (100 × 2.4) − (1,000 × 0.4)?",
-    "textThHtml": null,
-    "textEnHtml": null,
-    "image": null,
-    "choices": [],
-    "answer": null,
-    "shortAnswer": [
-      "-77.0"
-    ],
-    "attributes": {
-      "year": "2022",
-      "topic": [
-        "topic:number-pattern",
-        "topic:expression"
-      ],
-      "skill": [
-        "skill:algebra",
-        "skill:logical-reasoning"
-      ],
-      "trap": [
-        "trap:pattern-misread",
-        "trap:decimal-mix"
-      ],
-      "difficulty": 2,
-      "source": "source:chulabhorn",
-      "examSet": "chula-p6-2022"
-    },
-    "source": "Chulabhorn Science Math Test 2022",
-    "derivedFrom": "p6-chula-2022-o-q003",
-    "estimatedTimeSec": 90,
-    "score": 1,
-    "ownerOrg": "me",
-    "createdBy": "chatgpt",
-    "updatedBy": "chatgpt"
-  },
-  {
-    "id": "ae32a785-615c-4fda-83fe-f848c6226735",
-    "code": "p6-chula-2022-v-q003-005",
-    "textTh": "พิจารณาแบบรูปดังต่อไปนี้\nแบบรูปที่ 1: 1.1, 2.2, A, 26.4, 132, B\nแบบรูปที่ 2: 4.8, 2.4, C, 0.6, 0.3, D\nผลลัพธ์ของ (10 × 1.5) + (140 ÷ 2) + (100 × 2.5) − (1,000 × 0.5) เท่ากับเท่าใด",
-    "textEn": "Consider the following patterns:\nPattern 1: 1.1, 2.2, A, 26.4, 132, B\nPattern 2: 4.8, 2.4, C, 0.6, 0.3, D\nWhat is the result of (10 × 1.5) + (140 ÷ 2) + (100 × 2.5) − (1,000 × 0.5)?",
-    "textThHtml": null,
-    "textEnHtml": null,
-    "image": null,
-    "choices": [],
-    "answer": null,
-    "shortAnswer": [
-      "-165.0"
-    ],
-    "attributes": {
-      "year": "2022",
-      "topic": [
-        "topic:number-pattern",
-        "topic:expression"
-      ],
-      "skill": [
-        "skill:algebra",
-        "skill:logical-reasoning"
-      ],
-      "trap": [
-        "trap:pattern-misread",
-        "trap:decimal-mix"
-      ],
-      "difficulty": 2,
-      "source": "source:chulabhorn",
-      "examSet": "chula-p6-2022"
-    },
-    "source": "Chulabhorn Science Math Test 2022",
-    "derivedFrom": "p6-chula-2022-o-q003",
-    "estimatedTimeSec": 90,
-    "score": 1,
-    "ownerOrg": "me",
-    "createdBy": "chatgpt",
-    "updatedBy": "chatgpt"
-  },
-  {
-    "id": "45431faa-a827-4f82-962a-beb358c38e59",
-    "code": "p6-chula-2022-v-q003-006",
-    "textTh": "พิจารณาแบบรูปดังต่อไปนี้\nแบบรูปที่ 1: 1.1, 2.2, A, 26.4, 132, B\nแบบรูปที่ 2: 4.8, 2.4, C, 0.6, 0.3, D\nผลลัพธ์ของ (10 × 1.6) + (142 ÷ 2) + (100 × 2.6) − (1,000 × 0.6) เท่ากับเท่าใด",
-    "textEn": "Consider the following patterns:\nPattern 1: 1.1, 2.2, A, 26.4, 132, B\nPattern 2: 4.8, 2.4, C, 0.6, 0.3, D\nWhat is the result of (10 × 1.6) + (142 ÷ 2) + (100 × 2.6) − (1,000 × 0.6)?",
-    "textThHtml": null,
-    "textEnHtml": null,
-    "image": null,
-    "choices": [],
-    "answer": null,
-    "shortAnswer": [
-      "-253.0"
-    ],
-    "attributes": {
-      "year": "2022",
-      "topic": [
-        "topic:number-pattern",
-        "topic:expression"
-      ],
-      "skill": [
-        "skill:algebra",
-        "skill:logical-reasoning"
-      ],
-      "trap": [
-        "trap:pattern-misread",
-        "trap:decimal-mix"
-      ],
-      "difficulty": 2,
-      "source": "source:chulabhorn",
-      "examSet": "chula-p6-2022"
-    },
-    "source": "Chulabhorn Science Math Test 2022",
-    "derivedFrom": "p6-chula-2022-o-q003",
-    "estimatedTimeSec": 90,
-    "score": 1,
-    "ownerOrg": "me",
-    "createdBy": "chatgpt",
-    "updatedBy": "chatgpt"
-  },
-  {
-    "id": "6bdb7164-548d-4e23-9996-559a4efe362b",
-    "code": "p6-chula-2022-v-q003-007",
-    "textTh": "พิจารณาแบบรูปดังต่อไปนี้\nแบบรูปที่ 1: 1.1, 2.2, A, 26.4, 132, B\nแบบรูปที่ 2: 4.8, 2.4, C, 0.6, 0.3, D\nผลลัพธ์ของ (10 × 1.7) + (144 ÷ 2) + (100 × 2.7) − (1,000 × 0.7) เท่ากับเท่าใด",
-    "textEn": "Consider the following patterns:\nPattern 1: 1.1, 2.2, A, 26.4, 132, B\nPattern 2: 4.8, 2.4, C, 0.6, 0.3, D\nWhat is the result of (10 × 1.7) + (144 ÷ 2) + (100 × 2.7) − (1,000 × 0.7)?",
-    "textThHtml": null,
-    "textEnHtml": null,
-    "image": null,
-    "choices": [],
-    "answer": null,
-    "shortAnswer": [
-      "-341.0"
-    ],
-    "attributes": {
-      "year": "2022",
-      "topic": [
-        "topic:number-pattern",
-        "topic:expression"
-      ],
-      "skill": [
-        "skill:algebra",
-        "skill:logical-reasoning"
-      ],
-      "trap": [
-        "trap:pattern-misread",
-        "trap:decimal-mix"
-      ],
-      "difficulty": 2,
-      "source": "source:chulabhorn",
-      "examSet": "chula-p6-2022"
-    },
-    "source": "Chulabhorn Science Math Test 2022",
-    "derivedFrom": "p6-chula-2022-o-q003",
-    "estimatedTimeSec": 90,
-    "score": 1,
-    "ownerOrg": "me",
-    "createdBy": "chatgpt",
-    "updatedBy": "chatgpt"
-  },
-  {
-    "id": "cfaa17f7-d82f-49de-bc16-865da4780c30",
-    "code": "p6-chula-2022-v-q003-008",
-    "textTh": "พิจารณาแบบรูปดังต่อไปนี้\nแบบรูปที่ 1: 1.1, 2.2, A, 26.4, 132, B\nแบบรูปที่ 2: 4.8, 2.4, C, 0.6, 0.3, D\nผลลัพธ์ของ (10 × 1.8) + (146 ÷ 2) + (100 × 2.8) − (1,000 × 0.8) เท่ากับเท่าใด",
-    "textEn": "Consider the following patterns:\nPattern 1: 1.1, 2.2, A, 26.4, 132, B\nPattern 2: 4.8, 2.4, C, 0.6, 0.3, D\nWhat is the result of (10 × 1.8) + (146 ÷ 2) + (100 × 2.8) − (1,000 × 0.8)?",
-    "textThHtml": null,
-    "textEnHtml": null,
-    "image": null,
-    "choices": [],
-    "answer": null,
-    "shortAnswer": [
-      "-429.0"
-    ],
-    "attributes": {
-      "year": "2022",
-      "topic": [
-        "topic:number-pattern",
-        "topic:expression"
-      ],
-      "skill": [
-        "skill:algebra",
-        "skill:logical-reasoning"
-      ],
-      "trap": [
-        "trap:pattern-misread",
-        "trap:decimal-mix"
-      ],
-      "difficulty": 2,
-      "source": "source:chulabhorn",
-      "examSet": "chula-p6-2022"
-    },
-    "source": "Chulabhorn Science Math Test 2022",
-    "derivedFrom": "p6-chula-2022-o-q003",
-    "estimatedTimeSec": 90,
-    "score": 1,
-    "ownerOrg": "me",
-    "createdBy": "chatgpt",
-    "updatedBy": "chatgpt"
-  },
-  {
-    "id": "c5bcf970-214c-424b-ac99-df7458c61de1",
-    "code": "p6-chula-2022-v-q003-009",
-    "textTh": "พิจารณาแบบรูปดังต่อไปนี้\nแบบรูปที่ 1: 1.1, 2.2, A, 26.4, 132, B\nแบบรูปที่ 2: 4.8, 2.4, C, 0.6, 0.3, D\nผลลัพธ์ของ (10 × 1.9) + (148 ÷ 2) + (100 × 2.9) − (1,000 × 0.9) เท่ากับเท่าใด",
-    "textEn": "Consider the following patterns:\nPattern 1: 1.1, 2.2, A, 26.4, 132, B\nPattern 2: 4.8, 2.4, C, 0.6, 0.3, D\nWhat is the result of (10 × 1.9) + (148 ÷ 2) + (100 × 2.9) − (1,000 × 0.9)?",
-    "textThHtml": null,
-    "textEnHtml": null,
-    "image": null,
-    "choices": [],
-    "answer": null,
-    "shortAnswer": [
-      "-517.0"
-    ],
-    "attributes": {
-      "year": "2022",
-      "topic": [
-        "topic:number-pattern",
-        "topic:expression"
-      ],
-      "skill": [
-        "skill:algebra",
-        "skill:logical-reasoning"
-      ],
-      "trap": [
-        "trap:pattern-misread",
-        "trap:decimal-mix"
-      ],
-      "difficulty": 2,
-      "source": "source:chulabhorn",
-      "examSet": "chula-p6-2022"
-    },
-    "source": "Chulabhorn Science Math Test 2022",
-    "derivedFrom": "p6-chula-2022-o-q003",
-    "estimatedTimeSec": 90,
-    "score": 1,
-    "ownerOrg": "me",
-    "createdBy": "chatgpt",
-    "updatedBy": "chatgpt"
-  },
-  {
-    "id": "71adbe89-a3f0-4cf7-bc54-da9f0429614c",
-    "code": "p6-chula-2022-v-q003-010",
-    "textTh": "พิจารณาแบบรูปดังต่อไปนี้\nแบบรูปที่ 1: 1.1, 2.2, A, 26.4, 132, B\nแบบรูปที่ 2: 4.8, 2.4, C, 0.6, 0.3, D\nผลลัพธ์ของ (10 × 2.0) + (150 ÷ 2) + (100 × 3.0) − (1,000 × 1.0) เท่ากับเท่าใด",
-    "textEn": "Consider the following patterns:\nPattern 1: 1.1, 2.2, A, 26.4, 132, B\nPattern 2: 4.8, 2.4, C, 0.6, 0.3, D\nWhat is the result of (10 × 2.0) + (150 ÷ 2) + (100 × 3.0) − (1,000 × 1.0)?",
-    "textThHtml": null,
-    "textEnHtml": null,
-    "image": null,
-    "choices": [],
-    "answer": null,
-    "shortAnswer": [
-      "-605.0"
-    ],
-    "attributes": {
-      "year": "2022",
-      "topic": [
-        "topic:number-pattern",
-        "topic:expression"
-      ],
-      "skill": [
-        "skill:algebra",
-        "skill:logical-reasoning"
-      ],
-      "trap": [
-        "trap:pattern-misread",
-        "trap:decimal-mix"
-      ],
-      "difficulty": 2,
-      "source": "source:chulabhorn",
-      "examSet": "chula-p6-2022"
-    },
-    "source": "Chulabhorn Science Math Test 2022",
-    "derivedFrom": "p6-chula-2022-o-q003",
-    "estimatedTimeSec": 90,
+    "source": "ข้อสอบจริง ป.6 จุฬาภรณ์ ปี 2022",
+    "derivedFrom": null,
+    "estimatedTimeSec": 60,
     "score": 1,
     "ownerOrg": "me",
     "createdBy": "chatgpt",

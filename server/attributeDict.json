@@ -1,0 +1,447 @@
+{
+  "topic:addition-grade4": {
+    "type": "topic",
+    "th": "การบวก (ป.4)",
+    "en": "การบวก (Grade 4)",
+    "grade": 4
+  },
+  "topic:subtraction-grade4": {
+    "type": "topic",
+    "th": "การลบ (ป.4)",
+    "en": "การลบ (Grade 4)",
+    "grade": 4
+  },
+  "topic:multiplication-grade4": {
+    "type": "topic",
+    "th": "การคูณ (ป.4)",
+    "en": "การคูณ (Grade 4)",
+    "grade": 4
+  },
+  "topic:division-grade4": {
+    "type": "topic",
+    "th": "การหาร (ป.4)",
+    "en": "การหาร (Grade 4)",
+    "grade": 4
+  },
+  "topic:place-value-grade4": {
+    "type": "topic",
+    "th": "ค่าประจำหลัก (ป.4)",
+    "en": "ค่าประจำหลัก (Grade 4)",
+    "grade": 4
+  },
+  "topic:number-comparison-grade4": {
+    "type": "topic",
+    "th": "การเปรียบเทียบจำนวน (ป.4)",
+    "en": "การเปรียบเทียบจำนวน (Grade 4)",
+    "grade": 4
+  },
+  "topic:odd-even-grade4": {
+    "type": "topic",
+    "th": "จำนวนคี่-คู่ (ป.4)",
+    "en": "จำนวนคี่-คู่ (Grade 4)",
+    "grade": 4
+  },
+  "topic:rounding-grade4": {
+    "type": "topic",
+    "th": "การปัดเศษ (ป.4)",
+    "en": "การปัดเศษ (Grade 4)",
+    "grade": 4
+  },
+  "topic:fraction-grade4": {
+    "type": "topic",
+    "th": "เศษส่วนเบื้องต้น (ป.4)",
+    "en": "เศษส่วนเบื้องต้น (Grade 4)",
+    "grade": 4
+  },
+  "topic:compare-fractions-grade4": {
+    "type": "topic",
+    "th": "การเปรียบเทียบเศษส่วน (ป.4)",
+    "en": "การเปรียบเทียบเศษส่วน (Grade 4)",
+    "grade": 4
+  },
+  "topic:time-grade4": {
+    "type": "topic",
+    "th": "เวลา (ป.4)",
+    "en": "เวลา (Grade 4)",
+    "grade": 4
+  },
+  "topic:calendar-grade4": {
+    "type": "topic",
+    "th": "ปฏิทิน (ป.4)",
+    "en": "ปฏิทิน (Grade 4)",
+    "grade": 4
+  },
+  "topic:money-grade4": {
+    "type": "topic",
+    "th": "เงิน (ป.4)",
+    "en": "เงิน (Grade 4)",
+    "grade": 4
+  },
+  "topic:geometry-shapes-grade4": {
+    "type": "topic",
+    "th": "รูปร่างทางเรขาคณิต (ป.4)",
+    "en": "รูปร่างทางเรขาคณิต (Grade 4)",
+    "grade": 4
+  },
+  "topic:symmetry-grade4": {
+    "type": "topic",
+    "th": "สมมาตร (ป.4)",
+    "en": "สมมาตร (Grade 4)",
+    "grade": 4
+  },
+  "topic:area-grade4": {
+    "type": "topic",
+    "th": "พื้นที่ (ป.4)",
+    "en": "พื้นที่ (Grade 4)",
+    "grade": 4
+  },
+  "topic:perimeter-grade4": {
+    "type": "topic",
+    "th": "เส้นรอบรูป (ป.4)",
+    "en": "เส้นรอบรูป (Grade 4)",
+    "grade": 4
+  },
+  "topic:bar-graph-grade4": {
+    "type": "topic",
+    "th": "แผนภูมิแท่ง (ป.4)",
+    "en": "แผนภูมิแท่ง (Grade 4)",
+    "grade": 4
+  },
+  "topic:word-problem-single-step-grade4": {
+    "type": "topic",
+    "th": "โจทย์ปัญหาหนึ่งขั้น (ป.4)",
+    "en": "โจทย์ปัญหาหนึ่งขั้น (Grade 4)",
+    "grade": 4
+  },
+  "topic:multiplication-grade5": {
+    "type": "topic",
+    "th": "การคูณ (ป.5)",
+    "en": "การคูณ (Grade 5)",
+    "grade": 5
+  },
+  "topic:division-grade5": {
+    "type": "topic",
+    "th": "การหาร (ป.5)",
+    "en": "การหาร (Grade 5)",
+    "grade": 5
+  },
+  "topic:decimal-grade5": {
+    "type": "topic",
+    "th": "ทศนิยม (ป.5)",
+    "en": "ทศนิยม (Grade 5)",
+    "grade": 5
+  },
+  "topic:compare-decimals-grade5": {
+    "type": "topic",
+    "th": "การเปรียบเทียบทศนิยม (ป.5)",
+    "en": "การเปรียบเทียบทศนิยม (Grade 5)",
+    "grade": 5
+  },
+  "topic:fraction-decimal-conversion-grade5": {
+    "type": "topic",
+    "th": "การแปลงเศษส่วนและทศนิยม (ป.5)",
+    "en": "การแปลงเศษส่วนและทศนิยม (Grade 5)",
+    "grade": 5
+  },
+  "topic:mixed-number-grade5": {
+    "type": "topic",
+    "th": "จำนวนคละ (ป.5)",
+    "en": "จำนวนคละ (Grade 5)",
+    "grade": 5
+  },
+  "topic:expression-grade5": {
+    "type": "topic",
+    "th": "นิพจน์ (ป.5)",
+    "en": "นิพจน์ (Grade 5)",
+    "grade": 5
+  },
+  "topic:unit-conversion-grade5": {
+    "type": "topic",
+    "th": "การแปลงหน่วย (ป.5)",
+    "en": "การแปลงหน่วย (Grade 5)",
+    "grade": 5
+  },
+  "topic:volume-grade5": {
+    "type": "topic",
+    "th": "ปริมาตร (ป.5)",
+    "en": "ปริมาตร (Grade 5)",
+    "grade": 5
+  },
+  "topic:line-graph-grade5": {
+    "type": "topic",
+    "th": "กราฟเส้น (ป.5)",
+    "en": "กราฟเส้น (Grade 5)",
+    "grade": 5
+  },
+  "topic:table-interpretation-grade5": {
+    "type": "topic",
+    "th": "การอ่านตาราง (ป.5)",
+    "en": "การอ่านตาราง (Grade 5)",
+    "grade": 5
+  },
+  "topic:order-of-operations-grade5": {
+    "type": "topic",
+    "th": "ลำดับการคำนวณ (ป.5)",
+    "en": "ลำดับการคำนวณ (Grade 5)",
+    "grade": 5
+  },
+  "topic:word-problem-multi-step-grade5": {
+    "type": "topic",
+    "th": "โจทย์หลายขั้นตอน (ป.5)",
+    "en": "โจทย์หลายขั้นตอน (Grade 5)",
+    "grade": 5
+  },
+  "topic:pattern-recognition-grade5": {
+    "type": "topic",
+    "th": "การหาแบบแผน (ป.5)",
+    "en": "การหาแบบแผน (Grade 5)",
+    "grade": 5
+  },
+  "topic:logic-grade5": {
+    "type": "topic",
+    "th": "ตรรกะเบื้องต้น (ป.5)",
+    "en": "ตรรกะเบื้องต้น (Grade 5)",
+    "grade": 5
+  },
+  "topic:percent-grade6": {
+    "type": "topic",
+    "th": "ร้อยละ (ป.6)",
+    "en": "ร้อยละ (Grade 6)",
+    "grade": 6
+  },
+  "topic:ratio-grade6": {
+    "type": "topic",
+    "th": "อัตราส่วน (ป.6)",
+    "en": "อัตราส่วน (Grade 6)",
+    "grade": 6
+  },
+  "topic:proportion-grade6": {
+    "type": "topic",
+    "th": "ร้อยละและสัดส่วน (ป.6)",
+    "en": "ร้อยละและสัดส่วน (Grade 6)",
+    "grade": 6
+  },
+  "topic:estimation-grade6": {
+    "type": "topic",
+    "th": "การประมาณค่า (ป.6)",
+    "en": "การประมาณค่า (Grade 6)",
+    "grade": 6
+  },
+  "topic:equation-grade6": {
+    "type": "topic",
+    "th": "สมการ (ป.6)",
+    "en": "สมการ (Grade 6)",
+    "grade": 6
+  },
+  "topic:unknown-number-grade6": {
+    "type": "topic",
+    "th": "จำนวนที่ไม่ทราบ (ป.6)",
+    "en": "จำนวนที่ไม่ทราบ (Grade 6)",
+    "grade": 6
+  },
+  "topic:angle-basic-grade6": {
+    "type": "topic",
+    "th": "มุมเบื้องต้น (ป.6)",
+    "en": "มุมเบื้องต้น (Grade 6)",
+    "grade": 6
+  },
+  "topic:coordinate-grade6": {
+    "type": "topic",
+    "th": "พิกัด (ป.6)",
+    "en": "พิกัด (Grade 6)",
+    "grade": 6
+  },
+  "topic:number-pattern-grade6": {
+    "type": "topic",
+    "th": "ลำดับตัวเลข (ป.6)",
+    "en": "ลำดับตัวเลข (Grade 6)",
+    "grade": 6
+  },
+  "topic:graph-reading-grade6": {
+    "type": "topic",
+    "th": "การอ่านกราฟ (ป.6)",
+    "en": "การอ่านกราฟ (Grade 6)",
+    "grade": 6
+  },
+  "topic:real-life-application-grade6": {
+    "type": "topic",
+    "th": "ประยุกต์ใช้ในชีวิตจริง (ป.6)",
+    "en": "ประยุกต์ใช้ในชีวิตจริง (Grade 6)",
+    "grade": 6
+  },
+  "skill:mental-math": {
+    "type": "skill",
+    "th": "คำนวณในใจ",
+    "en": "Mental Math"
+  },
+  "skill:step-by-step-calculation": {
+    "type": "skill",
+    "th": "คิดเลขเป็นขั้นตอน",
+    "en": "Step By Step Calculation"
+  },
+  "skill:multi-step-reasoning": {
+    "type": "skill",
+    "th": "เหตุผลหลายขั้น",
+    "en": "Multi Step Reasoning"
+  },
+  "skill:problem-decomposition": {
+    "type": "skill",
+    "th": "แยกปัญหา",
+    "en": "Problem Decomposition"
+  },
+  "skill:logical-deduction": {
+    "type": "skill",
+    "th": "อนุมานอย่างมีเหตุผล",
+    "en": "Logical Deduction"
+  },
+  "skill:visualization": {
+    "type": "skill",
+    "th": "มองภาพในใจ",
+    "en": "Visualization"
+  },
+  "skill:equation-writing": {
+    "type": "skill",
+    "th": "เขียนสมการ",
+    "en": "Equation Writing"
+  },
+  "skill:unit-awareness": {
+    "type": "skill",
+    "th": "ความเข้าใจเรื่องหน่วย",
+    "en": "Unit Awareness"
+  },
+  "skill:table-graph-interpretation": {
+    "type": "skill",
+    "th": "อ่านตารางและกราฟ",
+    "en": "Table Graph Interpretation"
+  },
+  "skill:pattern-recognition": {
+    "type": "skill",
+    "th": "หาแบบแผน",
+    "en": "Pattern Recognition"
+  },
+  "skill:approximation": {
+    "type": "skill",
+    "th": "ประมาณค่า",
+    "en": "Approximation"
+  },
+  "skill:comparison": {
+    "type": "skill",
+    "th": "เปรียบเทียบ",
+    "en": "Comparison"
+  },
+  "skill:math-language-interpretation": {
+    "type": "skill",
+    "th": "ตีความภาษาคณิตศาสตร์",
+    "en": "Math Language Interpretation"
+  },
+  "skill:real-life-application": {
+    "type": "skill",
+    "th": "ประยุกต์ในชีวิตจริง",
+    "en": "Real Life Application"
+  },
+  "skill:spatial-thinking": {
+    "type": "skill",
+    "th": "มิติสัมพันธ์",
+    "en": "Spatial Thinking"
+  },
+  "trap:misread": {
+    "type": "trap",
+    "th": "อ่านไม่ครบ",
+    "en": "Misread"
+  },
+  "trap:read-incomplete": {
+    "type": "trap",
+    "th": "อ่านโจทย์ไม่หมด",
+    "en": "Read Incomplete"
+  },
+  "trap:keyword-trap": {
+    "type": "trap",
+    "th": "หลงคำ",
+    "en": "Keyword Trap"
+  },
+  "trap:unit-confusion": {
+    "type": "trap",
+    "th": "สับสนหน่วย",
+    "en": "Unit Confusion"
+  },
+  "trap:wrong-operation": {
+    "type": "trap",
+    "th": "เลือกบวกลบคูณหารผิด",
+    "en": "Wrong Operation"
+  },
+  "trap:inverse-logic": {
+    "type": "trap",
+    "th": "ตรรกะกลับด้าน",
+    "en": "Inverse Logic"
+  },
+  "trap:rounding-error": {
+    "type": "trap",
+    "th": "ปัดเศษผิด",
+    "en": "Rounding Error"
+  },
+  "trap:skip-steps": {
+    "type": "trap",
+    "th": "ข้ามขั้นตอน",
+    "en": "Skip Steps"
+  },
+  "trap:forget-carry-over": {
+    "type": "trap",
+    "th": "ลืมทด",
+    "en": "Forget Carry Over"
+  },
+  "trap:wrong-place-value": {
+    "type": "trap",
+    "th": "ค่าประจำหลักผิด",
+    "en": "Wrong Place Value"
+  },
+  "trap:decimal-misplace": {
+    "type": "trap",
+    "th": "จุดทศนิยมผิดตำแหน่ง",
+    "en": "Decimal Misplace"
+  },
+  "trap:fraction-denominator-confusion": {
+    "type": "trap",
+    "th": "สับสนตัวส่วน",
+    "en": "Fraction Denominator Confusion"
+  },
+  "trap:multiply-instead-of-add": {
+    "type": "trap",
+    "th": "คูณแทนบวก",
+    "en": "Multiply Instead Of Add"
+  },
+  "trap:apply-wrong-formula": {
+    "type": "trap",
+    "th": "ใช้สูตรผิด",
+    "en": "Apply Wrong Formula"
+  },
+  "trap:guessing": {
+    "type": "trap",
+    "th": "เดา",
+    "en": "Guessing"
+  },
+  "trap:estimate-without-checking": {
+    "type": "trap",
+    "th": "ประมาณแล้วไม่ตรวจ",
+    "en": "Estimate Without Checking"
+  },
+  "trap:confuse-similar-terms": {
+    "type": "trap",
+    "th": "สับสนคำคล้ายกัน",
+    "en": "Confuse Similar Terms"
+  },
+  "trap:assume-too-fast": {
+    "type": "trap",
+    "th": "คิดเร็วเกินไป",
+    "en": "Assume Too Fast"
+  },
+  "trap:incorrect-visualization": {
+    "type": "trap",
+    "th": "มองภาพโจทย์ผิด",
+    "en": "Incorrect Visualization"
+  },
+  "trap:use-answer-from-choice-first": {
+    "type": "trap",
+    "th": "เลือกจากตัวเลือกก่อนคิด",
+    "en": "Use Answer From Choice First"
+  }
+}

@@ -32,3 +32,24 @@ label {
 .hidden {
   display: none;
 }
+
+.question-image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 16px auto;
+}
+
+.question-box {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  background-color: #f9f9f9;
+}
+.correct {
+  border-left: 8px solid #4caf50;
+}
+.wrong {
+  border-left: 8px solid #f44336;
+}

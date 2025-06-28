@@ -164,3 +164,39 @@ model ExamSetMetadata {
 // | chulabhorn  | null  | p6     | 20             | 1800           | false       |
 // | suankularb  | 2565  | m1     | 50             | 4500           | true        |
 
+
+
+
+
+/// 🗂️ AttributeDictionary (HK Project)
+///
+/// ใช้เก็บชุดคำศัพท์กลางของ attribute สำหรับระบบคลังข้อสอบ (HK Project)
+/// เช่น topic:area-grade4, skill:mental-math, trap:misread
+///
+/// จุดประสงค์:
+/// - ใช้เป็น canonical dictionary เพื่อป้องกันการตั้งชื่อซ้ำซ้อน
+/// - ใช้ให้ AI เลือกจาก attribute เดิม ไม่เดาใหม่
+/// - ใช้แสดงผลชื่อไทย/อังกฤษใน frontend
+/// - ใช้วิเคราะห์จุดอ่อนของผู้เรียนแบบละเอียด
+///
+/// หมายเหตุ:
+/// - `type` = "topic", "skill", หรือ "trap"
+/// - `grade` จะใส่เฉพาะ topic เท่านั้น เช่น 4, 5, 6
+model AttributeDictionary {
+  /// รหัสคีย์ เช่น "topic:area-grade4"
+  key     String @id
+
+  /// ประเภทของ attribute: topic, skill, trap
+  type    String
+
+  /// ชื่อภาษาไทย เช่น "พื้นที่ (ป.4)"
+  th      String
+
+  /// ชื่อภาษาอังกฤษ เช่น "Area (Grade 4)"
+  en      String
+
+  /// ชั้นเรียนที่เกี่ยวข้อง เช่น 4, 5, 6 (เฉพาะ topic เท่านั้น)
+  grade   Int?
+
+  @@map("attribute_dictionary")
+}

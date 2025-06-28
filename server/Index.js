@@ -13,6 +13,8 @@ const bcrypt = require('bcrypt');
 
 app.use(express.static(path.join(__dirname, '..', 'client'))); // สำหรับไฟล์ static
 
+const attributeDictRoute = require('./routes/api/attributeDictRoute');
+app.use('/api', attributeDictRoute);
 
 
 // ✅ Middleware

@@ -1,62 +1,70 @@
-[
-  {
-    "code": "p6-chula-2022-o-q004",
-    "textTh": "กำหนดให้ เส้นตรง PQ ขนานกับ เส้นตรง RS\nเส้นตรง ℓ₁ และ เส้นตรง ℓ₂ ตัดกับเส้นคู่ขนาน ดังรูป\n\nขนาดของมุม A เท่ากับกี่องศา",
-    "textEn": "Let line PQ be parallel to line RS. Lines ℓ₁ and ℓ₂ intersect the parallel lines as shown.\n\nWhat is the measure of angle A?",
-    "image": "/images/questions/p6-chula-2022-o-q004.jpg",
+  [{
+    "code": "p6-chula-2022-o-q011", 
+    "textTh": "กำหนดให้ A และ B เป็นจำนวนนับที่สอดคล้องกับเงื่อนไขต่อไปนี้\n1) A และ B เป็นตัวประกอบของ 2565\n2) A < B และ A เป็นจำนวนเฉพาะ\n3) 3 × A = (2 × B) + 3\nแล้ว A + B เท่ากับเท่าใด",
+    "textEn": "Let A and B be natural numbers that satisfy the following conditions:\n1) A and B are factors of 2565\n2) A < B and A is a prime number\n3) 3 × A = (2 × B) + 3\nWhat is the value of A + B?",
     "choices": [
-      { "textTh": "65°", "textEn": "65°", "image": null },
-      { "textTh": "70°", "textEn": "70°", "image": null },
-      { "textTh": "110°", "textEn": "110°", "image": null },
-      { "textTh": "160°", "textEn": "160°", "image": null }
+      { "textTh": "42", "textEn": "42", "image": null },
+      { "textTh": "44", "textEn": "44", "image": null },
+      { "textTh": "46", "textEn": "46", "image": null },
+      { "textTh": "48", "textEn": "48", "image": null }
     ],
-    "answer": 3,
+    "answer": 2,
+    "image": null,
     "attributes": {
-      "year": "2022",
-      "topic": ["topic:parallel-lines"],
-      "skill": ["skill:angle-reasoning"],
-      "trap": ["trap:angle-confusion"],
-      "difficulty": 2,
-      "questionNo": "004",
-      "source": "source:chulabhorn",
-      "examSet": "chula-p6-2022"
+      "year":"2022",
+      "topic": [
+        "topic:divisor",
+        "topic:equation",
+        "topic:prime-number"
+      ],
+      "skill": [
+        "skill:logical-reasoning"
+      ],
+      "trap": [],
+      "difficulty": 3,
+      "questionNo": "011",
+      "examGrade": "p6"
     },
-    "source": "ข้อสอบจริง ป.6 จุฬาภรณ์ ปี 2022",
-    "derivedFrom": null,
-    "estimatedTimeSec": 60,
-    "score": 1,
+    "source": "Chulabhorn Science-Math test",
+    "year": "2022",
+    "score": 2,
     "ownerOrg": "me",
-    "createdBy": "chatgpt",
-    "updatedBy": "chatgpt"
+    "createdBy": "me",
+    "updatedBy": "me"
   },
   {
-    "code": "p6-chula-2022-o-q005",
-    "textTh": "แผนภูมิวงกลม แสดงการใช้น้ำในแต่ละวันโดยเฉลี่ยของครอบครัวหนึ่งที่มีสมาชิก 5 คน\n\nจากแผนภูมิวงกลม ครอบครัวนี้ใช้น้ำโดยเฉลี่ยวันละกี่ลิตร",
-    "textEn": "The pie chart shows the average daily water usage of a family with 5 members.\n\nBased on the pie chart, how many liters of water does this family use per day on average?",
-    "image": "/images/questions/p6-chula-2022-o-q005.jpg",
+    "code": "p6-chula-2022-o-q012", 
+    "textTh": "เฟย์ ฟาง แก้ว วิ่งรอบสนามที่เป็นรูปวงกลมโดยออกจากจุดเริ่มต้นพร้อมกัน โดยที่เฟย์ใช้เวลาในการวิ่ง 1 รอบสนามเป็นครึ่งหนึ่งของแก้ว ฟางใช้เวลาในการวิ่ง 1 รอบสนามมากกว่าแก้ว 10 นาที ถ้าทั้งสามคนใช้เวลาวิ่งรวมกัน 40 นาที ทั้งสามคนจะมาพบกันอีกครั้งที่จุดเริ่มต้นเมื่อเวลาผ่านไปน้อยที่สุดกี่นาที",
+    "textEn": "Faye, Fang, and Kaew run around a circular track and start at the same time. Faye takes half the time of Kaew to run one lap. Fang takes 10 minutes more than Kaew to run one lap. If the total time they run together is 40 minutes, after how many minutes will all three meet again at the starting point?",
     "choices": [
-      { "textTh": "480 ลิตร", "textEn": "480 liters", "image": null },
-      { "textTh": "600 ลิตร", "textEn": "600 liters", "image": null },
-      { "textTh": "720 ลิตร", "textEn": "720 liters", "image": null },
-      { "textTh": "960 ลิตร", "textEn": "960 liters", "image": null }
+      { "textTh": "110", "textEn": "110", "image": null },
+      { "textTh": "132", "textEn": "132", "image": null },
+      { "textTh": "150", "textEn": "150", "image": null },
+      { "textTh": "165", "textEn": "165", "image": null }
     ],
     "answer": 1,
+    "image": null,
     "attributes": {
-      "year": "2022",
-      "topic": ["topic:pie-chart"],
-      "skill": ["skill:percentage-to-quantity"],
-      "trap": ["trap:scale-misuse"],
-      "difficulty": 2,
-      "questionNo": "005",
-      "source": "source:chulabhorn",
-      "examSet": "chula-p6-2022"
+      "year":"2022",
+      "topic": [
+        "topic:least-common-multiple",
+        "topic:algebra-word-problem"
+      ],
+      "skill": [
+        "skill:system-of-equations",
+        "skill:unit-conversion"
+      ],
+      "trap": [
+        "trap:misread-total-time"
+      ],
+      "difficulty": 3,
+      "questionNo": "012",
+      "examGrade": "p6"
     },
-    "source": "ข้อสอบจริง ป.6 จุฬาภรณ์ ปี 2022",
-    "derivedFrom": null,
-    "estimatedTimeSec": 60,
-    "score": 1,
+    "source": "Chulabhorn Science-Math test",
+    "year": "2022",
+    "score": 2,
     "ownerOrg": "me",
-    "createdBy": "chatgpt",
-    "updatedBy": "chatgpt"
-  }
-]
+    "createdBy": "me",
+    "updatedBy": "me"
+  }]

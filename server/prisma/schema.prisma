@@ -111,8 +111,7 @@ model Question {
 //   ],
 //   "difficulty": 1,                     // ความยาก: 1 = ง่าย, 2 = กลาง, 3 = ยาก
 //   "questionNo": "001",                 // ลำดับข้อสอบในชุด เช่น "001"
-//   "source": "source:chulabhorn",       // แหล่งที่มา เช่น จุฬาภรณ์, สวนกุหลาบ
-//   "examSet": "chula-p6-2022"           // รหัสชุดข้อสอบ (link กับ ExamSetMetadata.id)
+//   "examGrade": "p6"                    // ระดับชั้นของข้อสอบ
 // }
 //
 // ✅ เหมาะสำหรับใช้ในการวิเคราะห์จุดอ่อนผู้เรียน, ระบบ adaptive learning, tag ข้อสอบ

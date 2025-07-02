@@ -37,7 +37,7 @@ label {
   max-width: 100%;
   height: auto;
   display: block;
-  margin: 16px auto;
+  margin: 1rem auto;
 }
 
 .question-box {
@@ -53,3 +53,6 @@ label {
 .wrong {
   border-left: 8px solid #f44336;
 }
+
+
+

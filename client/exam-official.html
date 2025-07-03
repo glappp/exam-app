@@ -10,13 +10,17 @@
 <body>
   <div id="app" class="container">
     <h1>ข้อสอบจริง</h1>
+<div class="exam-layout">
+  <div class="question-area">
     <div id="question-container"></div>
+  </div>
+  <div class="nav-sidebar" id="navigation">
+    <button id="prev-btn" disabled title="ย้อนกลับ">⬅️</button>
+    <span id="progress" style="text-align: center;"></span>
+    <button id="next-btn" title="ข้อต่อไป">➡️</button>
+  </div>
+</div>
 
-    <div id="navigation" class="mt-4">
-      <button id="prev-btn" disabled>ก่อนหน้า</button>
-      <span id="progress"></span>
-      <button id="next-btn">ถัดไป</button>
-    </div>
 
     <div id="submit-section" class="mt-4" style="display:none;">
       <button id="submit-btn">ส่งคำตอบทั้งหมด</button>
@@ -94,12 +98,14 @@ const res = await fetch(`/api/exam-set-official?source=${encodeURIComponent(sour
         });
       }
     }
+function updateProgress() {
+  document.getElementById('progress').textContent = `ข้อ ${currentIndex + 1} / ${questions.length}`;
+  document.getElementById('prev-btn').disabled = currentIndex === 0;
+  document.getElementById('next-btn').innerHTML = currentIndex === questions.length - 1 ? '✅' : '&rarr;';
+  document.getElementById('prev-btn').innerHTML = '&larr;';
+}
 
-    function updateProgress() {
-      document.getElementById('progress').textContent = `ข้อ ${currentIndex + 1} / ${questions.length}`;
-      document.getElementById('prev-btn').disabled = currentIndex === 0;
-      document.getElementById('next-btn').textContent = currentIndex === questions.length - 1 ? 'เสร็จสิ้น' : 'ถัดไป';
-    }
+
 
     document.getElementById('prev-btn').addEventListener('click', () => {
       if (currentIndex > 0) {

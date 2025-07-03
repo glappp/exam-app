@@ -35,9 +35,11 @@ label {
 
 .question-image {
   max-width: 100%;
+  max-height: 300px;
   height: auto;
+  object-fit: contain;
   display: block;
-  margin: 1rem auto;
+  margin: 10px auto;
 }
 
 .question-box {
@@ -47,12 +49,99 @@ label {
   margin-bottom: 1rem;
   background-color: #f9f9f9;
 }
+
 .correct {
   border-left: 8px solid #4caf50;
 }
+
 .wrong {
   border-left: 8px solid #f44336;
 }
 
+/* ✅ Layout แบ่งฝั่ง: โจทย์ซ้าย / ปุ่มขวา */
+.exam-layout {
+  display: flex;
+  align-items: flex-start;
+}
 
+.question-area {
+  flex-grow: 1;
+  padding-right: 20px;
+}
+
+.nav-sidebar {
+  width: 120px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: sticky;
+  top: 20px;
+}
+
+.nav-sidebar button {
+  padding: 14px;
+  width: 120px;
+  height: 80px;
+  font-size: 32px;
+  flex-shrink: 0;
+  cursor: pointer;
+  background: white;
+  border: 2px solid #ccc;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  color: black;
+}
+
+.nav-sidebar button:hover {
+  background: #f0f0f0;
+  border-color: #999;
+}
+
+/* ✅ ปุ่มย้อนกลับสีแดง */
+.nav-sidebar #prev-btn {
+  color: red !important;
+  border-color: red;
+  background-color: #ffecec;
+}
+
+.nav-sidebar #prev-btn:hover {
+  background-color: #ffdddd;
+  border-color: darkred;
+}
+
+/* ปรับความกว้างบนจอใหญ่ */
+@media (min-width: 768px) {
+  .container {
+    max-width: 900px;
+  }
+}
+
+@media print {
+  body {
+    background: white;
+  }
+
+  #navigation, #submit-section, .nav-sidebar, button {
+    display: none !important;
+  }
+
+  .question-box {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    margin-bottom: 2rem;
+  }
+
+  .question-image {
+    max-height: 400px; /* กันภาพล้น */
+  }
+
+  .page-break {
+    page-break-before: always;
+    break-before: always;
+  }
+}
+
+#recommendations {
+  display: none;
+}
 

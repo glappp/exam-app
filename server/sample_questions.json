@@ -1,70 +1,58 @@
-  [{
-    "code": "p6-chula-2022-o-q011", 
-    "textTh": "กำหนดให้ A และ B เป็นจำนวนนับที่สอดคล้องกับเงื่อนไขต่อไปนี้\n1) A และ B เป็นตัวประกอบของ 2565\n2) A < B และ A เป็นจำนวนเฉพาะ\n3) 3 × A = (2 × B) + 3\nแล้ว A + B เท่ากับเท่าใด",
-    "textEn": "Let A and B be natural numbers that satisfy the following conditions:\n1) A and B are factors of 2565\n2) A < B and A is a prime number\n3) 3 × A = (2 × B) + 3\nWhat is the value of A + B?",
+[
+  {
+    "code": "p6-chula-2022-o-q024",
+    "textTh": "ร้านสะดวกซื้อแห่งหนึ่ง ส่งเสริมการขายน้ำผลไม้ 3 ชนิด โดยแต่ละชนิดมีโปรโมชั่นแตกต่างกันดังนี้:\n- น้ำส้ม: 16 บาท ซื้อ 3 ขวด แถม 1 ดวง\n- น้ำองุ่น: 20 บาท ซื้อ 3 ขวด แถม 1 ดวง\n- น้ำลำไย: 12 บาท ซื้อ 2 ขวด แถม 1 ดวง\nเด็กคนหนึ่งอยากได้แสตมป์ทั้ง 3 ลาย จึงขอให้คุณแม่ซื้อน้ำผลไม้ทั้ง 3 ชนิด โดยขอให้ได้รับแสตมป์ครบจากการซื้อเท่านั้น และให้เลือกจ่ายเงินรวมให้น้อยที่สุด\nคุณแม่ควรจ่ายเงินกี่บาท",
+    "textEn": "A store sells 3 types of juice with different promotions:\n- Orange: 16 THB, buy 3 get 1 stamp\n- Grape: 20 THB, buy 3 get 1 stamp\n- Longan: 12 THB, buy 2 get 1 stamp\nA child wants 1 of each stamp. What is the minimum total cost the mother can pay to get all 3 stamps?",
     "choices": [
-      { "textTh": "42", "textEn": "42", "image": null },
-      { "textTh": "44", "textEn": "44", "image": null },
-      { "textTh": "46", "textEn": "46", "image": null },
-      { "textTh": "48", "textEn": "48", "image": null }
+      { "textTh": "17", "textEn": "17", "image": null },
+      { "textTh": "18", "textEn": "18", "image": null },
+      { "textTh": "19", "textEn": "19", "image": null },
+      { "textTh": "20", "textEn": "20", "image": null }
     ],
     "answer": 2,
-    "image": null,
+    "image": "/images/questions/p6-chula-2022-o-q024.png",
     "attributes": {
-      "year":"2022",
-      "topic": [
-        "topic:divisor",
-        "topic:equation",
-        "topic:prime-number"
-      ],
-      "skill": [
-        "skill:logical-reasoning"
-      ],
-      "trap": [],
-      "difficulty": 3,
-      "questionNo": "011",
-      "examGrade": "p6"
+      "year": "2022",
+      "questionNo": "024",
+      "examGrade": "p6",
+      "topic": [ "topic:unit-price", "topic:promotion-logic" ],
+      "skill": [ "skill:optimization", "skill:lowest-cost" ],
+      "trap": [ "trap:equal-unit-ignore-promo" ],
+      "difficulty": 3
     },
     "source": "Chulabhorn Science-Math test",
     "year": "2022",
-    "score": 2,
+    "score": 3,
     "ownerOrg": "me",
     "createdBy": "me",
     "updatedBy": "me"
   },
   {
-    "code": "p6-chula-2022-o-q012", 
-    "textTh": "เฟย์ ฟาง แก้ว วิ่งรอบสนามที่เป็นรูปวงกลมโดยออกจากจุดเริ่มต้นพร้อมกัน โดยที่เฟย์ใช้เวลาในการวิ่ง 1 รอบสนามเป็นครึ่งหนึ่งของแก้ว ฟางใช้เวลาในการวิ่ง 1 รอบสนามมากกว่าแก้ว 10 นาที ถ้าทั้งสามคนใช้เวลาวิ่งรวมกัน 40 นาที ทั้งสามคนจะมาพบกันอีกครั้งที่จุดเริ่มต้นเมื่อเวลาผ่านไปน้อยที่สุดกี่นาที",
-    "textEn": "Faye, Fang, and Kaew run around a circular track and start at the same time. Faye takes half the time of Kaew to run one lap. Fang takes 10 minutes more than Kaew to run one lap. If the total time they run together is 40 minutes, after how many minutes will all three meet again at the starting point?",
+    "code": "p6-chula-2022-o-q025",
+    "textTh": "ถุงใบหนึ่งบรรจุลูกบอลหมายเลข 0 ถึง 9 ลูกละ 1 หมายเลข\nหยิบลูกบอลออกมาครั้งละ 3 ลูก เพื่อสร้างจำนวนสามหลักที่หารด้วย 5 ลงตัว\nจะเป็นไปได้ทั้งหมดกี่จำนวน",
+    "textEn": "A bag contains balls labeled 0 to 9. Balls are drawn 3 at a time to form 3-digit numbers.\nHow many such 3-digit numbers divisible by 5 can be formed?",
     "choices": [
-      { "textTh": "110", "textEn": "110", "image": null },
       { "textTh": "132", "textEn": "132", "image": null },
-      { "textTh": "150", "textEn": "150", "image": null },
-      { "textTh": "165", "textEn": "165", "image": null }
+      { "textTh": "134", "textEn": "134", "image": null },
+      { "textTh": "136", "textEn": "136", "image": null },
+      { "textTh": "138", "textEn": "138", "image": null }
     ],
-    "answer": 1,
-    "image": null,
+    "answer": 2,
+    "image": "/images/questions/p6-chula-2022-o-q025.png",
     "attributes": {
-      "year":"2022",
-      "topic": [
-        "topic:least-common-multiple",
-        "topic:algebra-word-problem"
-      ],
-      "skill": [
-        "skill:system-of-equations",
-        "skill:unit-conversion"
-      ],
-      "trap": [
-        "trap:misread-total-time"
-      ],
-      "difficulty": 3,
-      "questionNo": "012",
-      "examGrade": "p6"
+      "year": "2022",
+      "questionNo": "025",
+      "examGrade": "p6",
+      "topic": [ "topic:permutation", "topic:divisibility" ],
+      "skill": [ "skill:enumeration", "skill:constraint-permutation" ],
+      "trap": [ "trap:include-leading-zero" ],
+      "difficulty": 3
     },
     "source": "Chulabhorn Science-Math test",
     "year": "2022",
-    "score": 2,
+    "score": 3,
     "ownerOrg": "me",
     "createdBy": "me",
     "updatedBy": "me"
-  }]
+  }
+]

@@ -1,3 +1,25 @@
-"prisma": {
-  "seed": "node prisma/seed.js"
+{
+  "name": "exam-app-up",
+  "version": "1.0.0",
+  "description": "Online Exam App",
+  "main": "index.js",
+"scripts": {
+  "start": "node server/index.js",
+  "build": "npx prisma generate",
+  "seed": "node prisma/seed.js",
+  "postinstall": "npx prisma generate"
+}
+
+,
+  "dependencies": {
+    "@prisma/client": "4.16.2",
+    "prisma": "4.16.2",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "express-session": "^1.18.1",
+    "multer": "^1.4.5-lts.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

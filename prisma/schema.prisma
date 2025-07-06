@@ -1,0 +1,208 @@
+// 📁 server/prisma/schema.prisma
+// ✅ Prisma schema รวมของเดิมกับ StudentProfile รายปี
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id               Int              @id @default(autoincrement())
+  username         String           @unique
+  password         String
+  firstName        String
+  lastName         String
+  email            String
+  role             String           // 'admin', 'teacher', 'student'
+  studentProfiles  StudentProfile[]
+  createdAt        DateTime         @default(now())
+
+  // ⬇️ เพิ่มความสัมพันธ์กลับจาก Result
+  results          Result[]
+}
+
+
+model StudentProfile {
+  id            Int              @id @default(autoincrement())
+  user          User             @relation(fields: [userId], references: [id])
+  userId        Int
+
+  academicYear  String           // เช่น "2567"
+  school        String
+  district      String
+  province      String
+  grade         String           // เช่น "ป.4"
+  classroom     String?
+  studentCode   String?
+
+  examResults   ExamResult[]
+  createdAt     DateTime         @default(now())
+}
+
+model ExamResult {
+  id                Int              @id @default(autoincrement())
+  studentProfile    StudentProfile   @relation(fields: [studentProfileId], references: [id])
+  studentProfileId  Int
+
+  mode              String           // 'practice', 'adaptive', 'targeted', 'competitive'
+  examSetCode       String?          // 🔸 ถ้ามีรหัสชุดข้อสอบ เช่น 'mock-p6-set001'
+
+  topicTagsJson     Json             // เช่น ["topic:addition", "topic:area"]
+  questionIds       Json             // เช่น [101, 102, 103]
+  userAnswers       Json             // เช่น [2, 0, 1]
+
+  score             Int
+  total             Int
+  durationSec       Int
+  weakAttributes    Json?
+
+  createdAt         DateTime         @default(now())
+}
+
+
+model Question {
+  id                String   @id @default(cuid()) // ✅ ใช้ UUID/cuid เท่านั้น ห้ามใช้ code มาใส่
+  code String? @unique
+                                                  // ✅ รหัสโจทย์แบบมนุษย์อ่านได้ (human-readable question code)
+                                                  // 📌 รูปแบบมาตรฐาน:
+                                                  //    <ระดับชั้น>-<แหล่งที่มา>-<ปี>-<ชนิด>-q<สามหลัก>[-<หมายเลข variant>]
+//
+// 🧩 ตัวอย่าง:
+//    "p6-pcc-2022-o-q001"      → ข้อ 1 จริงจากข้อสอบ PCC ปี 2022
+//    "p6-pcc-2022-v-q001-02"   → ข้อ 1 ดัดแปลงครั้งที่ 2 (variant 02)
+//
+// 🔖 ความหมาย:
+//    - ระดับชั้น: p6, m1, m3 ...
+//    - แหล่งที่มา: pcc, chula, o-net, spip (ตามโรงเรียนหรือสนามสอบ)
+//    - ปี: ค.ศ. เช่น 2022 (ไม่ใช้ พ.ศ. เพื่อความสอดคล้องสากล)
+//    - ชนิด: o = original, v = variant (ข้อดัดแปลงจาก original)
+//    - qXXX: เลขข้อสอบ 3 หลัก เพื่อรองรับมากกว่า 99 ข้อ
+//    - -XX (optional): เลขลำดับ variant เช่น -01, -02, ...
+//
+// 💡 ข้อควรจำ:
+//    - ใช้ `code` เป็น anchor ใน UI, PDF export, รูปภาพ, derivedFrom
+//    - ถ้าใช้งานจริงในระบบทุกข้อ → ควรใส่ `@unique` ป้องกันซ้ำ
+//    - ถ้าข้อสอบมี topic หลายเรื่อง → ห้ามใช้ topic เป็นส่วนหนึ่งของ code
+  textTh            String                         // ✅ โจทย์ภาษาไทย
+  textEn            String                         // ✅ โจทย์ภาษาอังกฤษ (ใช้วิเคราะห์ attribute)
+  image             String?                        // ✅ path ของรูป เช่น /images/questions/q001.png
+  choices           Json                           // ✅ สำหรับโจทย์แบบตัวเลือก (array of { textTh, textEn, image })
+  answer            Int?                           // ✅ index ของคำตอบที่ถูก (เฉพาะโจทย์แบบ choices)
+  shortAnswer       Json?                          // ✅ สำหรับโจทย์ short answer เช่น ["43", "43.0"]
+  attributes        Json                           // ✅ เก็บ topic, skill, trap, difficulty, questionNo, answerType, ฯลฯ
+// ✅ รายการ attribute ที่ใช้สำหรับ tag และวิเคราะห์โจทย์
+// --------------------------------------------------------
+// ✅ โครงสร้างหลักใน attributes:
+// {
+//   "year": "2022",                      // ปีที่ออกข้อสอบ (ค.ศ.)
+//   "topic": [                           // หัวข้อหลักของโจทย์
+//     "topic:order-of-operations"
+//   ],
+//   "skill": [                           // ทักษะที่ใช้ เช่น คำนวณ, หาร, bodmas
+//     "skill:arithmetic",
+//     "skill:bodmas"
+//   ],
+//   "trap": [                            // กับดักหรือความเข้าใจผิด
+//     "trap:misorder"
+//   ],
+//   "difficulty": 1,                     // ความยาก: 1 = ง่าย, 2 = กลาง, 3 = ยาก
+//   "questionNo": "001",                 // ลำดับข้อสอบในชุด เช่น "001"
+//   "examGrade": "p6"                    // ระดับชั้นของข้อสอบ
+// }
+//
+// ✅ เหมาะสำหรับใช้ในการวิเคราะห์จุดอ่อนผู้เรียน, ระบบ adaptive learning, tag ข้อสอบ
+// ✅ ใช้ร่วมกับระบบ derivedFrom, code และ image เพื่ออ้างอิงข้อสอบเดิม
+
+  source            String?                        // ✅ ชื่อชุดข้อสอบหรือสนาม เช่น "Mock PCC ป.6"
+  derivedFrom       String?                        // ✅ หากดัดแปลงจากข้ออื่น ให้ใส่ code ของต้นฉบับ
+  estimatedTimeSec  Int?                           // ✅ เวลาประเมิน (หน่วยวินาที)
+  score             Int?                           // ✅ คะแนนเต็มของข้อนี้ เช่น 1, 2, 3
+  ownerOrg          String                         // ✅ กำหนดว่าใครเป็นเจ้าของ เช่น "me"
+  createdBy         String                         // ✅ ชื่อผู้สร้าง เช่น "chatgpt"
+  updatedBy         String                         // ✅ ชื่อผู้แก้ไขล่าสุด
+  createdAt         DateTime @default(now())       // ✅ วันเวลาที่สร้าง
+  updatedAt         DateTime @updatedAt            // ✅ วันเวลาที่อัปเดตล่าสุด
+  results           Result[]                        // ✅ ความสัมพันธ์กับผลการทำข้อสอบ (ผลนักเรียน)
+}
+
+
+
+
+
+
+model Result {
+  id         Int      @id @default(autoincrement())
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId String
+
+  userId     Int?     // ⬅ ทำเป็น optional
+  user       User?    @relation(fields: [userId], references: [id]) // ⬅ optional เช่นกัน
+
+  selected   String
+  correct    Boolean
+  createdAt  DateTime @default(now())
+}
+
+model ExamSetMetadata {
+  id             String   @id @default(cuid())
+  examType       String   // เช่น "chulabhorn", "suankularb", "onet"
+  year           String?  // null หมายถึงใช้ได้กับทุกปี (สุ่ม)
+  grade          String   // เช่น "p6", "m1", "m3"
+  questionCount  Int      // จำนวนข้อสอบทั้งหมด
+  timeLimitSec   Int      // เวลาที่ใช้ทำข้อสอบหน่วยเป็นวินาที
+  isOfficial     Boolean  // true = ข้อสอบจริง, false = mock/synthetic/random
+  label          String?  // (แนะนำ) ป้ายแสดง เช่น "จุฬาภรณ์ ป.6 ปี 2565"
+  isActive       Boolean  @default(true) // (แนะนำ) ใช้ soft delete หรือเปิดปิดชุดสอบ
+
+  // ในอนาคตอาจเชื่อมกับชุดคำถามจริงได้
+  // questions      Question[] @relation(...)
+}
+
+
+// ตัวอย่างข้อมูลที่อาจจะบันทึกในตารางนี้:
+// | examType    | year  | grade | questionCount | timeLimitSec | isOfficial |
+// |-------------|-------|--------|----------------|----------------|-------------|
+// | chulabhorn  | 2566  | p6     | 40             | 3600           | true        |
+// | chulabhorn  | null  | p6     | 20             | 1800           | false       |
+// | suankularb  | 2565  | m1     | 50             | 4500           | true        |
+
+
+
+
+
+/// 🗂️ AttributeDictionary (HK Project)
+///
+/// ใช้เก็บชุดคำศัพท์กลางของ attribute สำหรับระบบคลังข้อสอบ (HK Project)
+/// เช่น topic:area-grade4, skill:mental-math, trap:misread
+///
+/// จุดประสงค์:
+/// - ใช้เป็น canonical dictionary เพื่อป้องกันการตั้งชื่อซ้ำซ้อน
+/// - ใช้ให้ AI เลือกจาก attribute เดิม ไม่เดาใหม่
+/// - ใช้แสดงผลชื่อไทย/อังกฤษใน frontend
+/// - ใช้วิเคราะห์จุดอ่อนของผู้เรียนแบบละเอียด
+///
+/// หมายเหตุ:
+/// - `type` = "topic", "skill", หรือ "trap"
+/// - `grade` จะใส่เฉพาะ topic เท่านั้น เช่น 4, 5, 6
+model AttributeDictionary {
+  /// รหัสคีย์ เช่น "topic:area-grade4"
+  key     String @id
+
+  /// ประเภทของ attribute: topic, skill, trap
+  type    String
+
+  /// ชื่อภาษาไทย เช่น "พื้นที่ (ป.4)"
+  th      String
+
+  /// ชื่อภาษาอังกฤษ เช่น "Area (Grade 4)"
+  en      String
+
+  /// ชั้นเรียนที่เกี่ยวข้อง เช่น 4, 5, 6 (เฉพาะ topic เท่านั้น)
+  grade   Int?
+
+  @@map("attribute_dictionary")
+}

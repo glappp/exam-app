@@ -1,8 +1,0 @@
--- CreateTable
-CREATE TABLE "Result" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "question" TEXT NOT NULL,
-    "selected" TEXT NOT NULL,
-    "correct" BOOLEAN NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-);

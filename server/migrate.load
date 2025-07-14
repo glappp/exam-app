@@ -1,0 +1,9 @@
+LOAD DATABASE
+     FROM sqlite:///data/dev.db
+     INTO postgresql://hkprojectdb_user:IeBOUug6Pj1b5Re6Tg2LrCM2MJf5PF9V@dpg-d1n7u7be5dus73c90tig-a.singapore-postgres.render.com:5432/hkprojectdb?sslmode=require
+     WITH include drop, create tables, create indexes, reset sequences,
+          data only, batch rows = 1000
+     SET work_mem to '128MB',
+         maintenance_work_mem to '512 MB'
+     BEFORE LOAD DO
+        $$ CREATE SCHEMA IF NOT EXISTS public; $$;

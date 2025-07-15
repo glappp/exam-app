@@ -4,8 +4,8 @@
   "description": "Online Exam App",
   "main": "server/index.js",
   "scripts": {
-    "postinstall": "npx prisma generate --schema=server/prisma/schema.prisma",
-    "build": "dotenv -e server/.env -- npx prisma generate --schema=server/prisma/schema.prisma && dotenv -e server/.env -- npx prisma migrate deploy --schema=server/prisma/schema.prisma",
+    "postinstall": "node node_modules/prisma/build/index.js generate --schema=server/prisma/schema.prisma",
+    "build": "dotenv -e server/.env -- node node_modules/prisma/build/index.js generate --schema=server/prisma/schema.prisma && dotenv -e server/.env -- node node_modules/prisma/build/index.js migrate deploy --schema=server/prisma/schema.prisma",
     "start": "node server/index.js",
     "dev": "nodemon server/index.js",
     "prisma:generate": "dotenv -e server/.env -- npx prisma generate --schema=server/prisma/schema.prisma",
@@ -33,3 +33,6 @@
     "seed": "node server/prisma/seed.js"
   }
 }
+
+
+

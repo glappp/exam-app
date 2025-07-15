@@ -27,5 +27,9 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "prisma": {
+    "seed": "node server/prisma/seed.js"
+  },
+  "postinstall": "npx prisma generate --schema=server/prisma/schema.prisma"
 }

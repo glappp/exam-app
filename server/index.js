@@ -5,7 +5,8 @@ const path = require('path');
 const fs = require('fs');
 const { PrismaClient } = require('@prisma/client');
 const session = require('express-session');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
+
 
 // Log ขั้นตอนเริ่มต้น
 console.log('🚀 Server is starting...');

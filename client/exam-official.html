@@ -10,17 +10,16 @@
 <body>
   <div id="app" class="container">
     <h1>ข้อสอบจริง</h1>
-<div class="exam-layout">
-  <div class="question-area">
-    <div id="question-container"></div>
-  </div>
-  <div class="nav-sidebar" id="navigation">
-    <button id="prev-btn" disabled title="ย้อนกลับ">⬅️</button>
-    <span id="progress" style="text-align: center;"></span>
-    <button id="next-btn" title="ข้อต่อไป">➡️</button>
-  </div>
-</div>
-
+    <div class="exam-layout">
+      <div class="question-area">
+        <div id="question-container"></div>
+      </div>
+      <div class="nav-sidebar" id="navigation">
+        <button id="prev-btn" disabled title="ย้อนกลับ">⬅️</button>
+        <span id="progress" style="text-align: center;"></span>
+        <button id="next-btn" title="ข้อต่อไป">➡️</button>
+      </div>
+    </div>
 
     <div id="submit-section" class="mt-4" style="display:none;">
       <button id="submit-btn">ส่งคำตอบทั้งหมด</button>
@@ -30,32 +29,47 @@
   </div>
 
   <script>
-    const user = localStorage.getItem('user');
-    if (!user) {
-      alert("กรุณาเข้าสู่ระบบก่อนใช้งาน");
-      window.location.href = "/login.html";
-    }
-
-    const urlParams = new URLSearchParams(window.location.search);
-    const grade = urlParams.get('grade');
-    const examType = urlParams.get('examType');
-    const year = urlParams.get('year');
-    const timed = urlParams.get('timed');
+    // ก่อนอื่น เช็ก session ว่า login แล้วหรือไม่
+    (async function checkLogin() {
+      const res = await fetch('/api/me', {
+        credentials: 'include'
+      });
+      if (!res.ok) {
+        alert('กรุณาเข้าสู่ระบบก่อนใช้งาน');
+        return window.location.href = '/login.html';
+      }
+      const data = await res.json();
+      if (!data.loggedIn) {
+        alert('กรุณาเข้าสู่ระบบก่อนใช้งาน');
+        return window.location.href = '/login.html';
+      }
+      // ถ้า login ผ่าน ให้โหลดข้อสอบ
+      initExam();
+    })();
 
     let questions = [];
     let currentIndex = 0;
     let answers = [];
 
+    function initExam() {
+      // อ่านพารามิเตอร์จาก URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const grade = urlParams.get('grade');
+      const examType = urlParams.get('examType');
+      const year = urlParams.get('year');
+      // ดึงชุดข้อสอบ
+      fetchQuestions(grade, examType, year);
+    }
 
-
-
-    async function fetchQuestions() {
-      const source = decodeURIComponent(examType); // เช่น Chulabhorn Science-Math test
-const res = await fetch(`/api/exam-set-official?source=${encodeURIComponent(source)}&year=${year}&grade=${grade}`);
-
+    async function fetchQuestions(grade, examType, year) {
+      const source = decodeURIComponent(examType);
+      const res = await fetch(
+        `/api/exam-set-official?source=${encodeURIComponent(source)}&year=${year}&grade=${grade}`,
+        { credentials: 'include' }
+      );
       if (!res.ok) {
         alert("ไม่พบชุดข้อสอบที่เลือก กรุณาตรวจสอบใหม่");
-        return;
+        return window.location.href = '/select-exam.html';
       }
       questions = await res.json();
       answers = new Array(questions.length).fill(null);
@@ -69,81 +83,79 @@ const res = await fetch(`/api/exam-set-official?source=${encodeURIComponent(sour
       container.innerHTML = `
         <div class="question-box">
           <div class="question-text">${(q.textTh || '').replace(/\n/g, '<br>')}</div>
-          ${q.image ? `<img src="${q.image}" class="question-image">` : ''}
+          ${q.image ? `<img src="/uploads/${q.image}" class="question-image">` : ''}
           <div class="answer-section">
-            ${q.choices && q.choices.length ? q.choices.map((c, i) => `
+            ${q.choices?.length ? q.choices.map((c,i) => `
               <label>
                 <input type="radio" name="answer" value="${i}" ${answers[currentIndex] == i ? 'checked' : ''}>
                 ${c.textTh}
               </label>
             `).join('<br>') : `
-              <input type="text" id="short-answer" value="${answers[currentIndex] || ''}" placeholder="พิมพ์คำตอบ">
+              <input type="text" id="short-answer" value="${answers[currentIndex]||''}" placeholder="พิมพ์คำตอบ">
             `}
           </div>
         </div>
       `;
-
       if (window.MathJax) MathJax.typesetPromise();
 
-      document.querySelectorAll('input[name="answer"]').forEach(input => {
-        input.addEventListener('change', e => {
+      // เก็บคำตอบเมื่อเปลี่ยน
+      container.querySelectorAll('input[name="answer"]').forEach(input => {
+        input.onchange = e => {
           answers[currentIndex] = parseInt(e.target.value);
-        });
+        };
       });
-
-      const shortInput = document.getElementById('short-answer');
-      if (shortInput) {
-        shortInput.addEventListener('input', e => {
-          answers[currentIndex] = e.target.value;
-        });
-      }
+      const short = container.querySelector('#short-answer');
+      if (short) short.oninput = e => {
+        answers[currentIndex] = e.target.value;
+      };
     }
-function updateProgress() {
-  document.getElementById('progress').textContent = `ข้อ ${currentIndex + 1} / ${questions.length}`;
-  document.getElementById('prev-btn').disabled = currentIndex === 0;
-  document.getElementById('next-btn').innerHTML = currentIndex === questions.length - 1 ? '✅' : '&rarr;';
-  document.getElementById('prev-btn').innerHTML = '&larr;';
-}
 
+    function updateProgress() {
+      document.getElementById('progress').textContent =
+        `ข้อ ${currentIndex+1} / ${questions.length}`;
+      document.getElementById('prev-btn').disabled = currentIndex===0;
+      document.getElementById('next-btn').innerHTML =
+        currentIndex===questions.length-1 ? '✅' : '&rarr;';
+    }
 
-
-    document.getElementById('prev-btn').addEventListener('click', () => {
-      if (currentIndex > 0) {
+    // ปุ่ม Previous
+    document.getElementById('prev-btn').onclick = () => {
+      if (currentIndex>0) {
         currentIndex--;
         renderQuestion();
         updateProgress();
       }
-    });
+    };
 
-    document.getElementById('next-btn').addEventListener('click', () => {
-      if (currentIndex < questions.length - 1) {
+    // ปุ่ม Next / Submit
+    document.getElementById('next-btn').onclick = () => {
+      if (currentIndex < questions.length-1) {
         currentIndex++;
         renderQuestion();
         updateProgress();
       } else {
-        const unanswered = [];
-        for (let i = 0; i < answers.length; i++) {
-          if (answers[i] === null || answers[i] === '') {
-            unanswered.push(i + 1);
-          }
+        // ตรวจว่าตอบครบหรือไม่
+        const missing = answers
+          .map((a,i) => (a===null||a==='')?i+1:null)
+          .filter(x=>x);
+        if (missing.length) {
+          return alert(`คุณยังไม่ได้ตอบข้อ: ${missing.join(', ')}\nกรุณาตอบให้ครบก่อนส่ง`);
         }
-
-        if (unanswered.length > 0) {
-          alert(`คุณยังไม่ได้ตอบข้อ: ${unanswered.join(', ')}\nกรุณาตอบให้ครบก่อนส่ง`);
-          return;
-        }
-
-        const ok = confirm("คุณแน่ใจหรือไม่ว่าต้องการส่งคำตอบทั้งหมด?");
-        if (!ok) return;
-
+        if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการส่งคำตอบทั้งหมด?")) return;
         document.getElementById('submit-section').style.display = 'block';
         document.getElementById('navigation').style.display = 'none';
       }
-    });
+    };
 
-    document.getElementById('submit-btn').addEventListener('click', async () => {
+    // ปุ่มส่งคำตอบ
+    document.getElementById('submit-btn').onclick = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const grade = urlParams.get('grade');
+      const examType = urlParams.get('examType');
+      const year = urlParams.get('year');
       const res = await fetch('/api/submit-exam', {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mode: 'official',
@@ -151,16 +163,16 @@ function updateProgress() {
           year,
           grade,
           questions: questions.map(q => q.id),
-          answers,
+          answers
         })
       });
+      if (!res.ok) {
+        return alert('ส่งคำตอบไม่สำเร็จ กรุณาลองใหม่');
+      }
       const result = await res.json();
       localStorage.setItem("examResult", JSON.stringify(result));
       window.location.href = "/result-competitive.html";
-    });
-
-    fetchQuestions();
-
+    };
   </script>
 </body>
 </html>

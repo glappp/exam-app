@@ -1,3 +1,5 @@
+// server/routes/api/exam-set-official.js
+
 const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
@@ -7,19 +9,20 @@ router.get('/', async (req, res) => {
   const { source, year, grade } = req.query;
 
   try {
-    const raw = await prisma.question.findMany({
+    const questions = await prisma.question.findMany({
       where: {
-        source: source,
+        source,
         AND: [
           {
             attributes: {
-              path: 'year',
+              // Prisma JSON filter ต้องรับ path เป็น array
+              path: ['year'],
               equals: year
             }
           },
           {
             attributes: {
-              path: 'examGrade',
+              path: ['examGrade'],
               equals: grade
             }
           }
@@ -28,17 +31,12 @@ router.get('/', async (req, res) => {
       take: 100
     });
 
-    // ✅ เรียงตาม questionNo เช่น "001", "002"
-    const questions = raw.sort((a, b) => {
-      const aNo = a.attributes?.questionNo || '000';
-      const bNo = b.attributes?.questionNo || '000';
-      return aNo.localeCompare(bNo);
-    });
-
     res.json(questions);
-  } catch (e) {
-    console.error('🔥 Prisma error:', e);
-    res.status(500).json({ error: 'Internal Server Error', details: e.message });
+  } catch (err) {
+    console.error('❌ fetch official exam error:', err);
+    res
+      .status(500)
+      .json({ error: 'Internal Server Error', details: err.message });
   }
 });
 

@@ -3,14 +3,16 @@
   "version": "1.0.0",
   "description": "Online Exam App",
   "main": "server/index.js",
-  "scripts": {
-    "build": "dotenv -e server/.env -- npx prisma generate --schema=server/prisma/schema.prisma && dotenv -e server/.env -- npx prisma migrate deploy --schema=server/prisma/schema.prisma",
-    "dev": "nodemon server/index.js",
-    "start": "node server/index.js",
-    "prisma:generate": "dotenv -e server/.env -- npx prisma generate --schema=server/prisma/schema.prisma",
-    "prisma:migrate": "dotenv -e server/.env -- npx prisma migrate deploy --schema=server/prisma/schema.prisma",
-    "seed": "node server/prisma/seed.js"
-  },
+"scripts": {
+  "postinstall": "npx prisma generate --schema=server/prisma/schema.prisma",
+  "build": "dotenv -e server/.env -- npx prisma generate --schema=server/prisma/schema.prisma && dotenv -e server/.env -- npx prisma migrate deploy --schema=server/prisma/schema.prisma",
+  "start": "node server/index.js",
+  "dev": "nodemon server/index.js",
+  "prisma:generate": "dotenv -e server/.env -- npx prisma generate --schema=server/prisma/schema.prisma",
+  "prisma:migrate": "dotenv -e server/.env -- npx prisma migrate deploy --schema=server/prisma/schema.prisma",
+  "seed": "node server/prisma/seed.js"
+}
+,
   "dependencies": {
     "@prisma/client": "6.11.1",
     "bcryptjs": "^3.0.2",

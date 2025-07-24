@@ -77,7 +77,8 @@ app.post('/api/logout', (req, res) => {
 });
 
 // Upload question
-import { uploadToR2 } from "./services/r2Client";
+import { uploadToR2 } from "./services/r2Client.js";
+;
 
 app.post('/add-question', upload.fields([
   { name: 'questionImage', maxCount: 1 },

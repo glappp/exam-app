@@ -49,42 +49,41 @@
       updateProgress();
     }
 
-function renderQuestion() {
-  const q = questions[currentIndex];
-  const container = document.getElementById('question-container');
-  container.innerHTML = `
-    <div class="question-box">
-      <div class="question-text">${q.textTh}</div>
-      ${q.image ? `<img src="${q.image}" class="question-image">` : ''}
-      <div class="answer-section">
-        ${q.choices && q.choices.length ? q.choices.map((c, i) => `
-          <label>
-            <input type="radio" name="answer" value="${i}" ${answers[currentIndex] == i ? 'checked' : ''}>
-            ${c.textTh}
-          </label>
-        `).join('<br>') : `
-          <input type="text" id="short-answer" value="${answers[currentIndex] || ''}" placeholder="พิมพ์คำตอบ">
-        `}
+  function renderQuestion() {
+    const q = questions[currentIndex];
+    const container = document.getElementById('question-container');
+    container.innerHTML = `
+      <div class="question-box">
+        <div class="question-text">${q.textTh}</div>
+        ${q.image ? `<img src="https://exam-images-hk.r2.dev/${q.image}" class="question-image">` : ''}
+        <div class="answer-section">
+          ${q.choices && q.choices.length ? q.choices.map((c, i) => `
+            <label>
+              <input type="radio" name="answer" value="${i}" ${answers[currentIndex] == i ? 'checked' : ''}>
+              ${c.textTh}
+            </label>
+          `).join('<br>') : `
+            <input type="text" id="short-answer" value="${answers[currentIndex] || ''}" placeholder="พิมพ์คำตอบ">
+          `}
+        </div>
       </div>
-    </div>
-  `;
+    `;
 
-  // ⭐ ใส่ตรงนี้เพื่อให้ MathJax ประมวลผลสมการใหม่ทุกครั้ง
-  if (window.MathJax) MathJax.typesetPromise();
+    if (window.MathJax) MathJax.typesetPromise();
 
-  document.querySelectorAll('input[name="answer"]').forEach(input => {
-    input.addEventListener('change', e => {
-      answers[currentIndex] = parseInt(e.target.value);
+    document.querySelectorAll('input[name="answer"]').forEach(input => {
+      input.addEventListener('change', e => {
+        answers[currentIndex] = parseInt(e.target.value);
+      });
     });
-  });
 
-  const shortInput = document.getElementById('short-answer');
-  if (shortInput) {
-    shortInput.addEventListener('input', e => {
-      answers[currentIndex] = e.target.value;
-    });
+    const shortInput = document.getElementById('short-answer');
+    if (shortInput) {
+      shortInput.addEventListener('input', e => {
+        answers[currentIndex] = e.target.value;
+      });
+    }
   }
-}
 
 
     function updateProgress() {

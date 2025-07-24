@@ -6,6 +6,8 @@ const fs = require('fs');
 const { PrismaClient } = require('@prisma/client');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
+const { uploadToR2 } = require("./utils/r2");
+
 
 
 // Log ขั้นตอนเริ่มต้น
@@ -76,6 +78,8 @@ app.post('/api/logout', (req, res) => {
 });
 
 // Upload question
+import { uploadToR2 } from "./services/r2Client";
+
 app.post('/add-question', upload.fields([
   { name: 'questionImage', maxCount: 1 },
   { name: 'choiceImage0', maxCount: 1 },
@@ -85,22 +89,41 @@ app.post('/add-question', upload.fields([
 ]), async (req, res) => {
   try {
     const { questionText, choice0, choice1, choice2, choice3, correct, difficulty } = req.body;
-    const files = req.files;
+    const files = req.files as { [field: string]: Express.Multer.File[] };
     const now = new Date().toISOString();
-    const choices = [choice0, choice1, choice2, choice3].map((text, i) => ({
-      textTh: text,
-      textEn: text,
-      image: files[`choiceImage${i}`]?.[0]?.filename || null
+
+    const choiceTexts = [choice0, choice1, choice2, choice3];
+
+    const choices = await Promise.all(choiceTexts.map(async (text, i) => {
+      const file = files[`choiceImage${i}`]?.[0];
+      const imageUrl = file
+        ? await uploadToR2(file.path, `choice-${i}-${Date.now()}-${file.originalname}`)
+        : null;
+      return {
+        textTh: text,
+        textEn: text,
+        image: imageUrl
+      };
     }));
+
+    const questionImageFile = files.questionImage?.[0];
+    const questionImageUrl = questionImageFile
+      ? await uploadToR2(questionImageFile.path, `question-${Date.now()}-${questionImageFile.originalname}`)
+      : null;
 
     const result = await prisma.question.create({
       data: {
         textTh: questionText,
         textEn: questionText,
-        image: files.questionImage?.[0]?.filename || null,
+        image: questionImageUrl,
         answer: parseInt(correct),
-        attributes: { topic: [], skill: [], trap: [], difficulty: difficulty ? parseInt(difficulty) : 1 },
-        difficulty,
+        attributes: {
+          topic: [],
+          skill: [],
+          trap: [],
+          difficulty: difficulty ? parseInt(difficulty) : 1
+        },
+        difficulty: difficulty ? parseInt(difficulty) : 1,
         choices,
         source: 'me',
         estimatedTimeSec: 30,

@@ -1,11 +1,11 @@
-const cors = require('cors');
-const express = require('express');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
-const { PrismaClient } = require('@prisma/client');
-const session = require('express-session');
-const bcrypt = require('bcryptjs');
+import cors from 'cors';
+import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+import { PrismaClient } from '@prisma/client';
+import session from 'express-session';
+import bcrypt from 'bcryptjs';
 
 
 
@@ -20,7 +20,11 @@ const upload = multer({ dest: 'uploads/' });
 app.use(express.static(path.join(__dirname, '..', 'client')));
 
 // Routes
-app.use('/api', require('./routes/api/attributeDictRoute'));
+
+import attributeDictRoute from './routes/api/attributeDictRoute.js';
+app.use('/api', attributeDictRoute);
+
+
 app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 app.use(session({
@@ -32,14 +36,25 @@ app.use(session({
 
 app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/api/register', require('./routes/register'));
-app.use('/questions', require('./routes/questions'));
-app.use('/results', require('./routes/results'));
-app.use('/api', require('./routes/exam-options'));
-app.use('/api/exam-set', require('./routes/api/exam-set-random'));
-app.use('/api/exam-sets', require('./routes/api/exam-sets'));
-app.use('/api/exam-set-official', require('./routes/api/exam-set-official'));
-app.use('/api/submit-exam', require('./routes/api/submit-exam'));
+
+import registerRoute from './routes/register.js';
+import questionsRoute from './routes/questions.js';
+import resultsRoute from './routes/results.js';
+import examOptionsRoute from './routes/exam-options.js';
+import examSetRandomRoute from './routes/api/exam-set-random.js';
+import examSetsRoute from './routes/api/exam-sets.js';
+import examSetOfficialRoute from './routes/api/exam-set-official.js';
+import submitExamRoute from './routes/api/submit-exam.js';
+
+app.use('/api/register', registerRoute);
+app.use('/questions', questionsRoute);
+app.use('/results', resultsRoute);
+app.use('/api', examOptionsRoute);
+app.use('/api/exam-set', examSetRandomRoute);
+app.use('/api/exam-sets', examSetsRoute);
+app.use('/api/exam-set-official', examSetOfficialRoute);
+app.use('/api/submit-exam', submitExamRoute);
+
 
 // Auth
 app.post('/api/login', async (req, res) => {

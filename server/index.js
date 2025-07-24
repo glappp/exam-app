@@ -6,7 +6,6 @@ const fs = require('fs');
 const { PrismaClient } = require('@prisma/client');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
-const { uploadToR2 } = require("./utils/r2");
 
 
 

@@ -116,7 +116,8 @@ app.post('/add-question', upload.fields([
     const choices = await Promise.all(choiceTexts.map(async (text, i) => {
       const file = files[`choiceImage${i}`]?.[0];
       const imageUrl = file
-        ? await uploadToR2(file.path, `choice-${i}-${Date.now()}-${file.originalname}`)
+        ? await uploadToR2(file.path, `images/choices/choice-${i}-${Date.now()}-${file.originalname}`)
+
         : null;
       return {
         textTh: text,
@@ -127,7 +128,8 @@ app.post('/add-question', upload.fields([
 
     const questionImageFile = files.questionImage?.[0];
     const questionImageUrl = questionImageFile
-      ? await uploadToR2(questionImageFile.path, `question-${Date.now()}-${questionImageFile.originalname}`)
+      ? await uploadToR2(questionImageFile.path, `images/questions/question-${Date.now()}-${questionImageFile.originalname}`)
+
       : null;
 
     const result = await prisma.question.create({

@@ -6,6 +6,11 @@ import fs from 'fs';
 import { PrismaClient } from '@prisma/client';
 import session from 'express-session';
 import bcrypt from 'bcryptjs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 
 

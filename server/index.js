@@ -88,7 +88,7 @@ app.post('/add-question', upload.fields([
 ]), async (req, res) => {
   try {
     const { questionText, choice0, choice1, choice2, choice3, correct, difficulty } = req.body;
-    const files = req.files as { [field: string]: Express.Multer.File[] };
+    const files = /** @type {{ [field: string]: Express.Multer.File[] }} */ (req.files);
     const now = new Date().toISOString();
 
     const choiceTexts = [choice0, choice1, choice2, choice3];

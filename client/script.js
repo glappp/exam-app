@@ -1,6 +1,7 @@
 let currentAnswer = -1;
 let currentQuestion = null;
 let currentLang = 'th'; // 🌐 รองรับหลายภาษา
+const CDN = import.meta.env.VITE_CDN_URL;
 
 // ตรวจสอบว่า login แล้ว
 async function checkLogin() {
@@ -193,3 +194,8 @@ function loadNextQuestion() {
   startExam();  // หรือ logic อื่นที่สุ่มข้อใหม่
 }
 
+
+
+function getImageUrl(key) {
+  return `${CDN}/${key.replace(/^\/+/, '')}`;
+}

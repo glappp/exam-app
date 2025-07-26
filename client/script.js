@@ -70,7 +70,9 @@ const filtered = allQuestions.filter(q =>
 function renderCurrentQuestion() {
   const q = currentQuestion;
   const questionArea = document.getElementById('question-area');
-  
+
+  console.log(import.meta.env.VITE_CDN_URL);
+
 console.log(getImageUrl("uploads/images/questions/p6-chula-2022-o-q004.png"));
 
   const choicesHTML = q.choices.map((c, i) =>

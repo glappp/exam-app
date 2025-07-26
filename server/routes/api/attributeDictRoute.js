@@ -1,8 +1,7 @@
-// server/routes/api/attributeDictRoute.js
-const express = require('express');
-const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
+import express from 'express';
+import { PrismaClient } from '@prisma/client';
 
+const router = express.Router();
 const prisma = new PrismaClient();
 
 router.get('/attributeDict.json', async (req, res) => {
@@ -15,4 +14,4 @@ router.get('/attributeDict.json', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

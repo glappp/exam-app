@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import { PrismaClient } from '@prisma/client';
+
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 // ✅ ดึงโจทย์ทั้งหมด (ใน practice mode ใช้)
@@ -14,4 +15,4 @@ router.get('/all', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

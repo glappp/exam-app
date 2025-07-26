@@ -1,15 +1,13 @@
-// 📁 server/routes/register.js
+import express from 'express';
+import bcrypt from 'bcryptjs';
+import { PrismaClient } from '@prisma/client';
 
-const express = require("express");
-const bcrypt = require('bcryptjs');
-const { PrismaClient } = require("@prisma/client");
 const router = express.Router();
-
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 10;
 
 // ✅ API สำหรับลงทะเบียนนักเรียน
-router.post("/", async (req, res) => {
+router.post('/', async (req, res) => {
   const {
     username, password, firstName, lastName, email, role,
     academicYear, school, district, province, grade, classroom, studentCode
@@ -19,7 +17,7 @@ router.post("/", async (req, res) => {
     // 🔐 ตรวจ username ซ้ำ
     const exists = await prisma.user.findUnique({ where: { username } });
     if (exists) {
-      return res.status(400).json({ error: "Username already exists" });
+      return res.status(400).json({ error: 'Username already exists' });
     }
 
     // 🔐 แฮชรหัสผ่าน
@@ -33,7 +31,7 @@ router.post("/", async (req, res) => {
         firstName,
         lastName,
         email,
-        role: role || "student",
+        role: role || 'student',
         studentProfiles: {
           create: {
             academicYear,
@@ -49,11 +47,11 @@ router.post("/", async (req, res) => {
       include: { studentProfiles: true }
     });
 
-    res.status(201).json({ message: "Register success", userId: newUser.id });
+    res.status(201).json({ message: 'Register success', userId: newUser.id });
   } catch (err) {
-    console.error("Register error:", err);
-    res.status(500).json({ error: "Internal server error" });
+    console.error('Register error:', err);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-module.exports = router;
+export default router;

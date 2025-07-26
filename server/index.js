@@ -8,27 +8,17 @@ import session from 'express-session';
 import bcrypt from 'bcryptjs';
 import { fileURLToPath } from 'url';
 
+// 💡 สำหรับ local file resolution
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-
-
-// Log ขั้นตอนเริ่มต้น
+// ✅ Prisma + express setup
 console.log('🚀 Server is starting...');
-
 const prisma = new PrismaClient();
 const app = express();
 const upload = multer({ dest: 'uploads/' });
 
-// Static client folder
 app.use(express.static(path.join(__dirname, '..', 'client')));
-
-// Routes
-
-const attributeDictRoute = require('./routes/api/attributeDictRoute.js');
-app.use('/api', attributeDictRoute);
-
-
 app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 app.use(session({
@@ -37,19 +27,21 @@ app.use(session({
   saveUninitialized: false,
   cookie: { secure: false }
 }));
-
 app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-const registerRoute = require('./routes/register.js');
-const questionsRoute = require('./routes/questions.js');
-const resultsRoute = require('./routes/results.js');
-const examOptionsRoute = require('./routes/exam-options.js');
-const examSetRandomRoute = require('./routes/api/exam-set-random.js');
-const examSetsRoute = require('./routes/api/exam-sets.js');
-const examSetOfficialRoute = require('./routes/api/exam-set-official.js');
-const submitExamRoute = require('./routes/api/submit-exam.js');
+// ✅ Import all route modules as ESModule
+import attributeDictRoute from './routes/api/attributeDictRoute.js';
+import registerRoute from './routes/register.js';
+import questionsRoute from './routes/questions.js';
+import resultsRoute from './routes/results.js';
+import examOptionsRoute from './routes/exam-options.js';
+import examSetRandomRoute from './routes/api/exam-set-random.js';
+import examSetsRoute from './routes/api/exam-sets.js';
+import examSetOfficialRoute from './routes/api/exam-set-official.js';
+import submitExamRoute from './routes/api/submit-exam.js';
 
+app.use('/api', attributeDictRoute);
 app.use('/api/register', registerRoute);
 app.use('/questions', questionsRoute);
 app.use('/results', resultsRoute);
@@ -59,8 +51,7 @@ app.use('/api/exam-sets', examSetsRoute);
 app.use('/api/exam-set-official', examSetOfficialRoute);
 app.use('/api/submit-exam', submitExamRoute);
 
-
-// Auth
+// ✅ Auth Routes
 app.post('/api/login', async (req, res) => {
   const { username, password } = req.body;
   const user = await prisma.user.findUnique({ where: { username } });
@@ -95,9 +86,8 @@ app.post('/api/logout', (req, res) => {
   });
 });
 
-// Upload question
-import { uploadToR2 } from "./services/r2Client.js";
-;
+// ✅ Upload question
+import { uploadToR2 } from './services/r2Client.js';
 
 app.post('/add-question', upload.fields([
   { name: 'questionImage', maxCount: 1 },
@@ -112,12 +102,10 @@ app.post('/add-question', upload.fields([
     const now = new Date().toISOString();
 
     const choiceTexts = [choice0, choice1, choice2, choice3];
-
     const choices = await Promise.all(choiceTexts.map(async (text, i) => {
       const file = files[`choiceImage${i}`]?.[0];
       const imageUrl = file
         ? await uploadToR2(file.path, `images/choices/choice-${i}-${Date.now()}-${file.originalname}`)
-
         : null;
       return {
         textTh: text,
@@ -129,7 +117,6 @@ app.post('/add-question', upload.fields([
     const questionImageFile = files.questionImage?.[0];
     const questionImageUrl = questionImageFile
       ? await uploadToR2(questionImageFile.path, `images/questions/question-${Date.now()}-${questionImageFile.originalname}`)
-
       : null;
 
     const result = await prisma.question.create({
@@ -164,7 +151,7 @@ app.post('/add-question', upload.fields([
   }
 });
 
-// Bind to all interfaces and dynamic PORT
+// ✅ Start server
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Backend is running on http://0.0.0.0:${PORT}`);

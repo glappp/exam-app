@@ -1,6 +1,7 @@
-const express = require('express');
+import express from 'express';
+import { PrismaClient } from '@prisma/client';
+
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 router.get('/exam-options', async (req, res) => {
@@ -14,7 +15,7 @@ router.get('/exam-options', async (req, res) => {
       whereClause = {};
     } else {
       console.warn('Unknown mode:', mode);
-      // ถ้าอยากให้ strict กว่านี้ สามารถส่ง status 400 กลับไปแทนได้:
+      // ถ้าอยาก strict:
       // return res.status(400).json({ error: 'Invalid mode' });
       whereClause = {};
     }
@@ -36,4 +37,4 @@ router.get('/exam-options', async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

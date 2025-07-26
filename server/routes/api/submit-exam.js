@@ -1,7 +1,24 @@
-const express = require('express');
+import express from 'express';
+import { PrismaClient } from '@prisma/client';
+
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+
+function normalizeAnswer(ans) {
+  const str = (typeof ans === 'string') ? ans.trim().replace(/\s+/g, '') : String(ans);
+  const num = parseFloat(str);
+  if (!isNaN(num)) return num.toFixed(6);
+  return str.toLowerCase();
+}
+
+function isCorrectAnswer(userAns, q) {
+  const a = normalizeAnswer(userAns);
+  if (q.answer != null) return parseInt(userAns) === q.answer;
+  if (Array.isArray(q.shortAnswer)) {
+    return q.shortAnswer.some(sa => normalizeAnswer(sa) === a);
+  }
+  return false;
+}
 
 router.post('/', async (req, res) => {
   const { mode, questions, answers } = req.body;
@@ -39,10 +56,8 @@ router.post('/', async (req, res) => {
       }
     });
 
-    // 🔐 ใส่ studentProfileId ชั่วคราว
     const studentProfileId = req.session?.studentProfileId || 1;
 
-    // ⏺️ บันทึกผลสอบ
     await prisma.examResult.create({
       data: {
         studentProfileId,
@@ -67,25 +82,9 @@ router.post('/', async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err);
+    console.error('❌ ตรวจคำตอบล้มเหลว:', err);
     res.status(500).json({ error: 'ตรวจคำตอบล้มเหลว' });
   }
 });
 
-function normalizeAnswer(ans) {
-  const str = (typeof ans === 'string') ? ans.trim().replace(/\s+/g, '') : String(ans);
-  const num = parseFloat(str);
-  if (!isNaN(num)) return num.toFixed(6);
-  return str.toLowerCase();
-}
-
-function isCorrectAnswer(userAns, q) {
-  const a = normalizeAnswer(userAns);
-  if (q.answer != null) return parseInt(userAns) === q.answer;
-  if (Array.isArray(q.shortAnswer)) {
-    return q.shortAnswer.some(sa => normalizeAnswer(sa) === a);
-  }
-  return false;
-}
-
-module.exports = router;
+export default router;

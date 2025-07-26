@@ -1,8 +1,7 @@
-// server/routes/api/exam-set-official.js
+import express from 'express';
+import { PrismaClient } from '@prisma/client';
 
-const express = require('express');
 const router = express.Router();
-const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 router.get('/', async (req, res) => {
@@ -15,8 +14,7 @@ router.get('/', async (req, res) => {
         AND: [
           {
             attributes: {
-              // Prisma JSON filter ต้องรับ path เป็น array
-              path: ['year'],
+              path: ['year'], // ต้องใช้ array สำหรับ JSON path
               equals: year
             }
           },
@@ -34,10 +32,11 @@ router.get('/', async (req, res) => {
     res.json(questions);
   } catch (err) {
     console.error('❌ fetch official exam error:', err);
-    res
-      .status(500)
-      .json({ error: 'Internal Server Error', details: err.message });
+    res.status(500).json({
+      error: 'Internal Server Error',
+      details: err.message
+    });
   }
 });
 
-module.exports = router;
+export default router;

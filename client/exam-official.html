@@ -79,7 +79,7 @@ function renderQuestion() {
   const choicesHTML = q.choices?.length
     ? q.choices.map((c, i) => {
         const imgHTML = c.image
-          ? `<img src="${getImageUrl(c.image)}" class="choice-image">`
+          ? `<img src="${getImageUrl(normalizeImageKey(c.image))}" class="choice-image">`
           : '';
         return `
           <label class="choice-item">
@@ -95,7 +95,7 @@ function renderQuestion() {
   container.innerHTML = `
     <div class="question-box">
       <div class="question-text">${(q.textTh || '').replace(/\n/g, '<br>')}</div>
-      ${q.image ? `<img src="${getImageUrl(q.image)}" class="question-image">` : ''}
+      ${q.image ? `<img src="${getImageUrl(normalizeImageKey(q.image))}" class="question-image">` : ''}
       <div class="answer-section">
         ${choicesHTML}
       </div>

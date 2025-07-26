@@ -18,3 +18,7 @@ export function getImageUrl(key) {
 
   return `${base}/${cleanKey}`;
 }
+
+export function normalizeImageKey(key) {
+  return key?.replace(/^\/?uploads\/+/, '').replace(/^\/+/, '');
+}

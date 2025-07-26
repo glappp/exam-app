@@ -44,7 +44,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 import registerRoute from './routes/register.js';
 import questionsRoute from './routes/questions.js';
 import resultsRoute from './routes/results.js';
-import examOptionsRoute from './routes/exam-options.js';
+const examOptionsRoute = require('./routes/exam-options.js');
 import examSetRandomRoute from './routes/api/exam-set-random.js';
 import examSetsRoute from './routes/api/exam-sets.js';
 import examSetOfficialRoute from './routes/api/exam-set-official.js';

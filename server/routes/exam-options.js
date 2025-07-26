@@ -1,20 +1,28 @@
-// server/routes/exam-options.js
 const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 router.get('/exam-options', async (req, res) => {
-  const mode = req.query.mode;
   try {
-  const sets = await prisma.examSetMetadata.findMany({
-    where: mode === 'official'
-    ? { isOfficial: true }
-    : {} // ฝึกฝน: เอาทั้ง true และ false
-  });
+    const mode = req.query.mode || 'all';
+    let whereClause = {};
 
+    if (mode === 'official') {
+      whereClause = { isOfficial: true };
+    } else if (mode === 'practice') {
+      whereClause = {};
+    } else {
+      console.warn('Unknown mode:', mode);
+      // ถ้าอยากให้ strict กว่านี้ สามารถส่ง status 400 กลับไปแทนได้:
+      // return res.status(400).json({ error: 'Invalid mode' });
+      whereClause = {};
+    }
 
-    // ดึงเฉพาะค่าไม่ซ้ำ (เช่น grade, examType, year)
+    const sets = await prisma.examSetMetadata.findMany({
+      where: whereClause
+    });
+
     const unique = {
       grades: [...new Set(sets.map(e => e.grade))],
       examTypes: [...new Set(sets.map(e => e.examType))],

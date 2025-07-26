@@ -25,7 +25,7 @@ app.use(express.static(path.join(__dirname, '..', 'client')));
 
 // Routes
 
-import attributeDictRoute from './routes/api/attributeDictRoute.js';
+const attributeDictRoute = require('./routes/api/attributeDictRoute.js');
 app.use('/api', attributeDictRoute);
 
 

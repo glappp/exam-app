@@ -47,6 +47,17 @@
     let questions = [];
     let currentIndex = 0;
     let answers = [];
+    const CDN = import.meta.env.VITE_CDN_URL;
+
+
+        function normalizeImageKey(key) {
+  return key?.replace(/^\/?uploads\/+/, '').replace(/^\/+/, '');
+}
+
+function getImageUrl(key) {
+  const cleanKey = key?.replace(/^\/?uploads\/+/, '').replace(/^\/+/, '');
+  return `${CDN}/${cleanKey}`;
+}
 
     function initExam() {
       const params = new URLSearchParams(window.location.search);
@@ -71,6 +82,8 @@
       renderQuestion();
       updateProgress();
     }
+
+
 
 function renderQuestion() {
   const q = questions[currentIndex];

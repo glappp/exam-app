@@ -18,6 +18,12 @@ async function checkLogin() {
 
 checkLogin();
 
+function getImageUrl(key) {
+  const cleanKey = key?.replace(/^\/?uploads\/+/, '').replace(/^\/+/, '');
+  return `${CDN}/${cleanKey}`;
+}
+
+
 
 function getText(q) {
   return currentLang === 'th' ? q.textTh || q.text : q.textEn || q.text;

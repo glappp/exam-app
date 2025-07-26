@@ -67,14 +67,14 @@ function renderCurrentQuestion() {
 
   const choicesHTML = q.choices.map((c, i) =>
     `<button onclick="checkAnswer(${i})" style="margin: 8px;">
-      ${c.image ? `<img src="${getImageUrl(c.image)}" style="max-height:40px;"><br>` : ""}
+      ${c.image ? `<img src="${getImageUrl(normalizeImageKey(c.image))}"  style="max-height:40px;"><br>` : ""}
       ${getChoiceText(c)}
     </button>`
   ).join(" ");
 
   questionArea.innerHTML = `
     <p><strong>โจทย์:</strong> ${getText(q)}</p>
-    ${q.image ? `<img src="${getImageUrl(q.image)}" style="max-width:100%; height:auto;"><br>` : ''}
+    ${q.image ? `<img src="${getImageUrl(normalizeImageKey(q.image))}"  style="max-width:100%; height:auto;"><br>` : ''}
     <div>${choicesHTML}</div>
     <p id="result"></p>
   `;
@@ -197,5 +197,10 @@ function loadNextQuestion() {
 
 
 function getImageUrl(key) {
-  return `${CDN}/${key.replace(/^\/+/, '')}`;
+  const cleanKey = key
+    .replace(/^\/?uploads\/+/, '')   // ล้าง 'uploads/' ด้านหน้า
+    .replace(/^\/+/, '');            // ล้าง '/' ด้านหน้าที่อาจหลงมา
+
+  return `${CDN}/${cleanKey}`;
 }
+

@@ -47,7 +47,7 @@ import resultsRoute from './routes/results.js';
 const examOptionsRoute = require('./routes/exam-options.js');
 import examSetRandomRoute from './routes/api/exam-set-random.js';
 import examSetsRoute from './routes/api/exam-sets.js';
-import examSetOfficialRoute from './routes/api/exam-set-official.js';
+const examSetOfficialRoute = require('./routes/api/exam-set-official.js');
 import submitExamRoute from './routes/api/submit-exam.js';
 
 app.use('/api/register', registerRoute);

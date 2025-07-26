@@ -5,9 +5,17 @@
   <title>Exam Official</title>
   <link rel="stylesheet" href="style.css" />
   <script>
-    // ✅ Inject CDN path สำหรับ static hosting บน Render
     window.CDN_URL = 'https://pub-34e7eb6d8c104c519f69185ecad1949f.r2.dev';
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']]
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
 </head>
 <body>
   <div id="question-container"></div>
@@ -37,7 +45,6 @@
       img.src = src;
     }
 
-    // ✅ ตรวจ login แล้วค่อย init exam
     (async function checkLogin() {
       try {
         const res = await fetch('/api/me', { credentials: 'include' });
@@ -79,7 +86,7 @@
       updateProgress();
     }
 
-    function renderQuestion() {
+    async function renderQuestion() {
       const q = questions[currentIndex];
       const container = document.getElementById('question-container');
       container.innerHTML = '';
@@ -95,7 +102,6 @@
         ? q.choices.map((c, i) => {
             const cImageUrl = c.image ? getImageUrl(c.image) : null;
             if (cImageUrl) preloadImage(cImageUrl);
-
             const imgHTML = cImageUrl
               ? `<img src="${cImageUrl}" alt="" class="choice-image">`
               : '';
@@ -121,7 +127,9 @@
         </div>
       `;
 
-      if (window.MathJax) MathJax.typesetPromise();
+      if (window.MathJax) {
+        await MathJax.typesetPromise();
+      }
 
       container.querySelectorAll('input[name="answer"]').forEach(input => {
         input.onchange = e => {

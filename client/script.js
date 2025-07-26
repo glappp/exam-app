@@ -1,29 +1,32 @@
-let currentAnswer = -1;
-let currentQuestion = null;
-let currentLang = 'th'; // 🌐 รองรับหลายภาษา
 const CDN = import.meta.env.VITE_CDN_URL;
 
-// ตรวจสอบว่า login แล้ว
+let currentAnswer = -1;
+let currentQuestion = null;
+let currentLang = 'th';
+
+// 🔒 ตรวจสอบว่า login แล้ว
 async function checkLogin() {
   const res = await fetch("/api/me", { credentials: "include" });
-  if (!res.ok) {
-    alert("กรุณาเข้าสู่ระบบก่อนใช้งาน");
-    window.location.href = "login.html";
-    return;
-  }
-
+  if (!res.ok) return redirectToLogin();
   const data = await res.json();
   document.getElementById("greeting").innerText = `👋 สวัสดี, ${data.firstName || "ผู้ใช้"}`;
 }
 
-checkLogin();
-
-function getImageUrl(key) {
-  const cleanKey = key?.replace(/^\/?uploads\/+/, '').replace(/^\/+/, '');
-  return `${CDN}/${cleanKey}`;
+function redirectToLogin() {
+  alert("กรุณาเข้าสู่ระบบก่อนใช้งาน");
+  window.location.href = "login.html";
 }
 
+checkLogin();
 
+function normalizeImageKey(key) {
+  return key?.replace(/^\/?uploads\/+/, '').replace(/^\/+/, '');
+}
+
+function getImageUrl(key) {
+  const cleanKey = normalizeImageKey(key);
+  return `${CDN}/${cleanKey}`;
+}
 
 function getText(q) {
   return currentLang === 'th' ? q.textTh || q.text : q.textEn || q.text;
@@ -39,21 +42,17 @@ function changeLang(lang) {
 }
 
 async function startExam() {
-  const topicKey = document.getElementById('chapter').value;
   const chapterText = document.getElementById('chapter').value;
   const topicTag = topicMap[chapterText]; // แมปชื่อไทย → tag อังกฤษ
 
   const questionArea = document.getElementById('question-area');
-
-  const res = await fetch('http://localhost:3001/questions/all');
+  const res = await fetch('/api/practice/all');
   const data = await res.json();
   const allQuestions = data.questions || [];
 
-  console.log("📦 allQuestions:", allQuestions);
-
-const filtered = allQuestions.filter(q =>
-  q.attributes?.topic?.includes(`topic:${topicTag}`)
-);
+  const filtered = allQuestions.filter(q =>
+    q.attributes?.topic?.includes(`topic:${topicTag}`)
+  );
 
   if (filtered.length === 0) {
     questionArea.innerHTML = `<p style="color:red;">❌ ไม่พบโจทย์ในบท "${chapterText}"</p>`;
@@ -71,25 +70,25 @@ function renderCurrentQuestion() {
   const q = currentQuestion;
   const questionArea = document.getElementById('question-area');
 
-  console.log(import.meta.env.VITE_CDN_URL);
+  const choicesHTML = q.choices.map((c, i) => {
+    const img = c.image ? `<img src="${getImageUrl(c.image)}" style="max-height:40px;"><br>` : '';
+    return `
+      <button onclick="checkAnswer(${i})" style="margin:8px;">
+        ${img}${getChoiceText(c)}
+      </button>`;
+  }).join(" ");
 
-console.log(getImageUrl("uploads/images/questions/p6-chula-2022-o-q004.png"));
-
-  const choicesHTML = q.choices.map((c, i) =>
-    `<button onclick="checkAnswer(${i})" style="margin: 8px;">
-      ${c.image ? `<img src="${getImageUrl(normalizeImageKey(c.image))}"  style="max-height:40px;"><br>` : ""}
-      ${getChoiceText(c)}
-    </button>`
-  ).join(" ");
+  const questionImg = q.image
+    ? `<img src="${getImageUrl(q.image)}" style="max-width:100%; height:auto;"><br>`
+    : '';
 
   questionArea.innerHTML = `
     <p><strong>โจทย์:</strong> ${getText(q)}</p>
-    ${q.image ? `<img src="${getImageUrl(normalizeImageKey(q.image))}"  style="max-width:100%; height:auto;"><br>` : ''}
+    ${questionImg}
     <div>${choicesHTML}</div>
     <p id="result"></p>
   `;
 }
-
 
 function checkAnswer(choiceIndex) {
   const result = document.getElementById('result');
@@ -106,7 +105,7 @@ function checkAnswer(choiceIndex) {
 async function saveResult(question, selected, isCorrect) {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
-  const res = await fetch('http://localhost:3001/results', {
+  const res = await fetch('/api/result', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -125,7 +124,7 @@ async function saveResult(question, selected, isCorrect) {
 }
 
 async function showResults() {
-  const res = await fetch('http://localhost:3001/results');
+  const res = await fetch('/api/result');
   const results = await res.json();
 
   const container = document.getElementById("results");
@@ -145,21 +144,18 @@ async function showResults() {
 }
 
 async function analyzeWeakness() {
-  console.log("🧠 เริ่มวิเคราะห์จุดอ่อน...");
-  const res = await fetch('http://localhost:3001/analysis');
+  const res = await fetch('/api/analysis');
   const data = await res.json();
-  console.log("📊 ผลลัพธ์จาก /analysis:", data);
 
   const output = data.map(item => {
     const chapterKey = item.chapter;
-    const chapterName = getTopicLabel(chapterKey); // ดึงชื่อบทภาษาไทยจาก reverseTopicMap
+    const chapterName = getTopicLabel(chapterKey);
     const suggestion = item.accuracy < 70 ? '→ 🔁 ควรทำซ้ำ' :
                        item.accuracy < 85 ? '→ ⚠️ พอใช้ได้' :
                                             '→ ✅ ดีมาก';
     return `
       <p>
-        บท <strong>${chapterName}</strong>:
-        ทำถูก ${item.correct}/${item.total} ครั้ง
+        บท <strong>${chapterName}</strong>: ทำถูก ${item.correct}/${item.total} ครั้ง
         (<strong>${item.accuracy}%</strong>) ${suggestion}
       </p>
     `;
@@ -170,26 +166,21 @@ async function analyzeWeakness() {
 
 function nextStepAfterAnswer(isCorrect) {
   if (!isCorrect) {
-    showExplanation(currentQuestion); // ← สำหรับอนาคต
-    setTimeout(() => {
-      loadNextQuestion();
-    }, 2000);
+    showExplanation(currentQuestion);
+    setTimeout(loadNextQuestion, 2000);
   } else {
-    setTimeout(() => {
-      loadNextQuestion();
-    }, 1000);
+    setTimeout(loadNextQuestion, 1000);
   }
 }
 
 function showExplanation(question) {
   const explanationBox = document.getElementById("explanation");
-  if (!explanationBox) return; // ป้องกันกรณีไม่มี element
+  if (!explanationBox) return;
 
   explanationBox.innerHTML = question.explanation
     ? `<p><strong>เฉลย:</strong> ${question.explanation}</p>`
     : "";
 }
-
 
 async function logout() {
   await fetch("/api/logout", {
@@ -199,18 +190,6 @@ async function logout() {
   window.location.href = "login.html";
 }
 
-
 function loadNextQuestion() {
-  startExam();  // หรือ logic อื่นที่สุ่มข้อใหม่
+  startExam();
 }
-
-
-
-function getImageUrl(key) {
-  const cleanKey = key
-    .replace(/^\/?uploads\/+/, '')   // ล้าง 'uploads/' ด้านหน้า
-    .replace(/^\/+/, '');            // ล้าง '/' ด้านหน้าที่อาจหลงมา
-
-  return `${CDN}/${cleanKey}`;
-}
-

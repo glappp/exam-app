@@ -1,156 +1,197 @@
-const CDN = import.meta.env.VITE_CDN_URL;
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>Exam Official</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="question-container"></div>
+  <div id="progress"></div>
+  <div id="navigation">
+    <button id="prev-btn">⬅️</button>
+    <button id="next-btn">➡️</button>
+  </div>
+  <div id="submit-section" style="display: none;">
+    <button id="submit-btn">ส่งคำตอบ</button>
+  </div>
 
-function normalizeImageKey(key) {
-  return key?.replace(/^\/?uploads\/+/, '').replace(/^\/+/, '');
-}
+  <script type="module">
+    const CDN = import.meta.env.VITE_CDN_URL || '';
 
-function getImageUrl(key) {
-  const cleanKey = normalizeImageKey(key);
-  return `${CDN}/${cleanKey}`;
-}
-
-(async function checkLogin() {
-  const res = await fetch('/api/me', { credentials: 'include' });
-  if (!res.ok) {
-    alert('กรุณาเข้าสู่ระบบก่อนใช้งาน');
-    return window.location.href = '/login.html';
-  }
-  const { loggedIn } = await res.json();
-  if (!loggedIn) {
-    alert('กรุณาเข้าสู่ระบบก่อนใช้งาน');
-    return window.location.href = '/login.html';
-  }
-  initExam();
-})();
-
-let questions = [];
-let currentIndex = 0;
-let answers = [];
-
-function initExam() {
-  const params = new URLSearchParams(window.location.search);
-  const grade = params.get('grade');
-  const examType = params.get('examType');
-  const year = params.get('year');
-  fetchQuestions(grade, examType, year);
-}
-
-async function fetchQuestions(grade, examType, year) {
-  const source = decodeURIComponent(examType);
-  const res = await fetch(
-    `/api/exam-set-official?source=${encodeURIComponent(source)}&year=${year}&grade=${grade}`,
-    { credentials: 'include' }
-  );
-  if (!res.ok) {
-    alert("ไม่พบชุดข้อสอบที่เลือก กรุณาตรวจสอบใหม่");
-    return window.location.href = '/select-exam.html';
-  }
-  questions = await res.json();
-  answers = new Array(questions.length).fill(null);
-  renderQuestion();
-  updateProgress();
-}
-
-function renderQuestion() {
-  const q = questions[currentIndex];
-  const container = document.getElementById('question-container');
-
-  const choicesHTML = q.choices?.length
-    ? q.choices.map((c, i) => {
-        const imgHTML = c.image
-          ? `<img src="${getImageUrl(c.image)}" class="choice-image">`
-          : '';
-        return `
-          <label class="choice-item">
-            <input type="radio" name="answer" value="${i}" ${answers[currentIndex] == i ? 'checked' : ''}>
-            ${c.textTh || ''} ${imgHTML}
-          </label>`;
-      }).join('<br>')
-    : `<input type="text" id="short-answer"
-         value="${answers[currentIndex] || ''}"
-         placeholder="พิมพ์คำตอบ">`;
-
-  container.innerHTML = `
-    <div class="question-box">
-      <div class="question-text">${(q.textTh || '').replace(/\n/g, '<br>')}</div>
-      ${q.image ? `<img src="${getImageUrl(q.image)}" class="question-image">` : ''}
-      <div class="answer-section">
-        ${choicesHTML}
-      </div>
-    </div>
-  `;
-
-  if (window.MathJax) MathJax.typesetPromise();
-
-  container.querySelectorAll('input[name="answer"]').forEach(input => {
-    input.onchange = e => {
-      answers[currentIndex] = parseInt(e.target.value);
-    };
-  });
-
-  const short = container.querySelector('#short-answer');
-  if (short) {
-    short.oninput = e => {
-      answers[currentIndex] = e.target.value;
-    };
-  }
-}
-
-function updateProgress() {
-  document.getElementById('progress').textContent =
-    `ข้อ ${currentIndex + 1} / ${questions.length}`;
-  document.getElementById('prev-btn').disabled = currentIndex === 0;
-  document.getElementById('next-btn').innerHTML =
-    currentIndex === questions.length - 1 ? '✅' : '➡️';
-}
-
-document.getElementById('prev-btn').onclick = () => {
-  if (currentIndex > 0) {
-    currentIndex--;
-    renderQuestion();
-    updateProgress();
-  }
-};
-
-document.getElementById('next-btn').onclick = () => {
-  if (currentIndex < questions.length - 1) {
-    currentIndex++;
-    renderQuestion();
-    updateProgress();
-  } else {
-    const missing = answers.map((a, i) => (a === null || a === '') ? i + 1 : null)
-                           .filter(x => x);
-    if (missing.length) {
-      return alert(`คุณยังไม่ได้ตอบข้อ: ${missing.join(', ')}\nกรุณาตอบให้ครบก่อนส่ง`);
+    function normalizeImageKey(key) {
+      return key?.replace(/^\/?uploads\/+/, '').replace(/^\/+/, '');
     }
-    if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการส่งคำตอบทั้งหมด?")) return;
-    document.getElementById('submit-section').style.display = 'block';
-    document.getElementById('navigation').style.display = 'none';
-  }
-};
 
-document.getElementById('submit-btn').onclick = async () => {
-  const params = new URLSearchParams(window.location.search);
-  const grade = params.get('grade');
-  const examType = params.get('examType');
-  const year = params.get('year');
-  const res = await fetch('/api/submit-exam', {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      mode: 'official',
-      source: examType,
-      year,
-      grade,
-      questions: questions.map(q => q.id),
-      answers
-    })
-  });
-  if (!res.ok) {
-    return alert('ส่งคำตอบไม่สำเร็จ กรุณาลองใหม่');
-  }
-  const result = await res.json();
-  localStorage.setItem("examResult", JSON.stringify(result));
-  window.location.href = "/result-competitive.html";
-};
+    function getImageUrl(key) {
+      const cleanKey = normalizeImageKey(key);
+      return `${CDN}/${cleanKey}`;
+    }
+
+    function preloadImage(src) {
+      const img = new Image();
+      img.src = src;
+    }
+
+    (async function checkLogin() {
+      const res = await fetch('/api/me', { credentials: 'include' });
+      if (!res.ok) {
+        alert('กรุณาเข้าสู่ระบบก่อนใช้งาน');
+        return (window.location.href = '/login.html');
+      }
+      const { loggedIn } = await res.json();
+      if (!loggedIn) {
+        alert('กรุณาเข้าสู่ระบบก่อนใช้งาน');
+        return (window.location.href = '/login.html');
+      }
+      initExam();
+    })();
+
+    let questions = [];
+    let currentIndex = 0;
+    let answers = [];
+
+    function initExam() {
+      const params = new URLSearchParams(window.location.search);
+      const grade = params.get('grade');
+      const examType = params.get('examType');
+      const year = params.get('year');
+      fetchQuestions(grade, examType, year);
+    }
+
+    async function fetchQuestions(grade, examType, year) {
+      const source = decodeURIComponent(examType);
+      const res = await fetch(
+        `/api/exam-set-official?source=${encodeURIComponent(source)}&year=${year}&grade=${grade}`,
+        { credentials: 'include' }
+      );
+      if (!res.ok) {
+        alert('ไม่พบชุดข้อสอบที่เลือก กรุณาตรวจสอบใหม่');
+        return (window.location.href = '/select-exam.html');
+      }
+      questions = await res.json();
+      answers = new Array(questions.length).fill(null);
+      renderQuestion();
+      updateProgress();
+    }
+
+    function renderQuestion() {
+      const q = questions[currentIndex];
+      const container = document.getElementById('question-container');
+      container.innerHTML = '';
+
+      const qImageUrl = q.image ? getImageUrl(q.image) : null;
+      if (qImageUrl) preloadImage(qImageUrl);
+
+      const imageHTML = qImageUrl
+        ? `<img src="${qImageUrl}" alt="" class="question-image">`
+        : '';
+
+      const choicesHTML = q.choices?.length
+        ? q.choices
+            .map((c, i) => {
+              const cImageUrl = c.image ? getImageUrl(c.image) : null;
+              if (cImageUrl) preloadImage(cImageUrl);
+
+              const imgHTML = cImageUrl
+                ? `<img src="${cImageUrl}" alt="" class="choice-image">`
+                : '';
+              return `
+                <label class="choice-item">
+                  <input type="radio" name="answer" value="${i}" ${
+                answers[currentIndex] == i ? 'checked' : ''
+              }>
+                  ${c.textTh || ''} ${imgHTML}
+                </label>`;
+            })
+            .join('<br>')
+        : `<input type="text" id="short-answer"
+             value="${answers[currentIndex] || ''}"
+             placeholder="พิมพ์คำตอบ">`;
+
+      container.innerHTML = `
+        <div class="question-box">
+          <div class="question-text">${(q.textTh || '').replace(/\n/g, '<br>')}</div>
+          ${imageHTML}
+          <div class="answer-section">
+            ${choicesHTML}
+          </div>
+        </div>
+      `;
+
+      if (window.MathJax) MathJax.typesetPromise();
+
+      container.querySelectorAll('input[name="answer"]').forEach(input => {
+        input.onchange = e => {
+          answers[currentIndex] = parseInt(e.target.value);
+        };
+      });
+
+      const short = container.querySelector('#short-answer');
+      if (short) {
+        short.oninput = e => {
+          answers[currentIndex] = e.target.value;
+        };
+      }
+    }
+
+    function updateProgress() {
+      document.getElementById('progress').textContent =
+        `ข้อ ${currentIndex + 1} / ${questions.length}`;
+      document.getElementById('prev-btn').disabled = currentIndex === 0;
+      document.getElementById('next-btn').innerHTML =
+        currentIndex === questions.length - 1 ? '✅' : '➡️';
+    }
+
+    document.getElementById('prev-btn').onclick = () => {
+      if (currentIndex > 0) {
+        currentIndex--;
+        renderQuestion();
+        updateProgress();
+      }
+    };
+
+    document.getElementById('next-btn').onclick = () => {
+      if (currentIndex < questions.length - 1) {
+        currentIndex++;
+        renderQuestion();
+        updateProgress();
+      } else {
+        const missing = answers.map((a, i) => (a === null || a === '') ? i + 1 : null).filter(x => x);
+        if (missing.length) {
+          return alert(`คุณยังไม่ได้ตอบข้อ: ${missing.join(', ')}\nกรุณาตอบให้ครบก่อนส่ง`);
+        }
+        if (!confirm("คุณแน่ใจหรือไม่ว่าต้องการส่งคำตอบทั้งหมด?")) return;
+        document.getElementById('submit-section').style.display = 'block';
+        document.getElementById('navigation').style.display = 'none';
+      }
+    };
+
+    document.getElementById('submit-btn').onclick = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const grade = params.get('grade');
+      const examType = params.get('examType');
+      const year = params.get('year');
+      const res = await fetch('/api/submit-exam', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'official',
+          source: examType,
+          year,
+          grade,
+          questions: questions.map(q => q.id),
+          answers
+        })
+      });
+      if (!res.ok) {
+        return alert('ส่งคำตอบไม่สำเร็จ กรุณาลองใหม่');
+      }
+      const result = await res.json();
+      localStorage.setItem("examResult", JSON.stringify(result));
+      window.location.href = "/result-competitive.html";
+    };
+  </script>
+</body>
+</html>

@@ -67,14 +67,14 @@ function renderCurrentQuestion() {
 
   const choicesHTML = q.choices.map((c, i) =>
     `<button onclick="checkAnswer(${i})" style="margin: 8px;">
-      ${c.image ? `<img src="/uploads/${c.image}" style="max-height:40px;"><br>` : ""}
+      ${c.image ? `<img src="${getImageUrl(c.image)}" style="max-height:40px;"><br>` : ""}
       ${getChoiceText(c)}
     </button>`
   ).join(" ");
 
   questionArea.innerHTML = `
     <p><strong>โจทย์:</strong> ${getText(q)}</p>
-    ${q.image ? `<img src="/uploads/${q.image}" style="max-width:100%; height:auto;"><br>` : ''}
+    ${q.image ? `<img src="${getImageUrl(q.image)}" style="max-width:100%; height:auto;"><br>` : ''}
     <div>${choicesHTML}</div>
     <p id="result"></p>
   `;

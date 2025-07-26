@@ -41,14 +41,14 @@ app.use(session({
 app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-import registerRoute from './routes/register.js';
-import questionsRoute from './routes/questions.js';
-import resultsRoute from './routes/results.js';
+const registerRoute = require('./routes/register.js');
+const questionsRoute = require('./routes/questions.js');
+const resultsRoute = require('./routes/results.js');
 const examOptionsRoute = require('./routes/exam-options.js');
-import examSetRandomRoute from './routes/api/exam-set-random.js';
-import examSetsRoute from './routes/api/exam-sets.js';
+const examSetRandomRoute = require('./routes/api/exam-set-random.js');
+const examSetsRoute = require('./routes/api/exam-sets.js');
 const examSetOfficialRoute = require('./routes/api/exam-set-official.js');
-import submitExamRoute from './routes/api/submit-exam.js';
+const submitExamRoute = require('./routes/api/submit-exam.js');
 
 app.use('/api/register', registerRoute);
 app.use('/questions', questionsRoute);

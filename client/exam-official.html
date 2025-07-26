@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <title>Exam Official</title>
   <link rel="stylesheet" href="style.css" />
+  <script>
+    // ✅ Inject CDN path สำหรับ static hosting บน Render
+    window.CDN_URL = 'https://pub-34e7eb6d8c104c519f69185ecad1949f.r2.dev';
+  </script>
 </head>
 <body>
   <div id="question-container"></div>
@@ -17,7 +21,7 @@
   </div>
 
   <script type="module">
-    const CDN = import.meta.env.VITE_CDN_URL || '';
+    const CDN = window.CDN_URL || '';
 
     function normalizeImageKey(key) {
       return key?.replace(/^\/?uploads\/+/, '').replace(/^\/+/, '');
@@ -33,18 +37,18 @@
       img.src = src;
     }
 
+    // ✅ ตรวจ login แล้วค่อย init exam
     (async function checkLogin() {
-      const res = await fetch('/api/me', { credentials: 'include' });
-      if (!res.ok) {
+      try {
+        const res = await fetch('/api/me', { credentials: 'include' });
+        if (!res.ok) throw new Error("Login failed");
+        const { loggedIn } = await res.json();
+        if (!loggedIn) throw new Error("Not logged in");
+        initExam();
+      } catch (err) {
         alert('กรุณาเข้าสู่ระบบก่อนใช้งาน');
-        return (window.location.href = '/login.html');
+        window.location.href = '/login.html';
       }
-      const { loggedIn } = await res.json();
-      if (!loggedIn) {
-        alert('กรุณาเข้าสู่ระบบก่อนใช้งาน');
-        return (window.location.href = '/login.html');
-      }
-      initExam();
     })();
 
     let questions = [];
@@ -67,7 +71,7 @@
       );
       if (!res.ok) {
         alert('ไม่พบชุดข้อสอบที่เลือก กรุณาตรวจสอบใหม่');
-        return (window.location.href = '/select-exam.html');
+        return window.location.href = '/select-exam.html';
       }
       questions = await res.json();
       answers = new Array(questions.length).fill(null);
@@ -88,23 +92,21 @@
         : '';
 
       const choicesHTML = q.choices?.length
-        ? q.choices
-            .map((c, i) => {
-              const cImageUrl = c.image ? getImageUrl(c.image) : null;
-              if (cImageUrl) preloadImage(cImageUrl);
+        ? q.choices.map((c, i) => {
+            const cImageUrl = c.image ? getImageUrl(c.image) : null;
+            if (cImageUrl) preloadImage(cImageUrl);
 
-              const imgHTML = cImageUrl
-                ? `<img src="${cImageUrl}" alt="" class="choice-image">`
-                : '';
-              return `
-                <label class="choice-item">
-                  <input type="radio" name="answer" value="${i}" ${
-                answers[currentIndex] == i ? 'checked' : ''
-              }>
-                  ${c.textTh || ''} ${imgHTML}
-                </label>`;
-            })
-            .join('<br>')
+            const imgHTML = cImageUrl
+              ? `<img src="${cImageUrl}" alt="" class="choice-image">`
+              : '';
+            return `
+              <label class="choice-item">
+                <input type="radio" name="answer" value="${i}" ${
+              answers[currentIndex] == i ? 'checked' : ''
+            }>
+                ${c.textTh || ''} ${imgHTML}
+              </label>`;
+          }).join('<br>')
         : `<input type="text" id="short-answer"
              value="${answers[currentIndex] || ''}"
              placeholder="พิมพ์คำตอบ">`;
@@ -157,7 +159,9 @@
         renderQuestion();
         updateProgress();
       } else {
-        const missing = answers.map((a, i) => (a === null || a === '') ? i + 1 : null).filter(x => x);
+        const missing = answers
+          .map((a, i) => (a === null || a === '') ? i + 1 : null)
+          .filter(x => x);
         if (missing.length) {
           return alert(`คุณยังไม่ได้ตอบข้อ: ${missing.join(', ')}\nกรุณาตอบให้ครบก่อนส่ง`);
         }

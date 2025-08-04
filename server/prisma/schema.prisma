@@ -96,6 +96,43 @@ model ExamSetMetadata {
   isActive      Boolean @default(true)
 }
 
+model Topic {
+  id        String        @id
+  labelTh   String
+  labelEn   String
+  grade     String        // P4, P5, P6
+  skills    TopicSkill[]
+}
+
+model Skill {
+  id        String        @id
+  labelTh   String
+  labelEn   String
+  grade     String?       // optional: บาง skill เจาะจง grade เดียว
+  topics    TopicSkill[]
+}
+
+model TopicSkill {
+  id        Int      @id @default(autoincrement())
+  topic     Topic    @relation(fields: [topicId], references: [id])
+  topicId   String
+  skill     Skill    @relation(fields: [skillId], references: [id])
+  skillId   String
+
+  @@unique([topicId, skillId])
+}
+
+model Trap {
+  id        String   @id
+  labelTh   String
+  labelEn   String
+}
+
+
+
+
+
+
 /// 🗂️ AttributeDictionary (HK Project)
 ///
 /// ใช้เก็บชุดคำศัพท์กลางของ attribute สำหรับระบบคลังข้อสอบ (HK Project)

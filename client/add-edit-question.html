@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>Add/Edit Question</title>
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    label { display: block; margin-top: 10px; }
+    input, select, textarea { width: 100%; margin-top: 5px; }
+    .choice-block { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
+    .image-preview { max-width: 200px; margin-top: 5px; }
+    #preview-th, #preview-en { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1 id="form-title">Add Question</h1>
+
+  <label>Topic</label>
+  <select id="topic-select"></select>
+
+  <label>Skill</label>
+  <select id="skill-select"></select>
+
+  <label>Difficulty</label>
+  <select id="difficulty-select">
+    <option value="easy">Easy</option>
+    <option value="medium">Medium</option>
+    <option value="hard">Hard</option>
+  </select>
+
+  <label>Estimated Time (sec)</label>
+  <input type="number" id="estimated-time" />
+
+  <label>Question Text (TH)</label>
+  <textarea id="text-th"></textarea>
+
+  <label>Question Text (EN)</label>
+  <textarea id="text-en"></textarea>
+
+  <h3>Preview (TH)</h3>
+  <div id="preview-th"></div>
+
+  <h3>Preview (EN)</h3>
+  <div id="preview-en"></div>
+
+  <label>Question Image</label>
+  <input type="file" id="question-image" />
+  <img id="question-image-preview" class="image-preview" />
+
+  <div id="choices-container"></div>
+
+  <label>Correct Answer</label>
+  <select id="answer-select">
+    <option value="">-- Select --</option>
+    <option value="0">Choice 1</option>
+    <option value="1">Choice 2</option>
+    <option value="2">Choice 3</option>
+    <option value="3">Choice 4</option>
+  </select>
+
+  <button id="submit-btn">Save Question</button>
+
+  <script>
+    const apiBase = '/api';
+    const r2PublicUrl = 'https://pub-34e7eb6d8c104c519f69185ecad1949f.r2.dev/';
+    const questionId = new URLSearchParams(location.search).get('id');
+
+    const topicSelect = document.getElementById('topic-select');
+    const skillSelect = document.getElementById('skill-select');
+    const choicesContainer = document.getElementById('choices-container');
+    const questionImageInput = document.getElementById('question-image');
+    const questionImagePreview = document.getElementById('question-image-preview');
+
+    let questionImageKey = null;
+    let choiceImageKeys = [null, null, null, null];
+
+    async function fetchTopics() {
+      const res = await fetch(`${apiBase}/topics`);
+      const topics = await res.json();
+      topicSelect.innerHTML = topics.map(t => `<option value="${t.id}">${t.nameTh}</option>`).join('');
+    }
+
+    async function fetchSkills(topicId) {
+      const res = await fetch(`${apiBase}/skills?topicId=${topicId}`);
+      const skills = await res.json();
+      skillSelect.innerHTML = skills.map(s => `<option value="${s.id}">${s.nameTh}</option>`).join('');
+    }
+
+    topicSelect.addEventListener('change', () => {
+      fetchSkills(topicSelect.value);
+    });
+
+    async function uploadImage(file) {
+      const key = `question-assets/${Date.now()}-${file.name}`;
+      const signedRes = await fetch(`${apiBase}/r2/signed-url?key=${encodeURIComponent(key)}`);
+      const { url } = await signedRes.json();
+      await fetch(url, { method: 'PUT', body: file });
+      return key;
+    }
+
+    questionImageInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        questionImageKey = await uploadImage(file);
+        questionImagePreview.src = r2PublicUrl + questionImageKey;
+      }
+    });
+
+    function renderChoiceInputs() {
+      choicesContainer.innerHTML = '';
+      for (let i = 0; i < 4; i++) {
+        const block = document.createElement('div');
+        block.className = 'choice-block';
+        block.innerHTML = `
+          <label>Choice ${i + 1} Text (TH)</label>
+          <input type="text" id="choice-th-${i}" />
+          <label>Choice ${i + 1} Text (EN)</label>
+          <input type="text" id="choice-en-${i}" />
+          <label>Choice ${i + 1} Image</label>
+          <input type="file" id="choice-img-${i}" />
+          <img id="choice-preview-${i}" class="image-preview" />
+        `;
+        choicesContainer.appendChild(block);
+
+        document.getElementById(`choice-img-${i}`).addEventListener('change', async (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            const key = await uploadImage(file);
+            choiceImageKeys[i] = key;
+            document.getElementById(`choice-preview-${i}`).src = r2PublicUrl + key;
+          }
+        });
+      }
+    }
+
+    async function preloadQuestion(id) {
+      const res = await fetch(`${apiBase}/questions/${id}`);
+      const q = await res.json();
+      document.getElementById('form-title').textContent = 'Edit Question';
+      document.getElementById('text-th').value = q.textTh;
+      document.getElementById('text-en').value = q.textEn;
+      document.getElementById('estimated-time').value = q.estimatedTimeSec || '';
+      questionImageKey = q.image;
+      if (questionImageKey) questionImagePreview.src = r2PublicUrl + questionImageKey;
+      topicSelect.value = q.attributes.topicId;
+      await fetchSkills(q.attributes.topicId);
+      skillSelect.value = q.attributes.skillId;
+      document.getElementById('difficulty-select').value = q.attributes.difficulty;
+      document.getElementById('answer-select').value = q.answer;
+
+      q.choices.forEach((c, i) => {
+        document.getElementById(`choice-th-${i}`).value = c.textTh || '';
+        document.getElementById(`choice-en-${i}`).value = c.textEn || '';
+        if (c.image) {
+          choiceImageKeys[i] = c.image;
+          document.getElementById(`choice-preview-${i}`).src = r2PublicUrl + c.image;
+        }
+      });
+
+      updatePreview();
+    }
+
+    function updatePreview() {
+      const th = document.getElementById('text-th').value;
+      const en = document.getElementById('text-en').value;
+      document.getElementById('preview-th').innerHTML = th;
+      document.getElementById('preview-en').innerHTML = en;
+      MathJax.typesetPromise([document.getElementById('preview-th'), document.getElementById('preview-en')]);
+    }
+
+    document.getElementById('text-th').addEventListener('input', updatePreview);
+    document.getElementById('text-en').addEventListener('input', updatePreview);
+
+    function validateForm() {
+      const errors = [];
+      if (!topicSelect.value) errors.push('กรุณาเลือก Topic');
+      if (!skillSelect.value) errors.push('กรุณาเลือก Skill');
+      if (!document.getElementById('text-th').value && !document.getElementById('text-en').value)
+        errors.push('กรุณากรอกโจทย์อย่างน้อยหนึ่งภาษา');
+      for (let i = 0; i < 4; i++) {
+        const th = document.getElementById(`choice-th-${i}`).value;
+        const en = document.getElementById(`choice-en-${i}`).value;
+        if (!th && !en && !choiceImageKeys[i]) {
+          errors.push(`Choice ${i + 1} ต้องมีอย่างน้อยหนึ่งข้อมูล`);
+        }
+      }
+      if (document.getElementById('answer-select').value === '') errors.push('กรุณาเลือกคำตอบที่ถูกต้อง');
+      return errors;
+    }
+
+    document.getElementById('submit-btn').addEventListener('click', async () => {
+      const errors = validateForm();
+      if (errors.length > 0) {
+        alert('พบข้อผิดพลาด:\n' + errors.join('\n'));
+        return;
+      }
+
+      const payload = {
+        textTh: document.getElementById('text-th').value,
+        textEn: document.getElementById('text-en').value,
+        image: questionImageKey,
+        choices: Array.from({ length: 4 }, (_, i) => ({
+          textTh: document.getElementById(`choice-th-${i}`).value,
+          textEn: document.getElementById(`choice-en-${i}`).value,
+          image: choiceImageKeys[i]
+        })),
+        answer: parseInt(document.getElementById('answer-select').value),
+        attributes: {
+          topicId: topicSelect.value,
+          skillId: skillSelect.value,
+          difficulty: document.getElementById('difficulty-select').value
+        },
+        estimatedTimeSec: parseInt(document.getElementById('estimated-time').value) || null
+      };
+
+      const method = questionId ? 'PUT' : 'POST';
+      const url = questionId ? `${apiBase}/questions/${questionId}` : `${apiBase}/questions`;
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error('Save failed');
+        alert('บันทึกสำเร็จ!');
+        location.href = '/questions'; // หรือ redirect ไปหน้าอื่นตามระบบคุณ
+      } catch (err) {
+        alert('เกิดข้อผิดพลาดในการบันทึก');
+        console.error(err);
+      }
+    });
+
+    // Init
+    (async () => {
+      await fetchTopics();
+      renderChoiceInputs();
+      if (questionId) await preloadQuestion(questionId);
+    })();
+  </script>
+</body>
+</html>

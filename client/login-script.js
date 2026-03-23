@@ -15,6 +15,7 @@ async function login() {
 
     if (res.ok) {
       status.innerText = "✅ เข้าสู่ระบบสำเร็จ";
+      localStorage.setItem("user", JSON.stringify(data.user));
       setTimeout(() => {
         window.location.href = "dashboard.html";
       }, 1000);

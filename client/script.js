@@ -38,7 +38,7 @@ async function startExam() {
 
   const questionArea = document.getElementById('question-area');
 
-  const res = await fetch('http://localhost:3001/questions/all');
+  const res = await fetch('/questions/all');
   const data = await res.json();
   const allQuestions = data.questions || [];
 
@@ -95,11 +95,12 @@ function checkAnswer(choiceIndex) {
 async function saveResult(question, selected, isCorrect) {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
-  const res = await fetch('http://localhost:3001/results', {
+  const res = await fetch('/results', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({
-      userId: user.id || "unknown",
+      userId: user.id || null,
       questionId: question.id,
       selected,
       isCorrect
@@ -114,7 +115,7 @@ async function saveResult(question, selected, isCorrect) {
 }
 
 async function showResults() {
-  const res = await fetch('http://localhost:3001/results');
+  const res = await fetch('/results');
   const results = await res.json();
 
   const container = document.getElementById("results");
@@ -134,27 +135,8 @@ async function showResults() {
 }
 
 async function analyzeWeakness() {
-  console.log("🧠 เริ่มวิเคราะห์จุดอ่อน...");
-  const res = await fetch('http://localhost:3001/analysis');
-  const data = await res.json();
-  console.log("📊 ผลลัพธ์จาก /analysis:", data);
-
-  const output = data.map(item => {
-    const chapterKey = item.chapter;
-    const chapterName = getTopicLabel(chapterKey); // ดึงชื่อบทภาษาไทยจาก reverseTopicMap
-    const suggestion = item.accuracy < 70 ? '→ 🔁 ควรทำซ้ำ' :
-                       item.accuracy < 85 ? '→ ⚠️ พอใช้ได้' :
-                                            '→ ✅ ดีมาก';
-    return `
-      <p>
-        บท <strong>${chapterName}</strong>:
-        ทำถูก ${item.correct}/${item.total} ครั้ง
-        (<strong>${item.accuracy}%</strong>) ${suggestion}
-      </p>
-    `;
-  }).join("");
-
-  document.getElementById("analysis").innerHTML = output;
+  const el = document.getElementById("analysis");
+  if (el) el.innerHTML = "<p>ฟีเจอร์นี้ยังไม่พร้อมใช้งาน</p>";
 }
 
 function nextStepAfterAnswer(isCorrect) {

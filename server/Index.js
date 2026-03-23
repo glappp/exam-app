@@ -52,9 +52,6 @@ app.use('/api/exam-sets', require('./routes/api/exam-sets'));
 app.use('/api/exam-set-official', require('./routes/api/exam-set-official'));
 app.use('/api/submit-exam', require('./routes/api/submit-exam'));
 
-const examSetOfficialRoutes = require('./routes/api/exam-set-official');
-app.use(examSetOfficialRoutes);
-
 
 // ✅ Auth APIs
 app.post('/api/login', async (req, res) => {

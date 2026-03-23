@@ -55,7 +55,7 @@ function renderQuestion() {
   container.innerHTML = `
     <div class="question-box">
       <div class="question-text">${q.textTh}</div>
-      ${q.image ? `<img src="${q.image}" class="question-image">` : ''}
+      ${q.image ? `<img src="/uploads/${q.image}" class="question-image">` : ''}
       <div class="answer-section">
         ${q.choices && q.choices.length ? q.choices.map((c, i) => `
           <label>
@@ -132,6 +132,7 @@ document.getElementById('submit-btn').addEventListener('click', async () => {
   const res = await fetch('/api/submit-exam', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({
       mode,
       questions: questions.map(q => q.id),

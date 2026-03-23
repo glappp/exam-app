@@ -11,9 +11,13 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'ข้อมูลคำตอบไม่ถูกต้อง' });
     }
 
-    const records = await prisma.question.findMany({
+    const fetched = await prisma.question.findMany({
       where: { id: { in: questions } }
     });
+
+    // เรียงลำดับให้ตรงกับ questions array ที่ client ส่งมา
+    const recordMap = new Map(fetched.map(q => [q.id, q]));
+    const records = questions.map(id => recordMap.get(id)).filter(Boolean);
 
     let correctCount = 0;
     let score = 0;
@@ -39,8 +43,13 @@ router.post('/', async (req, res) => {
       }
     });
 
-    // 🔐 ใส่ studentProfileId ชั่วคราว
-    const studentProfileId = req.session?.studentProfileId || 1;
+    // ดึง studentProfileId จาก session userId
+    const userId = req.session?.userId;
+    let studentProfileId = 1;
+    if (userId) {
+      const profile = await prisma.studentProfile.findFirst({ where: { userId } });
+      if (profile) studentProfileId = profile.id;
+    }
 
     // ⏺️ บันทึกผลสอบ
     await prisma.examResult.create({

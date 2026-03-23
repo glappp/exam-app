@@ -7,13 +7,16 @@ router.post('/', async (req, res) => {
   const { userId, questionId, selected, isCorrect } = req.body;
   console.log("📥 Raw req.body:", req.body);
 
+  // แปลง userId เป็น Int — ถ้าเป็น "unknown" หรือไม่มีค่า ให้ใช้ null
+  const parsedUserId = userId && !isNaN(parseInt(userId)) ? parseInt(userId) : null;
+
   try {
     const result = await prisma.result.create({
       data: {
         questionId: questionId.toString(),
         selected: selected.toString(),
         correct: isCorrect,
-        userId: userId  // ✅ เปลี่ยนตรงนี้
+        userId: parsedUserId
       }
     });
 

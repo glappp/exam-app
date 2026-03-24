@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>จัดการ Attribute Dictionary</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; color: #222; }
+
+    .topbar {
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 0 24px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar-title { font-weight: 600; font-size: 16px; }
+    .topbar a { font-size: 13px; color: #555; text-decoration: none; }
+    .topbar a:hover { color: #222; }
+
+    .container { max-width: 960px; margin: 32px auto; padding: 0 16px; }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .toolbar select, .toolbar input {
+      padding: 7px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      background: #fff;
+    }
+    .btn {
+      padding: 7px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+    .btn-edit { background: #f0f0f0; color: #333; }
+    .btn-edit:hover { background: #e0e0e0; }
+    .btn-delete { background: #fee2e2; color: #b91c1c; }
+    .btn-delete:hover { background: #fecaca; }
+
+    table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    thead { background: #f9fafb; }
+    th { padding: 10px 14px; text-align: left; font-size: 13px; color: #555; border-bottom: 1px solid #e5e7eb; }
+    td { padding: 10px 14px; font-size: 14px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-subject { background: #dbeafe; color: #1d4ed8; }
+    .badge-grade   { background: #dcfce7; color: #166534; }
+    .badge-topic   { background: #fef9c3; color: #854d0e; }
+    .badge-skill   { background: #ede9fe; color: #6d28d9; }
+    .badge-trap    { background: #fee2e2; color: #b91c1c; }
+
+    .count { font-size: 13px; color: #888; margin-bottom: 10px; }
+
+    /* Modal */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 10px;
+      padding: 24px;
+      width: 420px;
+      max-width: 95vw;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    }
+    .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 18px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; color: #555; margin-bottom: 5px; font-weight: 500; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+    .form-group input:disabled { background: #f5f5f5; color: #999; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+    .btn-cancel { background: #f0f0f0; color: #333; }
+    .btn-cancel:hover { background: #e0e0e0; }
+
+    .msg { padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 14px; display: none; }
+    .msg-success { background: #dcfce7; color: #166534; }
+    .msg-error   { background: #fee2e2; color: #b91c1c; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-title">Attribute Dictionary</span>
+  <a href="/dashboard.html">← กลับหน้าหลัก</a>
+</div>
+
+<div class="container">
+  <div id="msg" class="msg"></div>
+
+  <div class="toolbar">
+    <select id="filter-type" onchange="applyFilter()">
+      <option value="">ทุก type</option>
+      <option value="subject">subject</option>
+      <option value="grade">grade</option>
+      <option value="topic">topic</option>
+      <option value="skill">skill</option>
+      <option value="trap">trap</option>
+    </select>
+    <select id="filter-grade" onchange="applyFilter()">
+      <option value="">ทุก grade</option>
+      <option value="4">ป.4</option>
+      <option value="5">ป.5</option>
+      <option value="6">ป.6</option>
+      <option value="7">ม.1</option>
+      <option value="8">ม.2</option>
+      <option value="9">ม.3</option>
+    </select>
+    <input type="text" id="filter-search" placeholder="ค้นหา key / ชื่อ" oninput="applyFilter()" style="width:200px">
+    <button class="btn btn-primary" onclick="openAddModal()">+ เพิ่ม Attribute</button>
+  </div>
+
+  <div class="count" id="count"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Key</th>
+        <th>Type</th>
+        <th>ภาษาไทย</th>
+        <th>English</th>
+        <th>Grade</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="table-body">
+      <tr><td colspan="6" style="text-align:center;color:#aaa;padding:32px">กำลังโหลด...</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Modal Add/Edit -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <h3 id="modal-title">เพิ่ม Attribute</h3>
+    <div class="form-group">
+      <label>Key <span style="color:#b91c1c">*</span></label>
+      <input type="text" id="f-key" placeholder="เช่น topic:fractions-p5">
+      <div style="font-size:11px;color:#888;margin-top:4px">รูปแบบ: type:name เช่น topic:area-p6, skill:mental-math</div>
+    </div>
+    <div class="form-group">
+      <label>Type <span style="color:#b91c1c">*</span></label>
+      <select id="f-type" onchange="onTypeChange()">
+        <option value="">-- เลือก type --</option>
+        <option value="subject">subject</option>
+        <option value="grade">grade</option>
+        <option value="topic">topic</option>
+        <option value="skill">skill</option>
+        <option value="trap">trap</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>ชื่อภาษาไทย <span style="color:#b91c1c">*</span></label>
+      <input type="text" id="f-th" placeholder="เช่น เศษส่วน (ป.5)">
+    </div>
+    <div class="form-group">
+      <label>ชื่อภาษาอังกฤษ <span style="color:#b91c1c">*</span></label>
+      <input type="text" id="f-en" placeholder="เช่น Fractions (Grade 5)">
+    </div>
+    <div class="form-group" id="grade-group" style="display:none">
+      <label>Grade (ชั้นเรียน)</label>
+      <select id="f-grade">
+        <option value="">-- ไม่ระบุ --</option>
+        <option value="4">4 (ป.4)</option>
+        <option value="5">5 (ป.5)</option>
+        <option value="6">6 (ป.6)</option>
+        <option value="7">7 (ม.1)</option>
+        <option value="8">8 (ม.2)</option>
+        <option value="9">9 (ม.3)</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal()">ยกเลิก</button>
+      <button class="btn btn-primary" onclick="submitModal()">บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let allItems = [];
+  let editingKey = null;
+
+  async function loadData() {
+    const res = await fetch('/api/attribute-dict');
+    allItems = await res.json();
+    applyFilter();
+  }
+
+  function applyFilter() {
+    const type   = document.getElementById('filter-type').value;
+    const grade  = document.getElementById('filter-grade').value;
+    const search = document.getElementById('filter-search').value.toLowerCase();
+
+    let filtered = allItems;
+    if (type)   filtered = filtered.filter(i => i.type === type);
+    if (grade)  filtered = filtered.filter(i => i.grade === parseInt(grade));
+    if (search) filtered = filtered.filter(i =>
+      i.key.toLowerCase().includes(search) ||
+      i.th.toLowerCase().includes(search) ||
+      i.en.toLowerCase().includes(search)
+    );
+
+    document.getElementById('count').textContent = `แสดง ${filtered.length} จาก ${allItems.length} รายการ`;
+    renderTable(filtered);
+  }
+
+  function renderTable(items) {
+    const tbody = document.getElementById('table-body');
+    if (!items.length) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#aaa;padding:32px">ไม่พบรายการ</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = items.map(i => `
+      <tr>
+        <td style="font-family:monospace;font-size:12px">${i.key}</td>
+        <td><span class="badge badge-${i.type}">${i.type}</span></td>
+        <td>${i.th}</td>
+        <td style="color:#666">${i.en}</td>
+        <td style="color:#888">${i.grade ?? '-'}</td>
+        <td style="white-space:nowrap">
+          <button class="btn btn-sm btn-edit" onclick="openEditModal('${escapeKey(i.key)}')">แก้ไข</button>
+          <button class="btn btn-sm btn-delete" onclick="deleteItem('${escapeKey(i.key)}', '${i.th.replace(/'/g, "\\'")}')">ลบ</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function escapeKey(key) {
+    return key.replace(/'/g, "\\'");
+  }
+
+  function openAddModal() {
+    editingKey = null;
+    document.getElementById('modal-title').textContent = 'เพิ่ม Attribute';
+    document.getElementById('f-key').value = '';
+    document.getElementById('f-key').disabled = false;
+    document.getElementById('f-type').value = '';
+    document.getElementById('f-th').value = '';
+    document.getElementById('f-en').value = '';
+    document.getElementById('f-grade').value = '';
+    document.getElementById('grade-group').style.display = 'none';
+    document.getElementById('modal-backdrop').classList.add('open');
+  }
+
+  function openEditModal(key) {
+    const item = allItems.find(i => i.key === key);
+    if (!item) return;
+    editingKey = key;
+    document.getElementById('modal-title').textContent = 'แก้ไข Attribute';
+    document.getElementById('f-key').value = item.key;
+    document.getElementById('f-key').disabled = true;
+    document.getElementById('f-type').value = item.type;
+    document.getElementById('f-th').value = item.th;
+    document.getElementById('f-en').value = item.en;
+    document.getElementById('f-grade').value = item.grade ?? '';
+    document.getElementById('grade-group').style.display = item.type === 'topic' ? 'block' : 'none';
+    document.getElementById('modal-backdrop').classList.add('open');
+  }
+
+  function closeModal() {
+    document.getElementById('modal-backdrop').classList.remove('open');
+  }
+
+  function onTypeChange() {
+    const type = document.getElementById('f-type').value;
+    document.getElementById('grade-group').style.display = type === 'topic' ? 'block' : 'none';
+  }
+
+  async function submitModal() {
+    const key   = document.getElementById('f-key').value.trim();
+    const type  = document.getElementById('f-type').value;
+    const th    = document.getElementById('f-th').value.trim();
+    const en    = document.getElementById('f-en').value.trim();
+    const grade = document.getElementById('f-grade').value;
+
+    if (!key || !type || !th || !en) {
+      showMsg('กรุณากรอกข้อมูลให้ครบ', 'error');
+      return;
+    }
+
+    const body = { key, type, th, en, grade: grade || null };
+
+    let res;
+    if (editingKey) {
+      res = await fetch(`/api/attribute-dict/${encodeURIComponent(editingKey)}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      });
+    } else {
+      res = await fetch('/api/attribute-dict', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+      });
+    }
+
+    const data = await res.json();
+    if (data.success) {
+      closeModal();
+      await loadData();
+      showMsg(editingKey ? 'แก้ไขสำเร็จ' : 'เพิ่มสำเร็จ', 'success');
+    } else {
+      showMsg(data.error || 'เกิดข้อผิดพลาด', 'error');
+    }
+  }
+
+  async function deleteItem(key, name) {
+    if (!confirm(`ลบ "${name}" (${key}) ?\n\nข้อควรระวัง: โจทย์ที่ใช้ attribute นี้จะไม่หายไป แต่ชื่อจะไม่แสดงแล้ว`)) return;
+    const res = await fetch(`/api/attribute-dict/${encodeURIComponent(key)}`, { method: 'DELETE' });
+    const data = await res.json();
+    if (data.success) {
+      await loadData();
+      showMsg('ลบสำเร็จ', 'success');
+    } else {
+      showMsg(data.error || 'ลบไม่สำเร็จ', 'error');
+    }
+  }
+
+  function showMsg(text, type) {
+    const el = document.getElementById('msg');
+    el.textContent = text;
+    el.className = `msg msg-${type}`;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 3000);
+  }
+
+  // ปิด modal เมื่อคลิก backdrop
+  document.getElementById('modal-backdrop').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  loadData();
+</script>
+</body>
+</html>

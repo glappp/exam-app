@@ -111,39 +111,34 @@ app.post('/add-question', upload.fields([
   { name: 'choiceImage3', maxCount: 1 }
 ]), async (req, res) => {
   try {
-    const { questionText, choice0, choice1, choice2, choice3, correct, difficulty } = req.body;
+    const { questionText, answer, attributesJson, code } = req.body;
     const files = req.files;
-    const now = new Date().toISOString();
 
-    const choices = [choice0, choice1, choice2, choice3].map((text, i) => ({
-      textTh: text,
-      textEn: text, // ⛳ เปลี่ยนถ้ามีเวอร์ชันอังกฤษ
+    const attributes = attributesJson ? JSON.parse(attributesJson) : {
+      topic: [], skill: [], trap: [], difficulty: 1
+    };
+
+    const choices = [0, 1, 2, 3].map(i => ({
+      textTh: req.body[`choice${i}`] || '',
+      textEn: req.body[`choice${i}`] || '',
       image: files[`choiceImage${i}`]?.[0]?.filename || null
     }));
 
-    const result = await prisma.question.create({
-      data: {
-        textTh: questionText,
-        textEn: questionText,
-        image: files.questionImage?.[0]?.filename || null,
-        answer: parseInt(correct),
-        attributes: {
-          topic: [],
-          skill: [],
-          trap: [],
-          difficulty: difficulty ? parseInt(difficulty) : 1
-        },
-        difficulty,
-        choices,
-        source: 'me',
-        estimatedTimeSec: 30,
-        derivedFrom: null,
-        ownerOrg: 'me',
-        createdBy: 'admin',
-        updatedBy: 'admin',
-        createdAt: now
-      }
-    });
+    const data = {
+      textTh: questionText,
+      textEn: questionText,
+      image: files.questionImage?.[0]?.filename || null,
+      answer: parseInt(answer),
+      attributes,
+      difficulty: String(attributes.difficulty ?? 1),
+      choices,
+      ownerOrg: 'me',
+      createdBy: req.session?.username || 'teacher',
+      updatedBy: req.session?.username || 'teacher',
+    };
+    if (code) data.code = code;
+
+    const result = await prisma.question.create({ data });
 
     console.log('✅ เพิ่มโจทย์:', result.id);
     res.json({ success: true, id: result.id });

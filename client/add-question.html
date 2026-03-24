@@ -3,150 +3,479 @@
 <head>
   <meta charset="UTF-8">
   <title>เพิ่มโจทย์ใหม่</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; color: #222; }
+
+    .topbar {
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 0 24px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar-title { font-weight: 600; font-size: 16px; }
+    .topbar a { font-size: 13px; color: #555; text-decoration: none; }
+    .topbar a:hover { color: #222; }
+
+    .container { max-width: 760px; margin: 32px auto; padding: 0 16px 64px; }
+
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+    .card-title { font-size: 14px; font-weight: 600; color: #555; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; font-weight: 500; }
+    .form-group input[type=text],
+    .form-group input[type=number],
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+    .file-hint { font-size: 11px; color: #888; margin-top: 4px; }
+
+    /* Choices */
+    .choice-list { display: flex; flex-direction: column; gap: 10px; }
+    .choice-item {
+      display: grid;
+      grid-template-columns: 24px 1fr auto auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+    .choice-item.correct { border-color: #22c55e; background: #f0fdf4; }
+    .choice-item input[type=radio] { width: 16px; height: 16px; cursor: pointer; }
+    .choice-item input[type=text] {
+      padding: 7px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      width: 100%;
+    }
+    .choice-label { font-size: 13px; font-weight: 600; color: #888; }
+
+    /* Attribute checkboxes */
+    .attr-group { margin-bottom: 12px; }
+    .attr-group-label { font-size: 12px; font-weight: 600; color: #888; margin-bottom: 6px; text-transform: uppercase; }
+    .checkbox-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .checkbox-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border: 1px solid #e0e0e0;
+      border-radius: 99px;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+      background: #fff;
+    }
+    .checkbox-chip:hover { border-color: #2563eb; color: #2563eb; }
+    .checkbox-chip input { display: none; }
+    .checkbox-chip.checked { background: #dbeafe; border-color: #2563eb; color: #1d4ed8; font-weight: 500; }
+
+    /* Preview */
+    #preview-box {
+      display: none;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 16px;
+      background: #fafafa;
+      margin-top: 12px;
+    }
+
+    /* Actions */
+    .actions { display: flex; gap: 10px; margin-top: 8px; }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #f0f0f0; color: #333; }
+    .btn-secondary:hover { background: #e0e0e0; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .msg { padding: 10px 14px; border-radius: 6px; font-size: 14px; margin-top: 12px; display: none; }
+    .msg-success { background: #dcfce7; color: #166534; display: block; }
+    .msg-error   { background: #fee2e2; color: #b91c1c; display: block; }
+
+    .required { color: #b91c1c; }
+
+    .no-attr { font-size: 13px; color: #aaa; font-style: italic; }
+  </style>
 </head>
 <body>
-  <h2>เพิ่มโจทย์ใหม่</h2>
 
-  <form id="add-question-form" enctype="multipart/form-data">
-    <label>โจทย์ (text):</label><br>
-    <textarea name="questionText" rows="3" cols="50"></textarea><br><br>
+<div class="topbar">
+  <span class="topbar-title">เพิ่มโจทย์ใหม่</span>
+  <div style="display:flex;gap:16px">
+    <a href="/list-questions.html">รายการโจทย์</a>
+    <a href="/dashboard.html">← กลับหน้าหลัก</a>
+  </div>
+</div>
 
-    <label>ภาพโจทย์ (ถ้ามี):</label><br>
-    <input type="file" name="questionImage"><br><br>
+<div class="container">
 
-    <label>ตัวเลือก:</label><br>
-    <p><strong>ระบุว่าข้อใดคือคำตอบที่ถูกต้อง ✔️ (ติ๊กที่ปุ่มกลมด้านขวาของตัวเลือก):</strong></p>
-
-    <div id="choices">
-      <div>
-        <input type="text" name="choice0" placeholder="ตัวเลือกที่ 1">
-        <input type="radio" name="correct" value="0"> 
-        <input type="file" name="choiceImage0">
+  <!-- ข้อมูลพื้นฐาน -->
+  <div class="card">
+    <div class="card-title">ข้อมูลพื้นฐาน</div>
+    <div class="form-row-3">
+      <div class="form-group">
+        <label>วิชา <span class="required">*</span></label>
+        <select id="f-subject" onchange="onSubjectChange()">
+          <option value="">-- เลือกวิชา --</option>
+        </select>
       </div>
-      <div>
-        <input type="text" name="choice1" placeholder="ตัวเลือกที่ 2">
-        <input type="radio" name="correct" value="1">
-        <input type="file" name="choiceImage1">
+      <div class="form-group">
+        <label>ชั้นเรียน <span class="required">*</span></label>
+        <select id="f-grade" onchange="onGradeChange()">
+          <option value="">-- เลือกชั้น --</option>
+        </select>
       </div>
-      <div>
-        <input type="text" name="choice2" placeholder="ตัวเลือกที่ 3">
-        <input type="radio" name="correct" value="2">
-        <input type="file" name="choiceImage2">
-      </div>
-      <div>
-        <input type="text" name="choice3" placeholder="ตัวเลือกที่ 4">
-        <input type="radio" name="correct" value="3">
-        <input type="file" name="choiceImage3">
+      <div class="form-group">
+        <label>ความยาก <span class="required">*</span></label>
+        <select id="f-difficulty">
+          <option value="1">1 — ง่าย</option>
+          <option value="2" selected>2 — ปานกลาง</option>
+          <option value="3">3 — ยาก</option>
+        </select>
       </div>
     </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>ปีที่ออกข้อสอบ (ค.ศ.)</label>
+        <input type="number" id="f-year" placeholder="เช่น 2024" min="2000" max="2099">
+      </div>
+      <div class="form-group">
+        <label>รหัสข้อสอบ (code)</label>
+        <input type="text" id="f-code" placeholder="เช่น p6-pcc-2022-o-q001">
+        <div class="file-hint">รูปแบบ: grade-source-year-type-qXXX</div>
+      </div>
+    </div>
+  </div>
 
-    <br>
-    <label>ระดับความยาก:</label>
-    <select name="difficulty">
-      <option value="easy">ง่าย</option>
-      <option value="medium">ปานกลาง</option>
-      <option value="hard">ยาก</option>
-    </select><br><br>
+  <!-- โจทย์ -->
+  <div class="card">
+    <div class="card-title">โจทย์</div>
+    <div class="form-group">
+      <label>ข้อความโจทย์ <span class="required">*</span></label>
+      <textarea id="f-text" rows="3" placeholder="พิมพ์โจทย์ภาษาไทย..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>ภาพประกอบโจทย์</label>
+      <input type="file" id="f-image" accept="image/*" onchange="previewImg(this, 'q-img-preview')">
+      <img id="q-img-preview" style="display:none;max-height:120px;margin-top:8px;border-radius:6px">
+    </div>
+  </div>
 
-    <label>Tags (อัตโนมัติ):</label>
-    <input type="text" name="tags" disabled placeholder="ระบบจะใส่ให้ภายหลัง"><br><br>
+  <!-- ตัวเลือก -->
+  <div class="card">
+    <div class="card-title">ตัวเลือก <span style="font-weight:400;font-size:12px;color:#888">(คลิกปุ่มกลมเพื่อเลือกคำตอบที่ถูก)</span></div>
+    <div class="choice-list" id="choice-list">
+      <!-- render by JS -->
+    </div>
+  </div>
 
-    <button type="submit">เพิ่มโจทย์</button>
-    <button type="button" onclick="previewQuestion()">🔎 Preview</button>
-  </form>
+  <!-- Attributes -->
+  <div class="card">
+    <div class="card-title">Attributes</div>
+    <div class="attr-group">
+      <div class="attr-group-label">Topic</div>
+      <div class="checkbox-grid" id="chips-topic">
+        <span class="no-attr">เลือกวิชาและชั้นเรียนก่อน</span>
+      </div>
+    </div>
+    <div class="attr-group" style="margin-top:14px">
+      <div class="attr-group-label">Skill</div>
+      <div class="checkbox-grid" id="chips-skill">
+        <span class="no-attr">กำลังโหลด...</span>
+      </div>
+    </div>
+    <div class="attr-group" style="margin-top:14px">
+      <div class="attr-group-label">Trap</div>
+      <div class="checkbox-grid" id="chips-trap">
+        <span class="no-attr">กำลังโหลด...</span>
+      </div>
+    </div>
+  </div>
 
-  <div id="result" style="margin-top: 20px; font-weight: bold;"></div>
-  <div id="preview" style="margin-top: 20px; border: 1px solid #ccc; padding: 10px;"></div>
+  <!-- Preview & Submit -->
+  <div class="card">
+    <div class="actions">
+      <button class="btn btn-secondary" onclick="showPreview()">ดู Preview</button>
+      <button class="btn btn-primary" id="btn-submit" onclick="submitQuestion()">บันทึกโจทย์</button>
+    </div>
+    <div id="preview-box"></div>
+    <div id="msg" class="msg"></div>
+  </div>
 
-  <script>
-    let previewed = false;
+</div>
 
-    document.getElementById("add-question-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
+<script>
+  let allDict = [];
+  const CHOICES = ['A', 'B', 'C', 'D'];
 
-      if (!previewed) {
-        alert("⚠️ กรุณากดปุ่ม Preview เพื่อตรวจสอบก่อนส่งข้อมูล");
-        return;
-      }
+  // ─── Init ────────────────────────────────────────────────
+  async function init() {
+    allDict = await fetch('/api/attribute-dict').then(r => r.json());
+    renderSubjects();
+    renderChoices();
+    renderChips('skill', allDict.filter(i => i.type === 'skill'));
+    renderChips('trap', allDict.filter(i => i.type === 'trap'));
+  }
 
-      const form = e.target;
-      const formData = new FormData(form);
+  function renderSubjects() {
+    const sel = document.getElementById('f-subject');
+    sel.innerHTML = '<option value="">-- เลือกวิชา --</option>';
+    allDict.filter(i => i.type === 'subject').forEach(s => {
+      sel.innerHTML += `<option value="${s.key}">${s.th}</option>`;
+    });
+  }
 
-      try {
-        const res = await fetch("http://localhost:3001/add-question", {
-          method: "POST",
-          body: formData
-        });
+  function onSubjectChange() {
+    // reset grade และ topic
+    renderGrades();
+    document.getElementById('chips-topic').innerHTML = '<span class="no-attr">เลือกชั้นเรียนด้วย</span>';
+  }
 
-        const result = await res.json();
-        const output = result.success
-          ? `✅ เพิ่มโจทย์สำเร็จ! ID: ${result.id}`
-          : `❌ เกิดข้อผิดพลาด: ${result.error}`;
+  function renderGrades() {
+    const sel = document.getElementById('f-grade');
+    sel.innerHTML = '<option value="">-- เลือกชั้น --</option>';
+    allDict.filter(i => i.type === 'grade').forEach(g => {
+      sel.innerHTML += `<option value="${g.key}" data-grade="${g.grade}">${g.th}</option>`;
+    });
+  }
 
-        document.getElementById("result").innerText = output;
-        previewed = false; // reset
+  function onGradeChange() {
+    const gradeOpt = document.getElementById('f-grade').selectedOptions[0];
+    const gradeNum = gradeOpt ? parseInt(gradeOpt.dataset.grade) : null;
+    if (!gradeNum) {
+      document.getElementById('chips-topic').innerHTML = '<span class="no-attr">เลือกชั้นเรียนก่อน</span>';
+      return;
+    }
+    const topics = allDict.filter(i => i.type === 'topic' && i.grade === gradeNum);
+    renderChips('topic', topics);
+  }
 
-      } catch (err) {
-        document.getElementById("result").innerText = "❌ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: " + err.message;
-        console.error(err);
+  // ─── Choices ─────────────────────────────────────────────
+  function renderChoices() {
+    const list = document.getElementById('choice-list');
+    list.innerHTML = CHOICES.map((label, i) => `
+      <div class="choice-item" id="choice-row-${i}">
+        <input type="radio" name="correct" value="${i}" onchange="highlightCorrect(${i})" title="เลือกเป็นคำตอบที่ถูก">
+        <input type="text" id="choice-text-${i}" placeholder="ตัวเลือก ${label}">
+        <input type="file" id="choice-img-${i}" accept="image/*" style="font-size:12px;width:130px" onchange="previewImg(this, 'choice-img-preview-${i}')">
+        <img id="choice-img-preview-${i}" style="display:none;max-height:40px;border-radius:4px">
+      </div>
+    `).join('');
+  }
+
+  function highlightCorrect(idx) {
+    CHOICES.forEach((_, i) => {
+      document.getElementById(`choice-row-${i}`).classList.toggle('correct', i === idx);
+    });
+  }
+
+  // ─── Chips (checkbox) ─────────────────────────────────────
+  function renderChips(type, items) {
+    const container = document.getElementById(`chips-${type}`);
+    if (!items.length) {
+      container.innerHTML = '<span class="no-attr">ไม่มีข้อมูล</span>';
+      return;
+    }
+    container.innerHTML = items.map(item => `
+      <label class="checkbox-chip" id="chip-${item.key.replace(/:/g, '-')}">
+        <input type="checkbox" value="${item.key}" onchange="toggleChip(this)">
+        ${item.th}
+      </label>
+    `).join('');
+  }
+
+  function toggleChip(cb) {
+    const chip = cb.closest('.checkbox-chip');
+    chip.classList.toggle('checked', cb.checked);
+  }
+
+  function getChecked(type) {
+    return [...document.querySelectorAll(`#chips-${type} input:checked`)].map(cb => cb.value);
+  }
+
+  // ─── Image preview ────────────────────────────────────────
+  function previewImg(input, previewId) {
+    const img = document.getElementById(previewId);
+    if (input.files[0]) {
+      img.src = URL.createObjectURL(input.files[0]);
+      img.style.display = 'block';
+    } else {
+      img.style.display = 'none';
+    }
+  }
+
+  // ─── Preview ─────────────────────────────────────────────
+  function showPreview() {
+    const text = document.getElementById('f-text').value.trim();
+    if (!text) { showMsg('กรุณากรอกโจทย์ก่อน', 'error'); return; }
+
+    const choices = CHOICES.map((_, i) => ({
+      text: document.getElementById(`choice-text-${i}`).value.trim(),
+      file: document.getElementById(`choice-img-${i}`).files[0]
+    }));
+
+    const correctRadio = document.querySelector('input[name=correct]:checked');
+    const correctIdx = correctRadio ? parseInt(correctRadio.value) : null;
+
+    let html = `<strong>โจทย์:</strong> ${text}<br><br>`;
+    html += `<strong>ตัวเลือก:</strong><ul style="margin-top:6px;padding-left:16px">`;
+    choices.forEach((c, i) => {
+      if (c.text || c.file) {
+        const mark = correctIdx === i ? ' ✔️' : '';
+        const imgHTML = c.file ? `<br><img src="${URL.createObjectURL(c.file)}" height="50" style="margin-top:4px;border-radius:4px">` : '';
+        html += `<li>${CHOICES[i]}. ${c.text}${mark}${imgHTML}</li>`;
       }
     });
+    html += `</ul>`;
 
-    function previewQuestion() {
-      const form = document.getElementById("add-question-form");
-      const questionText = form.questionText.value.trim();
-      const choices = [
-        form.choice0.value.trim(),
-        form.choice1.value.trim(),
-        form.choice2.value.trim(),
-        form.choice3.value.trim()
-      ];
-
-      if (!questionText) {
-        alert("❌ กรุณากรอกโจทย์");
-        return;
-      }
-
-      const filledChoices = choices.filter(choice => choice !== "");
-      if (filledChoices.length < 2) {
-        alert("❌ กรุณากรอกตัวเลือกอย่างน้อย 2 ข้อ");
-        return;
-      }
-
-      if (!form.correct.value) {
-        alert("❌ กรุณาเลือกคำตอบที่ถูกต้อง");
-        return;
-      }
-
-      // เริ่มสร้าง preview
-      const previewDiv = document.getElementById("preview");
-      let html = `<h3>🔍 Preview</h3>`;
-      html += `<p><strong>โจทย์:</strong> ${questionText}</p>`;
-
-      const qImage = form.questionImage.files[0];
-      if (qImage) {
-        const imgURL = URL.createObjectURL(qImage);
-        html += `<p><strong>📷 ภาพโจทย์:</strong><br><img src="${imgURL}" height="100"></p>`;
-      }
-
-      html += `<p><strong>📝 ตัวเลือก:</strong></p><ul>`;
-      choices.forEach((text, i) => {
-        if (text) {
-          const mark = form.correct.value == i ? "✔️" : "";
-          const choiceImage = form[`choiceImage${i}`].files[0];
-          let imgHTML = "";
-          if (choiceImage) {
-            const imgURL = URL.createObjectURL(choiceImage);
-            imgHTML = `<br><img src="${imgURL}" height="50">`;
-          }
-          html += `<li>${text} ${mark}${imgHTML}</li>`;
-        }
-      });
-      html += `</ul>`;
-
-      previewDiv.innerHTML = html;
-      previewed = true;
+    const topics = getChecked('topic');
+    const skills = getChecked('skill');
+    const traps  = getChecked('trap');
+    if (topics.length || skills.length || traps.length) {
+      html += `<br><strong>Attributes:</strong><br>`;
+      if (topics.length) html += `topic: ${topics.join(', ')}<br>`;
+      if (skills.length) html += `skill: ${skills.join(', ')}<br>`;
+      if (traps.length)  html += `trap: ${traps.join(', ')}<br>`;
     }
-  </script>
+
+    const box = document.getElementById('preview-box');
+    box.innerHTML = html;
+    box.style.display = 'block';
+  }
+
+  // ─── Submit ───────────────────────────────────────────────
+  async function submitQuestion() {
+    const text       = document.getElementById('f-text').value.trim();
+    const subjectKey = document.getElementById('f-subject').value;
+    const gradeKey   = document.getElementById('f-grade').value;
+    const difficulty = parseInt(document.getElementById('f-difficulty').value);
+    const year       = document.getElementById('f-year').value.trim();
+    const code       = document.getElementById('f-code').value.trim();
+    const correctRadio = document.querySelector('input[name=correct]:checked');
+
+    if (!text)       { showMsg('กรุณากรอกโจทย์', 'error'); return; }
+    if (!subjectKey) { showMsg('กรุณาเลือกวิชา', 'error'); return; }
+    if (!gradeKey)   { showMsg('กรุณาเลือกชั้นเรียน', 'error'); return; }
+    if (!correctRadio) { showMsg('กรุณาเลือกคำตอบที่ถูกต้อง', 'error'); return; }
+
+    const choices = CHOICES.map((_, i) => ({
+      text: document.getElementById(`choice-text-${i}`).value.trim(),
+      file: document.getElementById(`choice-img-${i}`).files[0]
+    }));
+    const filledChoices = choices.filter(c => c.text || c.file);
+    if (filledChoices.length < 2) { showMsg('กรุณากรอกตัวเลือกอย่างน้อย 2 ข้อ', 'error'); return; }
+
+    const gradeOpt = document.getElementById('f-grade').selectedOptions[0];
+    const gradeNum = gradeOpt ? parseInt(gradeOpt.dataset.grade) : null;
+
+    const formData = new FormData();
+    formData.append('questionText', text);
+    formData.append('answer', correctRadio.value);
+    formData.append('attributesJson', JSON.stringify({
+      subject: subjectKey,
+      examGrade: gradeKey,
+      year: year || null,
+      topic: getChecked('topic'),
+      skill: getChecked('skill'),
+      trap: getChecked('trap'),
+      difficulty,
+    }));
+    if (code) formData.append('code', code);
+
+    choices.forEach((c, i) => {
+      formData.append(`choice${i}`, c.text);
+      if (c.file) formData.append(`choiceImage${i}`, c.file);
+    });
+
+    const qImage = document.getElementById('f-image').files[0];
+    if (qImage) formData.append('questionImage', qImage);
+
+    const btn = document.getElementById('btn-submit');
+    btn.disabled = true;
+    btn.textContent = 'กำลังบันทึก...';
+
+    try {
+      const res = await fetch('/add-question', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (data.success) {
+        showMsg(`✅ บันทึกสำเร็จ! ID: ${data.id}`, 'success');
+        resetForm();
+      } else {
+        showMsg(`❌ ${data.error || 'บันทึกไม่สำเร็จ'}`, 'error');
+      }
+    } catch (err) {
+      showMsg('❌ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'บันทึกโจทย์';
+    }
+  }
+
+  function resetForm() {
+    document.getElementById('f-text').value = '';
+    document.getElementById('f-subject').value = '';
+    document.getElementById('f-grade').innerHTML = '<option value="">-- เลือกชั้น --</option>';
+    document.getElementById('f-year').value = '';
+    document.getElementById('f-code').value = '';
+    document.getElementById('f-image').value = '';
+    document.getElementById('q-img-preview').style.display = 'none';
+    document.getElementById('chips-topic').innerHTML = '<span class="no-attr">เลือกวิชาและชั้นเรียนก่อน</span>';
+    document.querySelectorAll('.checkbox-chip').forEach(c => c.classList.remove('checked'));
+    document.querySelectorAll('.checkbox-chip input').forEach(c => c.checked = false);
+    renderChoices();
+    document.getElementById('preview-box').style.display = 'none';
+  }
+
+  function showMsg(text, type) {
+    const el = document.getElementById('msg');
+    el.textContent = text;
+    el.className = `msg msg-${type}`;
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (type === 'success') setTimeout(() => el.className = 'msg', 4000);
+  }
+
+  // แก้ /add-question route ให้รับ attributesJson
+  init();
+</script>
 </body>
 </html>

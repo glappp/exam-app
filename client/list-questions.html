@@ -151,7 +151,10 @@
           <td>${q.image ? `<img src="/uploads/${q.image}" height="40">` : '-'}</td>
           <td>${q.difficulty || '-'}</td>
           <td>${new Date(q.createdAt).toLocaleString()}</td>
-          <td><button class="view-btn" data-id="${q.id}">▶</button></td>
+          <td style="white-space:nowrap">
+            <button class="view-btn" data-id="${q.id}" style="margin-right:4px">ดู</button>
+            <a href="/edit-question.html?id=${q.id}" style="font-size:12px;padding:4px 8px;background:#f0f0f0;border-radius:4px;text-decoration:none;color:#333">แก้ไข</a>
+          </td>
         </tr>`;
       });
 

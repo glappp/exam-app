@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>แก้ไขโจทย์</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; color: #222; }
+
+    .topbar {
+      background: #fff;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 0 24px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar-title { font-weight: 600; font-size: 16px; }
+    .topbar a { font-size: 13px; color: #555; text-decoration: none; }
+    .topbar a:hover { color: #222; }
+
+    .container { max-width: 760px; margin: 32px auto; padding: 0 16px 64px; }
+
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+    }
+    .card-title { font-size: 14px; font-weight: 600; color: #555; margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; color: #555; margin-bottom: 6px; font-weight: 500; }
+    .form-group input[type=text],
+    .form-group input[type=number],
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus { outline: none; border-color: #2563eb; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .file-hint { font-size: 11px; color: #888; margin-top: 4px; }
+
+    .choice-list { display: flex; flex-direction: column; gap: 10px; }
+    .choice-item {
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      gap: 8px;
+      align-items: start;
+      padding: 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+    .choice-item.correct { border-color: #22c55e; background: #f0fdf4; }
+    .choice-item input[type=radio] { width: 16px; height: 16px; cursor: pointer; margin-top: 9px; }
+    .choice-content { display: flex; flex-direction: column; gap: 6px; }
+    .choice-content input[type=text] {
+      padding: 7px 10px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+    .choice-img-current { max-height: 60px; border-radius: 4px; display: block; margin-top: 4px; }
+
+    .attr-group { margin-bottom: 12px; }
+    .attr-group-label { font-size: 12px; font-weight: 600; color: #888; margin-bottom: 6px; text-transform: uppercase; }
+    .checkbox-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .checkbox-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border: 1px solid #e0e0e0;
+      border-radius: 99px;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+      background: #fff;
+    }
+    .checkbox-chip:hover { border-color: #2563eb; color: #2563eb; }
+    .checkbox-chip input { display: none; }
+    .checkbox-chip.checked { background: #dbeafe; border-color: #2563eb; color: #1d4ed8; font-weight: 500; }
+    .no-attr { font-size: 13px; color: #aaa; font-style: italic; }
+
+    .actions { display: flex; gap: 10px; margin-top: 8px; }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-secondary { background: #f0f0f0; color: #333; }
+    .btn-secondary:hover { background: #e0e0e0; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .msg { padding: 10px 14px; border-radius: 6px; font-size: 14px; margin-top: 12px; display: none; }
+    .msg-success { background: #dcfce7; color: #166534; display: block; }
+    .msg-error   { background: #fee2e2; color: #b91c1c; display: block; }
+
+    .loading { text-align: center; padding: 60px; color: #aaa; font-size: 15px; }
+    .required { color: #b91c1c; }
+    .id-badge { font-family: monospace; font-size: 12px; background: #f0f0f0; padding: 3px 8px; border-radius: 4px; color: #555; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-title">แก้ไขโจทย์</span>
+  <div style="display:flex;gap:16px">
+    <a href="/list-questions.html">← รายการโจทย์</a>
+    <a href="/dashboard.html">หน้าหลัก</a>
+  </div>
+</div>
+
+<div class="container" id="main-content">
+  <div class="loading">กำลังโหลดข้อมูล...</div>
+</div>
+
+<script>
+  const CHOICES = ['A', 'B', 'C', 'D'];
+  let allDict = [];
+  let questionId = null;
+  let currentQuestion = null;
+
+  async function init() {
+    const params = new URLSearchParams(location.search);
+    questionId = params.get('id');
+    if (!questionId) {
+      document.getElementById('main-content').innerHTML = '<div class="card"><p style="color:#b91c1c">ไม่พบ ID โจทย์ กรุณาเข้าจากหน้ารายการโจทย์</p></div>';
+      return;
+    }
+
+    const [dictRes, qRes] = await Promise.all([
+      fetch('/api/attribute-dict'),
+      fetch(`/questions/${questionId}`)
+    ]);
+
+    if (!qRes.ok) {
+      document.getElementById('main-content').innerHTML = '<div class="card"><p style="color:#b91c1c">ไม่พบโจทย์นี้ในระบบ</p></div>';
+      return;
+    }
+
+    allDict = await dictRes.json();
+    currentQuestion = await qRes.json();
+
+    renderForm();
+  }
+
+  function renderForm() {
+    const q = currentQuestion;
+    const attrs = q.attributes || {};
+    const choices = Array.isArray(q.choices) ? q.choices : [];
+
+    document.getElementById('main-content').innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <span style="font-size:14px;color:#555">ID:</span>
+        <span class="id-badge">${q.id}</span>
+        ${q.code ? `<span class="id-badge">${q.code}</span>` : ''}
+      </div>
+
+      <!-- ข้อมูลพื้นฐาน -->
+      <div class="card">
+        <div class="card-title">ข้อมูลพื้นฐาน</div>
+        <div class="form-row-3">
+          <div class="form-group">
+            <label>วิชา <span class="required">*</span></label>
+            <select id="f-subject" onchange="onSubjectChange()"></select>
+          </div>
+          <div class="form-group">
+            <label>ชั้นเรียน <span class="required">*</span></label>
+            <select id="f-grade" onchange="onGradeChange()"></select>
+          </div>
+          <div class="form-group">
+            <label>ความยาก <span class="required">*</span></label>
+            <select id="f-difficulty">
+              <option value="1">1 — ง่าย</option>
+              <option value="2">2 — ปานกลาง</option>
+              <option value="3">3 — ยาก</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>ปีที่ออกข้อสอบ (ค.ศ.)</label>
+            <input type="number" id="f-year" value="${attrs.year || ''}" placeholder="เช่น 2024" min="2000" max="2099">
+          </div>
+          <div class="form-group">
+            <label>รหัสข้อสอบ (code)</label>
+            <input type="text" id="f-code" value="${q.code || ''}" placeholder="เช่น p6-pcc-2022-o-q001">
+          </div>
+        </div>
+      </div>
+
+      <!-- โจทย์ -->
+      <div class="card">
+        <div class="card-title">โจทย์</div>
+        <div class="form-group">
+          <label>ข้อความโจทย์ <span class="required">*</span></label>
+          <textarea id="f-text" rows="3">${q.textTh || ''}</textarea>
+        </div>
+        <div class="form-group">
+          <label>ภาพประกอบโจทย์</label>
+          ${q.image ? `<img src="/uploads/${q.image}" class="choice-img-current" style="max-height:100px;margin-bottom:8px">` : ''}
+          <input type="file" id="f-image" accept="image/*" onchange="previewImg(this, 'q-img-preview')">
+          <img id="q-img-preview" style="display:none;max-height:120px;margin-top:8px;border-radius:6px">
+          <div class="file-hint">เลือกไฟล์ใหม่เพื่อแทนที่รูปเดิม</div>
+        </div>
+      </div>
+
+      <!-- ตัวเลือก -->
+      <div class="card">
+        <div class="card-title">ตัวเลือก</div>
+        <div class="choice-list" id="choice-list"></div>
+      </div>
+
+      <!-- Attributes -->
+      <div class="card">
+        <div class="card-title">Attributes</div>
+        <div class="attr-group">
+          <div class="attr-group-label">Topic</div>
+          <div class="checkbox-grid" id="chips-topic"><span class="no-attr">กำลังโหลด...</span></div>
+        </div>
+        <div class="attr-group" style="margin-top:14px">
+          <div class="attr-group-label">Skill</div>
+          <div class="checkbox-grid" id="chips-skill"><span class="no-attr">กำลังโหลด...</span></div>
+        </div>
+        <div class="attr-group" style="margin-top:14px">
+          <div class="attr-group-label">Trap</div>
+          <div class="checkbox-grid" id="chips-trap"><span class="no-attr">กำลังโหลด...</span></div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="card">
+        <div class="actions">
+          <button class="btn btn-primary" id="btn-save" onclick="saveQuestion()">บันทึกการแก้ไข</button>
+          <button class="btn btn-secondary" onclick="history.back()">ยกเลิก</button>
+        </div>
+        <div id="msg" class="msg"></div>
+      </div>
+    `;
+
+    // populate dropdowns + chips
+    populateSubjects(attrs.subject);
+    populateGrades(attrs.examGrade);
+    document.getElementById('f-difficulty').value = String(attrs.difficulty ?? 2);
+
+    const gradeOpt = document.getElementById('f-grade').selectedOptions[0];
+    const gradeNum = gradeOpt ? parseInt(gradeOpt.dataset.grade) : null;
+    renderChips('topic', allDict.filter(i => i.type === 'topic' && (!gradeNum || i.grade === gradeNum)), attrs.topic || []);
+    renderChips('skill', allDict.filter(i => i.type === 'skill'), attrs.skill || []);
+    renderChips('trap',  allDict.filter(i => i.type === 'trap'),  attrs.trap  || []);
+
+    renderChoices(choices, q.answer);
+  }
+
+  function populateSubjects(selectedKey) {
+    const sel = document.getElementById('f-subject');
+    sel.innerHTML = '<option value="">-- เลือกวิชา --</option>';
+    allDict.filter(i => i.type === 'subject').forEach(s => {
+      sel.innerHTML += `<option value="${s.key}" ${s.key === selectedKey ? 'selected' : ''}>${s.th}</option>`;
+    });
+  }
+
+  function populateGrades(selectedKey) {
+    const sel = document.getElementById('f-grade');
+    sel.innerHTML = '<option value="">-- เลือกชั้น --</option>';
+    allDict.filter(i => i.type === 'grade').forEach(g => {
+      sel.innerHTML += `<option value="${g.key}" data-grade="${g.grade}" ${g.key === selectedKey ? 'selected' : ''}>${g.th}</option>`;
+    });
+  }
+
+  function onSubjectChange() {
+    // subject เปลี่ยน → ไม่ reset grade แต่ให้ user เลือก grade ใหม่ได้
+  }
+
+  function onGradeChange() {
+    const gradeOpt = document.getElementById('f-grade').selectedOptions[0];
+    const gradeNum = gradeOpt ? parseInt(gradeOpt.dataset.grade) : null;
+    const attrs = currentQuestion.attributes || {};
+    const topics = allDict.filter(i => i.type === 'topic' && (!gradeNum || i.grade === gradeNum));
+    renderChips('topic', topics, attrs.topic || []);
+  }
+
+  function renderChoices(choices, correctAnswer) {
+    const list = document.getElementById('choice-list');
+    list.innerHTML = CHOICES.map((label, i) => {
+      const c = choices[i] || {};
+      const isCorrect = correctAnswer === i;
+      return `
+        <div class="choice-item ${isCorrect ? 'correct' : ''}" id="choice-row-${i}">
+          <input type="radio" name="correct" value="${i}" ${isCorrect ? 'checked' : ''} onchange="highlightCorrect(${i})" title="เลือกเป็นคำตอบที่ถูก">
+          <div class="choice-content">
+            <input type="text" id="choice-text-${i}" value="${(c.textTh || '').replace(/"/g, '&quot;')}" placeholder="ตัวเลือก ${label}">
+            ${c.image ? `<img src="/uploads/${c.image}" class="choice-img-current">` : ''}
+            <input type="file" id="choice-img-${i}" accept="image/*" style="font-size:12px" onchange="previewImg(this, 'choice-img-preview-${i}')">
+            <img id="choice-img-preview-${i}" style="display:none;max-height:40px;border-radius:4px">
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function highlightCorrect(idx) {
+    CHOICES.forEach((_, i) => {
+      document.getElementById(`choice-row-${i}`)?.classList.toggle('correct', i === idx);
+    });
+  }
+
+  function renderChips(type, items, selected = []) {
+    const container = document.getElementById(`chips-${type}`);
+    if (!items.length) {
+      container.innerHTML = '<span class="no-attr">ไม่มีข้อมูล</span>';
+      return;
+    }
+    container.innerHTML = items.map(item => {
+      const isChecked = selected.includes(item.key);
+      return `
+        <label class="checkbox-chip ${isChecked ? 'checked' : ''}">
+          <input type="checkbox" value="${item.key}" ${isChecked ? 'checked' : ''} onchange="toggleChip(this)">
+          ${item.th}
+        </label>
+      `;
+    }).join('');
+  }
+
+  function toggleChip(cb) {
+    cb.closest('.checkbox-chip').classList.toggle('checked', cb.checked);
+  }
+
+  function getChecked(type) {
+    return [...document.querySelectorAll(`#chips-${type} input:checked`)].map(cb => cb.value);
+  }
+
+  function previewImg(input, previewId) {
+    const img = document.getElementById(previewId);
+    if (input.files[0]) {
+      img.src = URL.createObjectURL(input.files[0]);
+      img.style.display = 'block';
+    }
+  }
+
+  async function saveQuestion() {
+    const text       = document.getElementById('f-text').value.trim();
+    const subjectKey = document.getElementById('f-subject').value;
+    const gradeKey   = document.getElementById('f-grade').value;
+    const difficulty = parseInt(document.getElementById('f-difficulty').value);
+    const year       = document.getElementById('f-year').value.trim();
+    const code       = document.getElementById('f-code').value.trim();
+    const correctRadio = document.querySelector('input[name=correct]:checked');
+
+    if (!text)         { showMsg('กรุณากรอกโจทย์', 'error'); return; }
+    if (!subjectKey)   { showMsg('กรุณาเลือกวิชา', 'error'); return; }
+    if (!gradeKey)     { showMsg('กรุณาเลือกชั้นเรียน', 'error'); return; }
+    if (!correctRadio) { showMsg('กรุณาเลือกคำตอบที่ถูกต้อง', 'error'); return; }
+
+    const attributesJson = JSON.stringify({
+      subject: subjectKey,
+      examGrade: gradeKey,
+      year: year || null,
+      topic: getChecked('topic'),
+      skill: getChecked('skill'),
+      trap: getChecked('trap'),
+      difficulty,
+    });
+
+    // ใช้ JSON body (ไม่มีรูปใหม่ในการ PUT ครั้งนี้ — รูปแก้ไขทำในรอบถัดไป)
+    const body = {
+      questionText: text,
+      answer: correctRadio.value,
+      attributesJson,
+      code,
+      choices: CHOICES.map((_, i) => document.getElementById(`choice-text-${i}`).value.trim())
+    };
+
+    const btn = document.getElementById('btn-save');
+    btn.disabled = true;
+    btn.textContent = 'กำลังบันทึก...';
+
+    try {
+      const res = await fetch(`/questions/${questionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (data.success) {
+        currentQuestion = data.question;
+        showMsg('✅ บันทึกสำเร็จ', 'success');
+      } else {
+        showMsg(`❌ ${data.error || 'บันทึกไม่สำเร็จ'}`, 'error');
+      }
+    } catch (err) {
+      showMsg('❌ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'บันทึกการแก้ไข';
+    }
+  }
+
+  function showMsg(text, type) {
+    const el = document.getElementById('msg');
+    el.textContent = text;
+    el.className = `msg msg-${type}`;
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (type === 'success') setTimeout(() => el.className = 'msg', 4000);
+  }
+
+  init();
+</script>
+</body>
+</html>

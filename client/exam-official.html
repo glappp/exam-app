@@ -3,164 +3,193 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ข้อสอบจริง</title>
+  <title>ข้อสอบจริง — คลังข้อสอบ</title>
   <link rel="stylesheet" href="/style.css">
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>
+  <style>
+    .timer {
+      font-size: 20px; font-weight: 700; color: var(--navy);
+      font-variant-numeric: tabular-nums;
+    }
+    .timer.warn  { color: #d97706; }
+    .timer.danger { color: #dc2626; }
+    .question-text { font-size: 15px; line-height: 1.7; margin-bottom: 12px; }
+    .answer-section label {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 7px;
+      margin-bottom: 8px; cursor: pointer; font-size: 14px; background: #fff;
+      transition: border-color .1s, background .1s;
+    }
+    .answer-section label:hover { border-color: var(--blue); background: #eff6ff; }
+    .answer-section label:has(input:checked) { border-color: var(--blue); background: #dbeafe; font-weight: 600; }
+    .answer-section input[type=radio] { margin-top: 2px; flex-shrink: 0; }
+    .progress-text { font-size: 13px; color: var(--muted); font-weight: 600; }
+    #submit-section { display: none; }
+    .result-item { display: flex; align-items: flex-start; gap: 10px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+    .result-item:last-child { border-bottom: none; }
+  </style>
 </head>
 <body>
-  <div id="app" class="container">
-    <h1>ข้อสอบจริง</h1>
-<div class="exam-layout">
-  <div class="question-area">
-    <div id="question-container"></div>
-  </div>
-  <div class="nav-sidebar" id="navigation">
-    <button id="prev-btn" disabled title="ย้อนกลับ">⬅️</button>
-    <span id="progress" style="text-align: center;"></span>
-    <button id="next-btn" title="ข้อต่อไป">➡️</button>
+
+<div class="topbar">
+  <span class="topbar-title">📄 ข้อสอบจริง</span>
+  <div class="topbar-nav">
+    <span id="timer-display" class="timer" style="display:none"></span>
+    <span class="progress-text" id="progress"></span>
+    <a href="exam.html">เลือกการสอบ</a>
   </div>
 </div>
 
-
-    <div id="submit-section" class="mt-4" style="display:none;">
-      <button id="submit-btn">ส่งคำตอบทั้งหมด</button>
+<div class="page">
+  <div class="exam-layout">
+    <div class="question-area">
+      <div id="question-container"></div>
     </div>
-
-    <div id="result-section" class="mt-6"></div>
+    <div class="nav-sidebar" id="navigation">
+      <button class="btn" id="prev-btn" disabled title="ย้อนกลับ">←</button>
+      <button class="btn btn-primary" id="next-btn" title="ข้อต่อไป">→</button>
+    </div>
   </div>
 
-  <script>
-    const user = localStorage.getItem('user');
-    if (!user) {
-      alert("กรุณาเข้าสู่ระบบก่อนใช้งาน");
-      window.location.href = "/login.html";
+  <div id="submit-section" style="margin-top:16px">
+    <button class="btn btn-primary btn-full" id="submit-btn">ส่งคำตอบทั้งหมด</button>
+  </div>
+
+  <div id="result-section" style="margin-top:16px"></div>
+</div>
+
+<script>
+  const urlParams = new URLSearchParams(location.search);
+  const grade    = urlParams.get('grade');
+  const examType = urlParams.get('examType');
+  const year     = urlParams.get('year');
+  const timed    = urlParams.get('timed') === '1';
+
+  let questions = [];
+  let currentIndex = 0;
+  let answers = [];
+  let examStartTime = null;
+  let timerInterval = null;
+  let timeLimitSec = null;
+
+  // Auth check via session
+  (async () => {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (!res.ok) { location.href = '/login.html'; }
+  })();
+
+  async function fetchQuestions() {
+    const source = decodeURIComponent(examType);
+    const res = await fetch(`/api/exam-set-official?source=${encodeURIComponent(source)}&year=${year}&grade=${grade}`, { credentials: 'include' });
+    if (!res.ok) {
+      document.getElementById('question-container').innerHTML =
+        '<div class="card"><p style="color:#b91c1c">ไม่พบชุดข้อสอบ กรุณาตรวจสอบใหม่</p></div>';
+      return;
     }
+    questions = await res.json();
+    answers = new Array(questions.length).fill(null);
+    examStartTime = Date.now();
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const grade = urlParams.get('grade');
-    const examType = urlParams.get('examType');
-    const year = urlParams.get('year');
-    const timed = urlParams.get('timed');
+    if (timed) startTimer();
+    renderQuestion();
+    updateProgress();
+  }
 
-    let questions = [];
-    let currentIndex = 0;
-    let answers = [];
-
-
-
-
-    async function fetchQuestions() {
-      const source = decodeURIComponent(examType); // เช่น Chulabhorn Science-Math test
-const res = await fetch(`/api/exam-set-official?source=${encodeURIComponent(source)}&year=${year}&grade=${grade}`);
-
-      if (!res.ok) {
-        alert("ไม่พบชุดข้อสอบที่เลือก กรุณาตรวจสอบใหม่");
-        return;
+  function startTimer() {
+    const el = document.getElementById('timer-display');
+    el.style.display = 'inline';
+    timerInterval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - examStartTime) / 1000);
+      const remaining = timeLimitSec ? timeLimitSec - elapsed : null;
+      const display = remaining !== null ? remaining : elapsed;
+      const mm = String(Math.floor(Math.abs(display) / 60)).padStart(2, '0');
+      const ss = String(Math.abs(display) % 60).padStart(2, '0');
+      el.textContent = remaining !== null ? `${mm}:${ss}` : `${mm}:${ss}`;
+      el.className = 'timer' + (remaining !== null && remaining < 60 ? ' danger' : remaining !== null && remaining < 180 ? ' warn' : '');
+      if (remaining !== null && remaining <= 0) {
+        clearInterval(timerInterval);
+        autoSubmit();
       }
-      questions = await res.json();
-      answers = new Array(questions.length).fill(null);
-      renderQuestion();
-      updateProgress();
-    }
+    }, 1000);
+  }
 
-    function renderQuestion() {
-      const q = questions[currentIndex];
-      const container = document.getElementById('question-container');
-      container.innerHTML = `
-        <div class="question-box">
-          <div class="question-text">${(q.textTh || '').replace(/\n/g, '<br>')}</div>
-          ${q.image ? `<img src="${q.image}" class="question-image">` : ''}
-          <div class="answer-section">
-            ${q.choices && q.choices.length ? q.choices.map((c, i) => `
-              <label>
-                <input type="radio" name="answer" value="${i}" ${answers[currentIndex] == i ? 'checked' : ''}>
-                ${c.textTh}
-              </label>
-            `).join('<br>') : `
-              <input type="text" id="short-answer" value="${answers[currentIndex] || ''}" placeholder="พิมพ์คำตอบ">
-            `}
-          </div>
+  function renderQuestion() {
+    const q = questions[currentIndex];
+    document.getElementById('question-container').innerHTML = `
+      <div class="card">
+        <div class="question-text">${(q.textTh || '').replace(/\n/g, '<br>')}</div>
+        ${q.image ? `<img src="${q.image.startsWith('/') ? q.image : '/uploads/' + q.image}" class="question-image">` : ''}
+        <div class="answer-section">
+          ${q.choices?.length ? q.choices.map((c, i) => `
+            <label>
+              <input type="radio" name="answer" value="${i}" ${answers[currentIndex] === i ? 'checked' : ''}>
+              ${c.image ? `<img src="/uploads/${c.image}" style="max-height:40px">` : ''}
+              ${c.textTh || ''}
+            </label>
+          `).join('') : `
+            <input class="form-group input" type="text" id="short-answer" value="${answers[currentIndex] || ''}" placeholder="พิมพ์คำตอบ" style="margin-top:8px">
+          `}
         </div>
-      `;
+      </div>
+    `;
 
-      if (window.MathJax) MathJax.typesetPromise();
+    if (window.MathJax) MathJax.typesetPromise();
 
-      document.querySelectorAll('input[name="answer"]').forEach(input => {
-        input.addEventListener('change', e => {
-          answers[currentIndex] = parseInt(e.target.value);
-        });
-      });
+    document.querySelectorAll('input[name="answer"]').forEach(input => {
+      input.addEventListener('change', e => { answers[currentIndex] = parseInt(e.target.value); });
+    });
+    const shortInput = document.getElementById('short-answer');
+    if (shortInput) shortInput.addEventListener('input', e => { answers[currentIndex] = e.target.value; });
+  }
 
-      const shortInput = document.getElementById('short-answer');
-      if (shortInput) {
-        shortInput.addEventListener('input', e => {
-          answers[currentIndex] = e.target.value;
-        });
-      }
+  function updateProgress() {
+    document.getElementById('progress').textContent = `ข้อ ${currentIndex + 1} / ${questions.length}`;
+    document.getElementById('prev-btn').disabled = currentIndex === 0;
+    document.getElementById('next-btn').textContent = currentIndex === questions.length - 1 ? '✔ เสร็จ' : '→';
+  }
+
+  document.getElementById('prev-btn').addEventListener('click', () => {
+    if (currentIndex > 0) { currentIndex--; renderQuestion(); updateProgress(); }
+  });
+
+  document.getElementById('next-btn').addEventListener('click', () => {
+    if (currentIndex < questions.length - 1) {
+      currentIndex++; renderQuestion(); updateProgress();
+    } else {
+      const unanswered = answers.map((a, i) => a === null || a === '' ? i + 1 : null).filter(Boolean);
+      if (unanswered.length) { alert(`ยังไม่ได้ตอบข้อ: ${unanswered.join(', ')}`); return; }
+      if (!confirm('ส่งคำตอบทั้งหมดใช่ไหม?')) return;
+      document.getElementById('submit-section').style.display = 'block';
+      document.getElementById('navigation').style.display = 'none';
     }
-function updateProgress() {
-  document.getElementById('progress').textContent = `ข้อ ${currentIndex + 1} / ${questions.length}`;
-  document.getElementById('prev-btn').disabled = currentIndex === 0;
-  document.getElementById('next-btn').innerHTML = currentIndex === questions.length - 1 ? '✅' : '&rarr;';
-  document.getElementById('prev-btn').innerHTML = '&larr;';
-}
+  });
 
+  document.getElementById('submit-btn').addEventListener('click', () => submitExam());
 
+  async function autoSubmit() {
+    document.getElementById('submit-section').style.display = 'block';
+    document.getElementById('navigation').style.display = 'none';
+    await submitExam();
+  }
 
-    document.getElementById('prev-btn').addEventListener('click', () => {
-      if (currentIndex > 0) {
-        currentIndex--;
-        renderQuestion();
-        updateProgress();
-      }
+  async function submitExam() {
+    const durationSec = examStartTime ? Math.round((Date.now() - examStartTime) / 1000) : 0;
+    if (timerInterval) clearInterval(timerInterval);
+    document.getElementById('submit-btn').disabled = true;
+    document.getElementById('submit-btn').textContent = 'กำลังส่ง...';
+
+    const res = await fetch('/api/submit-exam', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ mode: 'official', source: examType, year, grade, questions: questions.map(q => q.id), answers, durationSec })
     });
+    const result = await res.json();
+    localStorage.setItem('examResult', JSON.stringify(result));
+    location.href = '/result-competitive.html';
+  }
 
-    document.getElementById('next-btn').addEventListener('click', () => {
-      if (currentIndex < questions.length - 1) {
-        currentIndex++;
-        renderQuestion();
-        updateProgress();
-      } else {
-        const unanswered = [];
-        for (let i = 0; i < answers.length; i++) {
-          if (answers[i] === null || answers[i] === '') {
-            unanswered.push(i + 1);
-          }
-        }
-
-        if (unanswered.length > 0) {
-          alert(`คุณยังไม่ได้ตอบข้อ: ${unanswered.join(', ')}\nกรุณาตอบให้ครบก่อนส่ง`);
-          return;
-        }
-
-        const ok = confirm("คุณแน่ใจหรือไม่ว่าต้องการส่งคำตอบทั้งหมด?");
-        if (!ok) return;
-
-        document.getElementById('submit-section').style.display = 'block';
-        document.getElementById('navigation').style.display = 'none';
-      }
-    });
-
-    document.getElementById('submit-btn').addEventListener('click', async () => {
-      const res = await fetch('/api/submit-exam', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode: 'official',
-          source: examType,
-          year,
-          grade,
-          questions: questions.map(q => q.id),
-          answers,
-        })
-      });
-      const result = await res.json();
-      localStorage.setItem("examResult", JSON.stringify(result));
-      window.location.href = "/result-competitive.html";
-    });
-
-    fetchQuestions();
-
-  </script>
+  fetchQuestions();
+</script>
 </body>
 </html>

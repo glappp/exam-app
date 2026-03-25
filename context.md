@@ -1,6 +1,7 @@
 # context.md — exam-app
 
 > อ่านไฟล์นี้ก่อนเริ่มงานทุกครั้ง
+> อัปเดตล่าสุด: 2026-03-26
 
 ---
 
@@ -8,7 +9,16 @@
 
 คลังข้อสอบออนไลน์สำหรับนักเรียนไทย ป.4–ม.3
 - Stack: Node.js + Express + Prisma (SQLite) + Vanilla HTML/CSS/JS
-- Repository: https://github.com/glappp/exam-app
+- Repository: https://github.com/glappp/exam-app | Branch หลัก: `main`
+
+---
+
+## สถานะระบบ (2026-03-26)
+
+ระบบหลัก **ใช้งานได้จริงแล้ว** ครบ flow:
+`login → เลือกโหมด → ทำข้อสอบ → submit → dashboard แสดงผล`
+
+Authentication ใช้ **session-based** (`express-session`) ทุกหน้าแล้ว — ไม่มี localStorage อีกต่อไป
 
 ---
 
@@ -16,117 +26,192 @@
 
 ```
 server/
-  Index.js                        — Entry point, routes หลัก, /add-question
+  Index.js                        — Entry point, multer upload, PUT /questions/:id, routes
   prisma/
-    schema.prisma                 — Database schema
+    schema.prisma                 — Database schema (8 models)
     seed.js                       — Seed ExamSetMetadata
-    seed-attribute-dict.js        — Seed AttributeDictionary (subject/grade/topic/skill/trap)
+    seed-attribute-dict.js        — Seed AttributeDictionary
+    dev.db                        — SQLite database
   routes/
-    login.js, register.js
-    questions.js                  — GET /all, GET /:id, PUT /:id
-    results.js
-    exam-options.js
+    register.js, results.js, questions.js, exam-options.js
     api/
       attributeDictRoute.js       — CRUD /api/attribute-dict
+      student.js                  — /api/student/me, /profile, /history
+      admin.js                    — /api/admin/users, /results, /stats, PATCH role
       exam-set-random.js
       exam-set-official.js
       exam-sets.js
-      submit-exam.js
+      submit-exam.js              — ตรวจคำตอบ + บันทึก ExamResult ลง StudentProfile
 
 client/
-  login.html, dashboard.html
-  practice.html
-  test-competitive.html, exam-official.html
-  add-question.html               — เพิ่มโจทย์ใหม่ (redesigned)
-  edit-question.html              — แก้ไขโจทย์ (?id=xxx)
-  list-questions.html             — รายการโจทย์ + ปุ่มแก้ไข
+  style.css                       — Design system (topbar, card, btn, table, badge, ...)
+  login.html                      — Card layout, session auth
+  register.html                   — Card layout, validation, auto-redirect
+  dashboard.html                  — Stats, mode buttons, profile form, exam history, weakness chart
+  practice.html                   — Session auth, topbar
+  exam.html                       — Mode-card UI (official / practice)
+  exam-official.html              — ข้อสอบจริง: session auth, timer, durationSec
+  test-competitive.html           — สอบแข่งขัน: session auth, timer, durationSec
+  result-competitive.html         — แสดงผลหลังสอบ (ยังไม่ redesign)
+  add-question.html               — เพิ่มโจทย์ (redesigned + attribute dict)
+  edit-question.html              — แก้ไขโจทย์ + upload รูป
+  list-questions.html             — รายการโจทย์ (ไม่มี hardcode localhost แล้ว)
   attribute-dict.html             — จัดการ AttributeDictionary
-  style.css                       — Design system
+  admin.html                      — จัดการ users + ดูผลสอบ + เปลี่ยน role
 ```
 
 ---
 
 ## Database Models (schema.prisma)
 
+### User
+`id`, `username` (unique), `password` (bcrypt), `firstName`, `lastName`, `email`, `role` (admin/teacher/student)
+
+### StudentProfile
+ผูกกับ User, รองรับหลายปีการศึกษา
+`userId`, `academicYear`, `school`, `district`, `province`, `grade`, `classroom`, `studentCode`
+
+### ExamResult
+ผูกกับ StudentProfile
+`mode` (practice/adaptive/competitive/official), `score`, `total`, `durationSec`,
+`questionIds` (JSON), `userAnswers` (JSON), `weakAttributes` (JSON flat map เช่น `{"topic:fractions-p6": -2}`)
+
 ### Question
-- `id` — cuid (auto)
+- `id` — cuid
 - `code` — human-readable เช่น `p6-pcc-2022-o-q001`
-- `textTh`, `textEn` — โจทย์ภาษาไทย/อังกฤษ
-- `image` — path รูปภาพ
-- `choices` — JSON array of `{ textTh, textEn, image }`
+- `textTh`, `textEn`
+- `image` — filename ใน `server/uploads/`
+- `choices` — JSON array `[{ textTh, textEn, image }]`
 - `answer` — index คำตอบที่ถูก
-- `attributes` — JSON โครงสร้างดังนี้:
+- `attributes` — JSON:
   ```json
-  {
-    "subject": "math",
-    "examGrade": "grade:p6",
-    "year": "2022",
-    "topic": ["topic:fractions-p6"],
-    "skill": ["skill:mental-math"],
-    "trap": ["trap:misread"],
-    "difficulty": 2
-  }
+  { "subject": "math", "examGrade": "grade:p6", "year": "2022",
+    "topic": ["topic:fractions-p6"], "skill": ["skill:mental-math"],
+    "trap": ["trap:misread"], "difficulty": 2 }
   ```
-- `difficulty` — String ("1"/"2"/"3")
-- `source`, `ownerOrg`, `createdBy`, `updatedBy`
+- `difficulty` — String ("1"/"2"/"3") — **หมายเหตุ: ใน Question เป็น String แต่ใน attributes เป็น Int**
 
 ### AttributeDictionary
 - `key` — PK เช่น `topic:area-p6`, `skill:mental-math`, `subject:math`, `grade:p4`
 - `type` — `"subject"` | `"grade"` | `"topic"` | `"skill"` | `"trap"`
-- `th` — ชื่อภาษาไทย (แสดงใน UI)
-- `en` — ชื่อภาษาอังกฤษ (ใช้สำหรับ AI วิเคราะห์)
-- `grade` — Int หรือ null (ผูกกับ topic เท่านั้น)
-
-### User / StudentProfile / ExamResult
-- User → StudentProfile (1 user หลาย profile ตามปีการศึกษา)
-- StudentProfile → ExamResult
-- ยังไม่ได้ต่อสายกับ session (งานที่ค้าง)
+- `th`, `en`, `grade` (Int หรือ null)
 
 ---
 
-## API Endpoints
+## API Endpoints (ครบถ้วน)
 
 | Method | Path | หน้าที่ |
 |--------|------|--------|
-| POST | `/api/login` | Login |
+| POST | `/api/login` | Login → set session |
 | GET | `/api/me` | ดู session ปัจจุบัน |
 | POST | `/api/logout` | Logout |
-| GET | `/api/attribute-dict` | ดึง AttributeDictionary (filter: ?type=, ?grade=) |
+| POST | `/api/register` | สมัครสมาชิก + สร้าง StudentProfile |
+| GET | `/api/student/me` | User + profile + 10 ผลสอบล่าสุด |
+| PUT | `/api/student/profile` | Create/update StudentProfile ตามปีการศึกษา |
+| GET | `/api/student/history` | ประวัติสอบ 50 รายการ |
+| GET | `/api/admin/users` | รายชื่อ users ทั้งหมด (admin only) |
+| GET | `/api/admin/results` | ผลสอบ 100 รายการล่าสุด (admin only) |
+| GET | `/api/admin/stats` | สถิติ users/questions/results |
+| PATCH | `/api/admin/users/:id/role` | เปลี่ยน role (admin only) |
+| GET | `/api/attribute-dict` | ดึง AttributeDictionary |
 | POST | `/api/attribute-dict` | เพิ่ม attribute |
 | PUT | `/api/attribute-dict/:key` | แก้ไข attribute |
 | DELETE | `/api/attribute-dict/:key` | ลบ attribute |
 | GET | `/questions/all` | ดึงโจทย์ทั้งหมด |
 | GET | `/questions/:id` | ดึงโจทย์รายข้อ |
-| PUT | `/questions/:id` | แก้ไขโจทย์ |
+| PUT | `/questions/:id` | แก้ไขโจทย์ (multipart/form-data + images) |
 | POST | `/add-question` | เพิ่มโจทย์ใหม่ (multipart/form-data) |
-| GET | `/api/exam-set` | สุ่มข้อสอบ |
+| GET | `/api/exam-set/random` | สุ่มข้อสอบ |
 | GET | `/api/exam-set-official` | ข้อสอบจริง |
-| POST | `/api/submit-exam` | ส่งคำตอบ |
+| POST | `/api/submit-exam` | ส่งคำตอบ → ตรวจ + บันทึก ExamResult |
+
+**หมายเหตุ:** ทุก fetch ต้องใส่ `credentials: 'include'`
 
 ---
 
-## การ Seed ข้อมูลเริ่มต้น
+## Design System (style.css)
+
+Class หลักที่ใช้ข้ามทุกหน้า:
+- Layout: `.topbar`, `.page`, `.page-wide`, `.card`, `.card-title`
+- Form: `.form-group`, `.form-row`
+- Button: `.btn`, `.btn-primary`, `.btn-navy`, `.btn-ghost`, `.btn-danger`, `.btn-full`
+- Exam: `.exam-layout`, `.question-area`, `.nav-sidebar`, `.question-box`, `.choices`, `.choice-btn`
+- Misc: `.badge`, `.badge-success/error/info/warn`, `.msg`, `.table`, `.hidden`
+
+---
+
+## Seed
 
 ```bash
-# Seed AttributeDictionary (subject/grade/topic/skill/trap สำหรับ math ป.4–ม.3)
-node server/prisma/seed-attribute-dict.js
+cd server
+npx prisma generate          # ถ้า node_modules ในโฟลเดอร์ server
+node prisma/seed-attribute-dict.js   # สร้าง AttributeDictionary 67 รายการ
 ```
-
----
-
-## งานที่ค้าง (ยังไม่ได้ทำ)
-
-- [ ] ระบบ student personal database
-  - เพิ่ม `studentProfileId` ใน session ตั้งแต่ login
-  - API `/api/my-profile` และ `/api/my-history`
-  - Dashboard แสดงประวัติและจุดอ่อนส่วนตัว
-- [ ] GUI redesign (login/dashboard/practice/exam) — มีไฟล์แล้วแต่ยังไม่ commit
 
 ---
 
 ## หมายเหตุสำคัญ
 
-- รอให้ผู้ใช้อนุมัติก่อนแก้ code ทุกครั้ง
-- `difficulty` ใน Question เก็บเป็น String ("1"/"2"/"3") แต่ใน attributes เก็บเป็น Int
-- รูปภาพเก็บใน `server/uploads/` และเสิร์ฟที่ `/uploads/`
-- Session ใช้ `express-session` (cookie-based) — ต้องใช้ `credentials: include` ทุก fetch
+- `difficulty` ใน Question เก็บเป็น String ("1"/"2"/"3") แต่ใน `attributes` เป็น Int
+- รูปภาพเก็บใน `server/uploads/` เสิร์ฟที่ `/uploads/`
+- Session: `express-session` (cookie-based) — ใช้ `credentials: 'include'` ทุก fetch
+- `weakAttributes` ใน ExamResult เป็น flat object `{ "topic:xxx": -2, "skill:yyy": -1 }` (ติดลบ = ผิด)
+- Admin เข้าได้ที่ `/admin.html` — ต้อง role = `"admin"`
+
+---
+
+## งานที่เหลือ — แบ่งเป็น Phase
+
+### Phase A — ปรับปรุง UX ที่มีอยู่ (1–2 วัน)
+
+1. **result-competitive.html redesign** ให้ match style ใหม่
+   - แสดงคะแนน / เปอร์เซ็นต์ / ข้อที่ถูก/ผิดพร้อมเฉลย
+   - ปุ่ม "ทำอีกครั้ง" / "กลับหน้าหลัก"
+
+2. **Practice mode ให้ submit ExamResult ด้วย**
+   - ตอนนี้ `practice.html` + `script.js` ยังไม่ส่ง `/api/submit-exam`
+   - ต้องเก็บ questionIds + answers + durationSec แล้วส่งตอนจบ session
+
+3. **Pagination ใน list-questions.html**
+   - ตอนนี้โหลดทีเดียวหมด
+   - ทำ page-based หรือ infinite scroll
+
+---
+
+### Phase B — Adaptive & Recommendation (2–3 วัน)
+
+4. **Adaptive mode ทำงานจริง**
+   - ปุ่ม "ปรับจุดอ่อน" ใน dashboard ยังไป practice ธรรมดา
+   - ต้องดึง weakAttributes จาก ExamResult ล่าสุด
+   - สร้าง `/api/exam-set/adaptive` → filter questions ตาม weak topics
+   - ส่ง `mode: 'adaptive'` ไป submit-exam
+
+5. **Recommendation บน Dashboard**
+   - เพิ่ม "แนะนำให้ฝึก" ใต้ weakness chart
+   - Rule-based: topic ที่ score ติดลบ → แสดงชื่อ + ปุ่ม "ฝึกเลย"
+   - ปุ่ม link ไป `practice.html?topic=xxx`
+
+---
+
+### Phase C — Production Readiness (1–2 วัน)
+
+6. **Error handling ให้ robust**
+   - API ทุกตัว: handle Prisma error อย่างถูกต้อง
+   - Frontend: แสดง error message ทุก fetch
+   - Rate limiting บน login endpoint
+
+7. **Upload รูปไป Cloudflare R2**
+   - ตอนนี้เก็บ local `server/uploads/`
+   - เปลี่ยน multer storage → R2
+   - เก็บ URL แทน filename
+   - ไฟล์ที่เกี่ยวข้อง: `Index.js` (upload config), `add-question.html`, `edit-question.html`
+
+---
+
+### Phase D — Deploy (1 วัน)
+
+8. **Deploy จริง**
+   - มี `deploy-version` branch อยู่แล้ว
+   - ตรวจสอบ environment variables (session secret, DB path)
+   - ทดสอบ end-to-end บน server จริง
+   - เปลี่ยน SQLite → PostgreSQL ถ้าต้องการ scale

@@ -3,138 +3,165 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>เลือกโหมดทำข้อสอบ</title>
-  <link rel="stylesheet" href="/style.css" />
+  <title>เลือกการสอบ — คลังข้อสอบ</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    body {
-      font-family: sans-serif;
-      background-color: #f5f5f5;
-      padding: 2rem;
+    .mode-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+    @media (max-width: 480px) { .mode-cards { grid-template-columns: 1fr; } }
+
+    .mode-card {
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      background: #fff;
     }
-    .container {
-      max-width: 600px;
-      margin: auto;
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    select, button {
-      width: 100%;
-      padding: 0.6rem;
-      margin: 0.5rem 0;
-      font-size: 1rem;
-    }
-    label {
-      margin-top: 1rem;
-      font-weight: bold;
-      display: block;
-    }
-    .hidden {
-      display: none;
-    }
+    .mode-card:hover { border-color: var(--blue); }
+    .mode-card.active { border-color: var(--blue); background: #eff6ff; }
+    .mode-card .icon { font-size: 26px; display: block; margin-bottom: 6px; }
+    .mode-card .label { font-weight: 700; font-size: 14px; }
+    .mode-card .desc  { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+    .options-panel { display: none; }
+    .options-panel.visible { display: block; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>เลือกโหมดทำข้อสอบ</h2>
-
-    <label for="mode">โหมด:</label>
-    <select id="mode" onchange="onModeChange()">
-      <option value="official">ข้อสอบจริง</option>
-      <option value="practice">ฝึกฝน</option>
-    </select>
-
-    <div id="common-options">
-      <label for="grade">ระดับชั้น:</label>
-      <select id="grade"></select>
-
-      <label for="examType">สนามสอบ:</label>
-      <select id="examType"></select>
+  <div class="topbar">
+    <span class="topbar-title">เลือกการสอบ</span>
+    <div class="topbar-nav">
+      <span class="topbar-user" id="greeting"></span>
+      <a href="dashboard.html">หน้าหลัก</a>
+      <a href="#" onclick="logout()">ออกจากระบบ</a>
     </div>
+  </div>
 
-    <div id="official-only">
-      <label for="year">ปีที่สอบ:</label>
-      <select id="year"></select>
+  <div class="page">
+    <div class="card">
+      <div class="card-title">โหมดการสอบ</div>
+      <div class="mode-cards">
+        <div class="mode-card active" id="card-official" onclick="selectMode('official')">
+          <span class="icon">📄</span>
+          <div class="label">ข้อสอบจริง</div>
+          <div class="desc">ข้อสอบเก่าจริงตามปีและสนาม</div>
+        </div>
+        <div class="mode-card" id="card-practice" onclick="selectMode('practice')">
+          <span class="icon">⏱️</span>
+          <div class="label">ฝึกสอบ (สุ่มข้อ)</div>
+          <div class="desc">สุ่มข้อสอบตามชั้นและสนาม</div>
+        </div>
+      </div>
+
+      <div class="options-panel visible" id="opts-official">
+        <div class="form-row">
+          <div class="form-group">
+            <label>ระดับชั้น</label>
+            <select id="grade-official"></select>
+          </div>
+          <div class="form-group">
+            <label>สนามสอบ</label>
+            <select id="examType-official"></select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>ปีที่สอบ</label>
+          <select id="year-official"></select>
+        </div>
+      </div>
+
+      <div class="options-panel" id="opts-practice">
+        <div class="form-row">
+          <div class="form-group">
+            <label>ระดับชั้น</label>
+            <select id="grade-practice"></select>
+          </div>
+          <div class="form-group">
+            <label>สนามสอบ</label>
+            <select id="examType-practice"></select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group mt-16" style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" id="timed" style="width:auto;margin:0">
+        <label for="timed" style="margin:0;font-size:14px;font-weight:500;color:var(--text)">จับเวลา</label>
+      </div>
+
+      <button class="btn btn-primary mt-16" onclick="startExam()">เริ่มสอบ</button>
     </div>
-
-    <label>
-      <input type="checkbox" id="timed"> จับเวลา
-    </label>
-
-    <button onclick="startExam()">เริ่มทำข้อสอบ</button>
   </div>
 
   <script>
+    let currentMode = 'official';
+
+    function selectMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('active'));
+      document.getElementById(`card-${mode}`).classList.add('active');
+      document.querySelectorAll('.options-panel').forEach(p => p.classList.remove('visible'));
+      document.getElementById(`opts-${mode}`).classList.add('visible');
+    }
+
     async function fetchOptions(mode) {
       const res = await fetch(`/api/exam-options?mode=${mode}`);
       const data = await res.json();
+      const suffix = mode === 'official' ? '-official' : '-practice';
 
-      const gradeSelect = document.getElementById('grade');
-      const examTypeSelect = document.getElementById('examType');
-      const yearSelect = document.getElementById('year');
-
-      gradeSelect.innerHTML = '';
-      examTypeSelect.innerHTML = '';
-      yearSelect.innerHTML = '';
+      const gradeEl    = document.getElementById('grade'    + suffix);
+      const examTypeEl = document.getElementById('examType' + suffix);
+      gradeEl.innerHTML = '';
+      examTypeEl.innerHTML = '';
 
       data.grades.forEach(g => {
-        const opt = document.createElement('option');
-        opt.value = g;
-        opt.textContent = gradeLabel(g);
-        gradeSelect.appendChild(opt);
+        gradeEl.innerHTML += `<option value="${g}">${gradeLabel(g)}</option>`;
       });
-
       data.examTypes.forEach(e => {
-        const opt = document.createElement('option');
-        opt.value = e;
-        opt.textContent = examLabel(e);
-        examTypeSelect.appendChild(opt);
+        examTypeEl.innerHTML += `<option value="${e}">${examLabel(e)}</option>`;
       });
 
-      (data.years || []).forEach(y => {
-        const opt = document.createElement('option');
-        opt.value = y;
-        opt.textContent = y;
-        yearSelect.appendChild(opt);
-      });
-    }
-
-    function onModeChange() {
-      const mode = document.getElementById('mode').value;
-      document.getElementById('official-only').classList.toggle('hidden', mode !== 'official');
-      fetchOptions(mode);
+      if (mode === 'official') {
+        const yearEl = document.getElementById('year-official');
+        yearEl.innerHTML = '';
+        (data.years || []).forEach(y => {
+          yearEl.innerHTML += `<option value="${y}">${y}</option>`;
+        });
+      }
     }
 
     function gradeLabel(g) {
-      return { p4: 'ป.4', p5: 'ป.5', p6: 'ป.6', m1: 'ม.1', m3: 'ม.3' }[g] || g;
+      return { p4:'ป.4', p5:'ป.5', p6:'ป.6', m1:'ม.1', m2:'ม.2', m3:'ม.3' }[g] || g;
     }
-
     function examLabel(e) {
-      return {
-        chulabhorn: 'จุฬาภรณ์',
-        suankularb: 'สวนกุหลาบ',
-        muengnont: 'เมืองนนท์'
-      }[e] || e;
+      return { chulabhorn:'จุฬาภรณ์', suankularb:'สวนกุหลาบ', muengnont:'เมืองนนท์' }[e] || e;
     }
 
     function startExam() {
-      const mode = document.getElementById('mode').value;
-      const grade = document.getElementById('grade').value;
-      const examType = document.getElementById('examType').value;
-      const timed = document.getElementById('timed').checked ? '1' : '0';
+      const suffix = currentMode === 'official' ? '-official' : '-practice';
+      const grade    = document.getElementById('grade'    + suffix).value;
+      const examType = document.getElementById('examType' + suffix).value;
+      const timed    = document.getElementById('timed').checked ? '1' : '0';
 
-      let url = '';
-      if (mode === 'official') {
-        const year = document.getElementById('year').value;
-        url = `exam-official.html?grade=${grade}&examType=${examType}&year=${year}&timed=${timed}`;
+      if (currentMode === 'official') {
+        const year = document.getElementById('year-official').value;
+        location.href = `exam-official.html?grade=${grade}&examType=${examType}&year=${year}&timed=${timed}`;
       } else {
-        url = `test-competitive.html?grade=${grade}&examType=${examType}&timed=${timed}`;
+        location.href = `test-competitive.html?grade=${grade}&examType=${examType}&timed=${timed}`;
       }
-      window.location.href = url;
     }
 
-    window.onload = onModeChange;
+    function logout() {
+      fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      location.href = 'login.html';
+    }
+
+    (async () => {
+      const res = await fetch('/api/me', { credentials: 'include' });
+      if (!res.ok) { location.href = 'login.html'; return; }
+      const me = await res.json();
+      document.getElementById('greeting').textContent = `สวัสดี, ${me.firstName || ''}`;
+      await Promise.all([fetchOptions('official'), fetchOptions('practice')]);
+    })();
   </script>
 </body>
 </html>

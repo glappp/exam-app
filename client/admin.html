@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel — คลังข้อสอบ</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .stat-strip { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 24px; }
+    .stat-box { background:#fff; border-radius:10px; padding:18px; text-align:center; box-shadow:var(--shadow); }
+    .stat-num  { font-size:28px; font-weight:800; color:var(--navy); }
+    .stat-lbl  { font-size:12px; color:var(--muted); margin-top:3px; }
+
+    .tabs { display:flex; gap:4px; margin-bottom:16px; }
+    .tab-btn {
+      padding:8px 18px; border:1.5px solid var(--border); border-radius:7px;
+      background:#fff; font-size:13px; font-weight:600; cursor:pointer; color:var(--muted);
+    }
+    .tab-btn.active { background:var(--navy); color:#fff; border-color:var(--navy); }
+
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+
+    .role-sel {
+      padding:4px 8px; border:1px solid var(--border); border-radius:5px;
+      font-size:12px; cursor:pointer; background:#fff;
+    }
+    .role-sel:focus { outline:none; border-color:var(--blue); }
+
+    .pct-bar { height:6px; background:#f0f0f0; border-radius:3px; overflow:hidden; display:inline-block; width:60px; vertical-align:middle; }
+    .pct-fill { height:100%; border-radius:3px; background:var(--blue); }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <span class="topbar-title">Admin Panel</span>
+    <div class="topbar-nav">
+      <a href="dashboard.html">หน้าหลัก</a>
+      <a href="list-questions.html">โจทย์</a>
+      <a href="attribute-dict.html">Dict</a>
+      <a href="#" onclick="logout()">ออกจากระบบ</a>
+    </div>
+  </div>
+
+  <div class="page-wide">
+    <div class="stat-strip" id="stat-strip">
+      <div class="stat-box"><div class="stat-num" id="s-users">—</div><div class="stat-lbl">ผู้ใช้ทั้งหมด</div></div>
+      <div class="stat-box"><div class="stat-num" id="s-questions">—</div><div class="stat-lbl">โจทย์ทั้งหมด</div></div>
+      <div class="stat-box"><div class="stat-num" id="s-results">—</div><div class="stat-lbl">ครั้งที่สอบ</div></div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('users')">ผู้ใช้</button>
+      <button class="tab-btn" onclick="switchTab('results')">ผลการสอบ</button>
+    </div>
+
+    <!-- Users tab -->
+    <div class="tab-panel active card" id="tab-users">
+      <div id="users-content"><div style="color:var(--muted);font-size:13px">กำลังโหลด...</div></div>
+    </div>
+
+    <!-- Results tab -->
+    <div class="tab-panel card" id="tab-results">
+      <div id="results-content"><div style="color:var(--muted);font-size:13px">กำลังโหลด...</div></div>
+    </div>
+  </div>
+
+  <script>
+    function switchTab(name) {
+      document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', ['users','results'][i] === name));
+      document.querySelectorAll('.tab-panel').forEach((p,i) => p.classList.toggle('active', ['tab-users','tab-results'][i] === `tab-${name}`));
+    }
+
+    async function loadStats() {
+      const r = await fetch('/api/admin/stats', { credentials:'include' });
+      if (!r.ok) { location.href = 'dashboard.html'; return; }
+      const d = await r.json();
+      document.getElementById('s-users').textContent     = d.userCount;
+      document.getElementById('s-questions').textContent = d.questionCount;
+      document.getElementById('s-results').textContent   = d.resultCount;
+    }
+
+    async function loadUsers() {
+      const r = await fetch('/api/admin/users', { credentials:'include' });
+      const d = await r.json();
+      const el = document.getElementById('users-content');
+      if (!d.users?.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px">ไม่มีผู้ใช้</p>'; return; }
+
+      const rows = d.users.map(u => {
+        const p = u.studentProfiles?.[0];
+        const examCount = p?._count?.examResults ?? '—';
+        const roleColors = { admin:'badge-error', teacher:'badge-info', student:'badge-success' };
+        return `<tr>
+          <td>${u.id}</td>
+          <td><strong>${u.firstName} ${u.lastName}</strong><br><span class="text-small text-muted">@${u.username}</span></td>
+          <td>${u.email}</td>
+          <td><span class="badge ${roleColors[u.role] || 'badge-warn'}">${u.role}</span></td>
+          <td>${p ? `${p.grade} • ${p.school}` : '—'}</td>
+          <td>${examCount}</td>
+          <td>
+            <select class="role-sel" onchange="changeRole(${u.id}, this.value)">
+              ${['student','teacher','admin'].map(r => `<option value="${r}" ${r===u.role?'selected':''}>${r}</option>`).join('')}
+            </select>
+          </td>
+        </tr>`;
+      }).join('');
+
+      el.innerHTML = `<div style="overflow-x:auto">
+        <table class="table">
+          <thead><tr>
+            <th>ID</th><th>ชื่อ</th><th>Email</th><th>Role</th><th>โปรไฟล์</th><th>ครั้งที่สอบ</th><th>เปลี่ยน Role</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+    }
+
+    async function loadResults() {
+      const r = await fetch('/api/admin/results', { credentials:'include' });
+      const d = await r.json();
+      const el = document.getElementById('results-content');
+      if (!d.results?.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px">ยังไม่มีผลสอบ</p>'; return; }
+
+      const modeClass = { practice:'badge-success', competitive:'badge-warn', adaptive:'badge-info', official:'badge-error' };
+      const rows = d.results.map(r => {
+        const u = r.studentProfile?.user;
+        const pct = r.total ? Math.round(r.score / r.total * 100) : 0;
+        const date = new Date(r.createdAt).toLocaleDateString('th-TH', { day:'2-digit', month:'short', year:'2-digit', hour:'2-digit', minute:'2-digit' });
+        return `<tr>
+          <td>${date}</td>
+          <td>${u ? `${u.firstName} ${u.lastName}` : '—'}</td>
+          <td>${r.studentProfile?.grade || '—'}</td>
+          <td><span class="badge ${modeClass[r.mode] || 'badge-warn'}">${r.mode}</span></td>
+          <td>${r.score}/${r.total}</td>
+          <td>
+            <div class="pct-bar"><div class="pct-fill" style="width:${pct}%"></div></div>
+            <span style="font-size:12px;margin-left:6px">${pct}%</span>
+          </td>
+        </tr>`;
+      }).join('');
+
+      el.innerHTML = `<div style="overflow-x:auto">
+        <table class="table">
+          <thead><tr>
+            <th>วันที่</th><th>นักเรียน</th><th>ชั้น</th><th>โหมด</th><th>คะแนน</th><th>%</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+    }
+
+    async function changeRole(userId, newRole) {
+      const r = await fetch(`/api/admin/users/${userId}/role`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ role: newRole })
+      });
+      if (!r.ok) alert('เปลี่ยน role ไม่สำเร็จ');
+    }
+
+    function logout() {
+      fetch('/api/logout', { method:'POST', credentials:'include' });
+      location.href = 'login.html';
+    }
+
+    async function init() {
+      const me = await fetch('/api/me', { credentials:'include' });
+      if (!me.ok) { location.href = 'login.html'; return; }
+      const data = await me.json();
+      if (data.role !== 'admin') { alert('คุณไม่มีสิทธิ์เข้าหน้านี้'); location.href = 'dashboard.html'; return; }
+
+      await Promise.all([loadStats(), loadUsers(), loadResults()]);
+    }
+
+    init();
+  </script>
+</body>
+</html>

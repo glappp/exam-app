@@ -1,52 +1,373 @@
-<!-- client/dashboard.html -->
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>แดชบอร์ด</title>
-  <link rel="stylesheet" href="style.css" />
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 2rem;
-      background-color: #f7f9fa;
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; color: #222; min-height: 100vh; }
+
+    .topbar {
+      background: #1e3a5f;
+      color: #fff;
+      padding: 0 24px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-    h1 {
-      margin-bottom: 2rem;
+    .topbar-title { font-weight: 600; font-size: 16px; }
+    .topbar-right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+    .topbar-right a { color: #93c5fd; text-decoration: none; }
+    .topbar-right a:hover { color: #fff; }
+
+    .container { max-width: 900px; margin: 28px auto; padding: 0 16px 64px; }
+
+    .welcome { margin-bottom: 24px; }
+    .welcome h2 { font-size: 22px; font-weight: 700; }
+    .welcome p { color: #666; font-size: 14px; margin-top: 4px; }
+
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
-    .mode-list {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 1rem;
-      max-width: 400px;
+    .card-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 14px;
     }
-    .mode-list button {
-      padding: 1.2rem;
-      font-size: 1.1rem;
-      background-color: #007acc;
-      color: white;
+
+    /* Mode buttons */
+    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .mode-btn {
+      padding: 14px 12px;
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
       cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      transition: opacity .15s;
     }
-    .mode-list button:hover {
-      background-color: #005fa3;
+    .mode-btn:hover { opacity: .85; }
+    .mode-btn .icon { font-size: 22px; }
+    .mode-btn.green  { background: #dcfce7; color: #166534; }
+    .mode-btn.blue   { background: #dbeafe; color: #1e40af; }
+    .mode-btn.orange { background: #ffedd5; color: #9a3412; }
+    .mode-btn.purple { background: #f3e8ff; color: #6b21a8; }
+
+    /* Profile form */
+    .form-group { margin-bottom: 12px; }
+    .form-group label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 6px;
+      font-size: 13px; font-family: inherit;
     }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: #3b82f6; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn-save {
+      padding: 9px 20px; background: #1e3a5f; color: #fff;
+      border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 500;
+    }
+    .btn-save:hover { background: #16304f; }
+    .save-msg { font-size: 12px; margin-top: 8px; }
+
+    /* Stats row */
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+    .stat-box { background: #f8fafc; border-radius: 8px; padding: 12px; text-align: center; }
+    .stat-num { font-size: 24px; font-weight: 700; color: #1e3a5f; }
+    .stat-label { font-size: 11px; color: #888; margin-top: 2px; }
+
+    /* History table */
+    .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .history-table th { text-align: left; padding: 8px 10px; background: #f8fafc; color: #666; font-weight: 600; border-bottom: 1px solid #e8e8e8; }
+    .history-table td { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+    .badge-practice  { background: #dcfce7; color: #166534; }
+    .badge-competitive { background: #ffedd5; color: #9a3412; }
+    .badge-adaptive  { background: #dbeafe; color: #1e40af; }
+    .badge-official  { background: #f3e8ff; color: #6b21a8; }
+
+    /* Weakness */
+    .weak-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .weak-label { font-size: 12px; color: #444; width: 160px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .weak-bar-bg { flex: 1; height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
+    .weak-bar-fill { height: 100%; border-radius: 4px; background: #3b82f6; }
+    .weak-bar-fill.warn { background: #f59e0b; }
+    .weak-bar-fill.danger { background: #ef4444; }
+    .weak-pct { font-size: 12px; color: #666; width: 36px; text-align: right; }
+
+    .empty-msg { font-size: 13px; color: #aaa; font-style: italic; text-align: center; padding: 16px 0; }
   </style>
 </head>
 <body>
-  <h1>เลือกโหมดที่ต้องการ</h1>
 
-  <div class="mode-list">
-    <button onclick="goTo('practice')">🟢 โหมดฝึกหัด</button>
-    <button onclick="goTo('adaptive')">🔵 โหมดปรับตามจุดอ่อน</button>
-    <button onclick="goTo('exam')">🟠 โหมดสอบแข่งขัน</button>
+<div class="topbar">
+  <span class="topbar-title">คลังข้อสอบออนไลน์</span>
+  <div class="topbar-right">
+    <span id="topbar-name"></span>
+    <a href="#" onclick="logout()">ออกจากระบบ</a>
+  </div>
+</div>
+
+<div class="container">
+  <div class="welcome">
+    <h2 id="welcome-name">กำลังโหลด...</h2>
+    <p id="welcome-sub"></p>
   </div>
 
-  <script>
-    function goTo(mode) {
-      window.location.href = mode + '.html';
+  <!-- Stats row -->
+  <div class="stats-row" id="stats-row" style="display:none">
+    <div class="stat-box">
+      <div class="stat-num" id="stat-total">0</div>
+      <div class="stat-label">ครั้งที่สอบ</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" id="stat-avg">—</div>
+      <div class="stat-label">คะแนนเฉลี่ย (%)</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-num" id="stat-best">—</div>
+      <div class="stat-label">สูงสุด (%)</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <!-- Left: Mode buttons + Weaknesses -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+
+      <div class="card">
+        <div class="card-title">เริ่มเรียน / สอบ</div>
+        <div class="mode-grid">
+          <button class="mode-btn green" onclick="location.href='practice.html'">
+            <span class="icon">📗</span>ฝึกหัด
+          </button>
+          <button class="mode-btn blue" onclick="location.href='practice.html?mode=adaptive'">
+            <span class="icon">🎯</span>ปรับจุดอ่อน
+          </button>
+          <button class="mode-btn orange" onclick="location.href='exam.html'">
+            <span class="icon">⏱️</span>สอบแข่งขัน
+          </button>
+          <button class="mode-btn purple" onclick="location.href='exam.html?type=official'">
+            <span class="icon">📄</span>ข้อสอบจริง
+          </button>
+        </div>
+      </div>
+
+      <div class="card" id="weakness-card">
+        <div class="card-title">จุดอ่อน (Top 5)</div>
+        <div id="weakness-content"><div class="empty-msg">ยังไม่มีข้อมูล</div></div>
+      </div>
+
+    </div>
+
+    <!-- Right: Profile form + History -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+
+      <div class="card">
+        <div class="card-title">ข้อมูลนักเรียน</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>ปีการศึกษา (พ.ศ.)</label>
+            <input type="text" id="p-year" placeholder="เช่น 2568" maxlength="4">
+          </div>
+          <div class="form-group">
+            <label>ระดับชั้น</label>
+            <select id="p-grade">
+              <option value="">-- เลือก --</option>
+              <option>ป.4</option><option>ป.5</option><option>ป.6</option>
+              <option>ม.1</option><option>ม.2</option><option>ม.3</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>โรงเรียน</label>
+          <input type="text" id="p-school" placeholder="ชื่อโรงเรียน">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>อำเภอ / เขต</label>
+            <input type="text" id="p-district">
+          </div>
+          <div class="form-group">
+            <label>จังหวัด</label>
+            <input type="text" id="p-province">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>ห้อง</label>
+            <input type="text" id="p-classroom" placeholder="เช่น 1/1">
+          </div>
+          <div class="form-group">
+            <label>เลขประจำตัว</label>
+            <input type="text" id="p-code">
+          </div>
+        </div>
+        <button class="btn-save" onclick="saveProfile()">บันทึก</button>
+        <div class="save-msg" id="save-msg"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">ประวัติการสอบ</div>
+        <div id="history-content"><div class="empty-msg">ยังไม่มีประวัติ</div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  let studentData = null;
+
+  async function init() {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (!res.ok) { location.href = 'login.html'; return; }
+    const me = await res.json();
+
+    document.getElementById('topbar-name').textContent = me.firstName || me.username || '';
+    document.getElementById('welcome-name').textContent = `สวัสดี, ${me.firstName || 'นักเรียน'} 👋`;
+
+    // Load full student data
+    const r2 = await fetch('/api/student/me', { credentials: 'include' });
+    if (r2.ok) {
+      studentData = await r2.json();
+      applyProfile(studentData.profile);
+      renderStats(studentData.examResults);
+      renderHistory(studentData.examResults);
+      renderWeakness(studentData.examResults);
+      if (studentData.profile) {
+        document.getElementById('welcome-sub').textContent =
+          `${studentData.profile.grade} • ${studentData.profile.school} • ปีการศึกษา ${studentData.profile.academicYear}`;
+      }
     }
-  </script>
+  }
+
+  function applyProfile(p) {
+    if (!p) return;
+    document.getElementById('p-year').value     = p.academicYear || '';
+    document.getElementById('p-grade').value    = p.grade || '';
+    document.getElementById('p-school').value   = p.school || '';
+    document.getElementById('p-district').value = p.district || '';
+    document.getElementById('p-province').value = p.province || '';
+    document.getElementById('p-classroom').value = p.classroom || '';
+    document.getElementById('p-code').value     = p.studentCode || '';
+  }
+
+  function renderStats(results) {
+    if (!results.length) return;
+    document.getElementById('stats-row').style.display = 'grid';
+    document.getElementById('stat-total').textContent = results.length;
+    const pcts = results.map(r => r.total ? Math.round(r.score / r.total * 100) : 0);
+    const avg = Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length);
+    const best = Math.max(...pcts);
+    document.getElementById('stat-avg').textContent = avg + '%';
+    document.getElementById('stat-best').textContent = best + '%';
+  }
+
+  function renderHistory(results) {
+    const el = document.getElementById('history-content');
+    if (!results.length) return;
+    const rows = results.slice(0, 8).map(r => {
+      const pct = r.total ? Math.round(r.score / r.total * 100) : 0;
+      const date = new Date(r.createdAt).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
+      const badgeClass = { practice: 'badge-practice', competitive: 'badge-competitive', adaptive: 'badge-adaptive', official: 'badge-official' }[r.mode] || 'badge-practice';
+      return `<tr>
+        <td>${date}</td>
+        <td><span class="badge ${badgeClass}">${modeLabel(r.mode)}</span></td>
+        <td>${r.score}/${r.total}</td>
+        <td>${pct}%</td>
+      </tr>`;
+    }).join('');
+    el.innerHTML = `<table class="history-table">
+      <thead><tr><th>วันที่</th><th>โหมด</th><th>คะแนน</th><th>%</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+  }
+
+  function renderWeakness(results) {
+    const el = document.getElementById('weakness-content');
+    // Aggregate weakAttributes from results
+    const tally = {};
+    results.forEach(r => {
+      const w = r.weakAttributes;
+      if (!w || typeof w !== 'object') return;
+      Object.entries(w).forEach(([k, v]) => {
+        tally[k] = (tally[k] || 0) + (typeof v === 'number' ? v : 0);
+      });
+    });
+    const entries = Object.entries(tally).sort((a, b) => a[1] - b[1]).slice(0, 5);
+    if (!entries.length) return;
+
+    const max = Math.max(...entries.map(e => Math.abs(e[1])), 1);
+    el.innerHTML = entries.map(([key, val]) => {
+      const pct = Math.round(Math.abs(val) / max * 100);
+      const label = key.replace(/^(topic|skill|trap):/, '');
+      const fillClass = pct > 70 ? 'danger' : pct > 40 ? 'warn' : '';
+      return `<div class="weak-bar-row">
+        <div class="weak-label" title="${key}">${label}</div>
+        <div class="weak-bar-bg"><div class="weak-bar-fill ${fillClass}" style="width:${pct}%"></div></div>
+        <div class="weak-pct">${val > 0 ? '+' : ''}${val}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function modeLabel(m) {
+    return { practice: 'ฝึกหัด', competitive: 'แข่งขัน', adaptive: 'ปรับจุดอ่อน', official: 'ข้อสอบจริง' }[m] || m;
+  }
+
+  async function saveProfile() {
+    const body = {
+      academicYear: document.getElementById('p-year').value.trim(),
+      grade:        document.getElementById('p-grade').value,
+      school:       document.getElementById('p-school').value.trim(),
+      district:     document.getElementById('p-district').value.trim(),
+      province:     document.getElementById('p-province').value.trim(),
+      classroom:    document.getElementById('p-classroom').value.trim(),
+      studentCode:  document.getElementById('p-code').value.trim(),
+    };
+    const msg = document.getElementById('save-msg');
+    try {
+      const res = await fetch('/api/student/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (data.success) {
+        msg.style.color = '#166534';
+        msg.textContent = '✅ บันทึกสำเร็จ';
+        document.getElementById('welcome-sub').textContent =
+          `${body.grade} • ${body.school} • ปีการศึกษา ${body.academicYear}`;
+        setTimeout(() => msg.textContent = '', 3000);
+      } else {
+        msg.style.color = '#b91c1c';
+        msg.textContent = `❌ ${data.error || 'บันทึกไม่สำเร็จ'}`;
+      }
+    } catch {
+      msg.style.color = '#b91c1c';
+      msg.textContent = '❌ ไม่สามารถเชื่อมต่อได้';
+    }
+  }
+
+  async function logout() {
+    await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+    location.href = 'login.html';
+  }
+
+  init();
+</script>
 </body>
 </html>

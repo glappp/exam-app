@@ -38,7 +38,7 @@ async function startExam() {
 
   const questionArea = document.getElementById('question-area');
 
-  const res = await fetch('http://localhost:3001/questions/all');
+  const res = await fetch('/questions/all');
   const data = await res.json();
   const allQuestions = data.questions || [];
 
@@ -95,7 +95,7 @@ function checkAnswer(choiceIndex) {
 async function saveResult(question, selected, isCorrect) {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
-  const res = await fetch('http://localhost:3001/results', {
+  const res = await fetch('/results', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -114,7 +114,7 @@ async function saveResult(question, selected, isCorrect) {
 }
 
 async function showResults() {
-  const res = await fetch('http://localhost:3001/results');
+  const res = await fetch('/results');
   const results = await res.json();
 
   const container = document.getElementById("results");
@@ -135,7 +135,7 @@ async function showResults() {
 
 async function analyzeWeakness() {
   console.log("🧠 เริ่มวิเคราะห์จุดอ่อน...");
-  const res = await fetch('http://localhost:3001/analysis');
+  const res = await fetch('/analysis');
   const data = await res.json();
   console.log("📊 ผลลัพธ์จาก /analysis:", data);
 

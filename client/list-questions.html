@@ -134,7 +134,7 @@
       if (keyword) params.append("keyword", keyword);
       params.append("page", page);
 
-      const res = await fetch(`http://localhost:3001/questions?${params}`);
+      const res = await fetch(`/questions?${params}`);
       const data = await res.json();
 
       currentQuestions = data.questions;

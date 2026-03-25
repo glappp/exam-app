@@ -369,7 +369,10 @@
     if (!gradeKey)     { showMsg('กรุณาเลือกชั้นเรียน', 'error'); return; }
     if (!correctRadio) { showMsg('กรุณาเลือกคำตอบที่ถูกต้อง', 'error'); return; }
 
-    const attributesJson = JSON.stringify({
+    const formData = new FormData();
+    formData.append('questionText', text);
+    formData.append('answer', correctRadio.value);
+    formData.append('attributesJson', JSON.stringify({
       subject: subjectKey,
       examGrade: gradeKey,
       year: year || null,
@@ -377,27 +380,26 @@
       skill: getChecked('skill'),
       trap: getChecked('trap'),
       difficulty,
+    }));
+    if (code) formData.append('code', code);
+
+    // choice texts + images
+    CHOICES.forEach((_, i) => {
+      formData.append(`choice${i}`, document.getElementById(`choice-text-${i}`).value.trim());
+      const imgFile = document.getElementById(`choice-img-${i}`)?.files[0];
+      if (imgFile) formData.append(`choiceImage${i}`, imgFile);
     });
 
-    // ใช้ JSON body (ไม่มีรูปใหม่ในการ PUT ครั้งนี้ — รูปแก้ไขทำในรอบถัดไป)
-    const body = {
-      questionText: text,
-      answer: correctRadio.value,
-      attributesJson,
-      code,
-      choices: CHOICES.map((_, i) => document.getElementById(`choice-text-${i}`).value.trim())
-    };
+    // question image
+    const qImgFile = document.getElementById('f-image')?.files[0];
+    if (qImgFile) formData.append('questionImage', qImgFile);
 
     const btn = document.getElementById('btn-save');
     btn.disabled = true;
     btn.textContent = 'กำลังบันทึก...';
 
     try {
-      const res = await fetch(`/questions/${questionId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
+      const res = await fetch(`/questions/${questionId}`, { method: 'PUT', body: formData });
       const data = await res.json();
       if (data.success) {
         currentQuestion = data.question;

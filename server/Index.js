@@ -19,6 +19,9 @@ app.use('/api', attributeDictRoute); // ✅ เส้นทางจะเป็
 const studentRoute = require('./routes/api/student');
 app.use('/api/student', studentRoute);
 
+const adminRoute = require('./routes/api/admin');
+app.use('/api/admin', adminRoute);
+
 
 // ✅ Middleware
 app.use(cors({ credentials: true, origin: true }));

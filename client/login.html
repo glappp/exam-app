@@ -1,16 +1,111 @@
-<!-- login.html -->
 <!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>Login</title>
-  <script src="login-script.js" defer></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เข้าสู่ระบบ — คลังข้อสอบ</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+    .login-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+    .login-card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 380px;
+    }
+    .login-logo {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .login-logo .icon { font-size: 40px; display: block; margin-bottom: 6px; }
+    .login-logo h1 { font-size: 18px; font-weight: 700; color: var(--navy); }
+    .login-logo p { font-size: 13px; color: var(--muted); margin-top: 2px; }
+    .error-msg { background: #fee2e2; color: #b91c1c; padding: 10px 14px; border-radius: 7px; font-size: 13px; margin-bottom: 14px; display: none; }
+    .register-link { text-align: center; font-size: 13px; color: var(--muted); margin-top: 16px; }
+    .register-link a { color: var(--blue); text-decoration: none; font-weight: 600; }
+  </style>
 </head>
 <body>
-  <h2>🔐 เข้าสู่ระบบ</h2>
-  <label>Username: <input id="username" /></label><br/>
-  <label>Password: <input id="password" type="password" /></label><br/>
-  <button onclick="login()">เข้าสู่ระบบ</button>
-  <p id="status"></p>
+  <div class="topbar">
+    <span class="topbar-title">คลังข้อสอบออนไลน์</span>
+  </div>
+
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">
+        <span class="icon">📚</span>
+        <h1>คลังข้อสอบออนไลน์</h1>
+        <p>ป.4 — ม.3 | เข้าสู่ระบบเพื่อเริ่มใช้งาน</p>
+      </div>
+
+      <div class="error-msg" id="error-msg"></div>
+
+      <div class="form-group">
+        <label>ชื่อผู้ใช้</label>
+        <input type="text" id="username" placeholder="username" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>รหัสผ่าน</label>
+        <input type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+
+      <button class="btn btn-navy btn-full mt-16" id="login-btn" onclick="login()">เข้าสู่ระบบ</button>
+
+      <div class="register-link">
+        ยังไม่มีบัญชี? <a href="register.html">สมัครสมาชิก</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="login-script.js"></script>
+  <script>
+    document.getElementById('password').addEventListener('keydown', e => {
+      if (e.key === 'Enter') login();
+    });
+
+    // Override login-script.js error display to use new UI
+    const _origLogin = window.login;
+    window.login = async function() {
+      const btn = document.getElementById('login-btn');
+      const errEl = document.getElementById('error-msg');
+      errEl.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'กำลังเข้าสู่ระบบ...';
+
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ username, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          window.location.href = 'dashboard.html';
+        } else {
+          errEl.textContent = data.message || 'เข้าสู่ระบบไม่สำเร็จ';
+          errEl.style.display = 'block';
+        }
+      } catch {
+        errEl.textContent = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'เข้าสู่ระบบ';
+      }
+    };
+  </script>
 </body>
 </html>

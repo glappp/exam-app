@@ -2,71 +2,104 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>Practice Mode</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ฝึกหัด — คลังข้อสอบ</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .topic-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .topic-chip {
+      padding: 10px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      text-align: center;
+      transition: all .15s;
+    }
+    .topic-chip:hover  { border-color: var(--blue); color: var(--blue); }
+    .topic-chip.active { border-color: var(--blue); background: #dbeafe; color: #1e40af; font-weight: 600; }
+
+    .result-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+    .result-row:last-child { border-bottom: none; }
+    .result-correct { color: #16a34a; font-weight: 700; font-size: 18px; }
+    .result-wrong   { color: #dc2626; font-weight: 700; font-size: 18px; }
+
+    #question-area { margin-top: 0; }
+  </style>
 </head>
 <body>
-  <h2>📚 ฝึกทำข้อสอบ (Practice Mode)</h2>
-
-  <div>
-    <label>🌐 ภาษา (Language):
-      <select id="language" onchange="changeLang(this.value)">
-        <option value="th">🇹🇭 ไทย</option>
-        <option value="en">🇬🇧 English</option>
-      </select>
-    </label>
+  <div class="topbar">
+    <span class="topbar-title">📗 โหมดฝึกหัด</span>
+    <div class="topbar-nav">
+      <span class="topbar-user" id="greeting"></span>
+      <a href="dashboard.html">หน้าหลัก</a>
+      <a href="#" onclick="logout()">ออกจากระบบ</a>
+    </div>
   </div>
 
-  <label>เลือกหัวข้อ: 
-    <select id="chapter">
-      <option>บวก</option>
-      <option>ลบ</option>
-      <option>คูณ</option>
-      <option>หาร</option>
-      <option>เศษส่วน</option>
-      <option>สมการ</option>
-      <option>พื้นที่</option>
-    </select>
-  </label>
-  <button onclick="startExam()">เริ่มทำข้อสอบ</button>
-  <button onclick="logout()">ออกจากระบบ</button>
+  <div class="page">
+    <!-- เลือกหัวข้อ + เริ่ม -->
+    <div class="card" id="setup-panel">
+      <div class="card-title">เลือกหัวข้อที่ต้องการฝึก</div>
 
-  <div id="question-area"></div>
-  <div id="explanation" style="margin-top: 1em;"></div>
-  <div id="results"></div>
-  <div id="analysis"></div>
+      <div class="form-row" style="margin-bottom:14px">
+        <div class="form-group">
+          <label>ภาษา</label>
+          <select id="language" onchange="changeLang(this.value)">
+            <option value="th">ไทย</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>หัวข้อ</label>
+          <select id="chapter">
+            <option>บวก</option>
+            <option>ลบ</option>
+            <option>คูณ</option>
+            <option>หาร</option>
+            <option>เศษส่วน</option>
+            <option>สมการ</option>
+            <option>พื้นที่</option>
+          </select>
+        </div>
+      </div>
 
-  <!-- 🔄 โหลด dependency -->
+      <button class="btn btn-primary" onclick="startExam()">เริ่มทำข้อสอบ</button>
+    </div>
+
+    <!-- โจทย์ -->
+    <div id="question-area"></div>
+
+    <!-- ผลลัพธ์ + วิเคราะห์ -->
+    <div id="results"></div>
+    <div id="analysis"></div>
+  </div>
+
   <script>
-
     function changeLang(lang) {
       currentLang = lang;
-      // หากต้องการ refresh โจทย์ทันทีเมื่อเปลี่ยนภาษา:
-      if (typeof renderCurrentQuestion === "function") renderCurrentQuestion();
+      if (typeof renderCurrentQuestion === 'function') renderCurrentQuestion();
+    }
+    function logout() {
+      fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      location.href = 'login.html';
     }
   </script>
-
   <script src="topicMap.js"></script>
   <script src="script.js"></script>
   <script>
-  // ตรวจสอบว่า login อยู่หรือไม่
-  const user = JSON.parse(localStorage.getItem("user"));
-  if (!user) {
-    alert("กรุณาเข้าสู่ระบบก่อนใช้งาน");
-    window.location.href = "login.html";
-  }
-
-  function logout() {
-    localStorage.removeItem("user");
-    window.location.href = "login.html";
-  }
-
-  // ใช้ชื่อผู้ใช้งานในการแสดงผล (ถ้าต้องการ)
-  document.addEventListener("DOMContentLoaded", () => {
-    const greeting = document.createElement("p");
-    greeting.innerHTML = `👋 สวัสดี, ${user.firstName || user.username}`;
-    document.body.insertBefore(greeting, document.body.firstChild);
-  });
-</script>
-
+    (async () => {
+      const res = await fetch('/api/me', { credentials: 'include' });
+      if (!res.ok) { location.href = 'login.html'; return; }
+      const me = await res.json();
+      document.getElementById('greeting').textContent = `สวัสดี, ${me.firstName || me.username}`;
+    })();
+  </script>
 </body>
 </html>

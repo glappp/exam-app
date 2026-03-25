@@ -4,7 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 router.post('/', async (req, res) => {
-  const { mode, questions, answers } = req.body;
+  const { mode, questions, answers, durationSec } = req.body;
 
   try {
     if (!Array.isArray(answers) || answers.length !== questions.length) {
@@ -18,7 +18,7 @@ router.post('/', async (req, res) => {
     let correctCount = 0;
     let score = 0;
     let fullScore = 0;
-    const wrongAttributes = { topic: {}, skill: {}, trap: {} };
+    const wrongAttributes = {};
 
     records.forEach((q, i) => {
       const userAns = answers[i];
@@ -33,29 +33,52 @@ router.post('/', async (req, res) => {
         ['topic', 'skill', 'trap'].forEach(type => {
           const attrs = q.attributes?.[type] || [];
           attrs.forEach(attr => {
-            wrongAttributes[type][attr] = (wrongAttributes[type][attr] || 0) + 1;
+            wrongAttributes[attr] = (wrongAttributes[attr] || 0) - 1;
           });
         });
       }
     });
 
-    // 🔐 ใส่ studentProfileId ชั่วคราว
-    const studentProfileId = req.session?.studentProfileId || 1;
-
-    // ⏺️ บันทึกผลสอบ
-    await prisma.examResult.create({
-      data: {
-        studentProfileId,
-        mode,
-        topicTagsJson: [],
-        score,
-        total: questions.length,
-        durationSec: 0,
-        weakAttributes: wrongAttributes,
-        questionIds: questions,
-        userAnswers: answers
+    // หา StudentProfile ของ user ที่ login อยู่
+    let studentProfileId = null;
+    if (req.session?.userId) {
+      const profile = await prisma.studentProfile.findFirst({
+        where: { userId: req.session.userId },
+        orderBy: { createdAt: 'desc' }
+      });
+      if (profile) {
+        studentProfileId = profile.id;
+      } else {
+        // สร้าง profile ชั่วคราวถ้ายังไม่มี
+        const newProfile = await prisma.studentProfile.create({
+          data: {
+            userId: req.session.userId,
+            academicYear: String(new Date().getFullYear() + 543),
+            school: 'ไม่ระบุ',
+            district: '',
+            province: '',
+            grade: 'ไม่ระบุ'
+          }
+        });
+        studentProfileId = newProfile.id;
       }
-    });
+    }
+
+    if (studentProfileId) {
+      await prisma.examResult.create({
+        data: {
+          studentProfileId,
+          mode: mode || 'practice',
+          topicTagsJson: [],
+          score,
+          total: questions.length,
+          durationSec: durationSec || 0,
+          weakAttributes: wrongAttributes,
+          questionIds: questions,
+          userAnswers: answers
+        }
+      });
+    }
 
     res.json({
       correctCount,

@@ -2,63 +2,194 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>ลงทะเบียนนักเรียน</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สมัครสมาชิก — คลังข้อสอบ</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    body { font-family: sans-serif; max-width: 600px; margin: 40px auto; }
-    input, select { width: 100%; padding: 8px; margin-bottom: 12px; }
-    button { padding: 10px 20px; }
-    .success { color: green; }
-    .error { color: red; }
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+    .register-wrap {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 32px 16px 80px;
+    }
+    .register-card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+    }
+    .register-logo { margin-bottom: 24px; }
+    .register-logo h1 { font-size: 18px; font-weight: 700; color: var(--navy); }
+    .register-logo p  { font-size: 13px; color: var(--muted); margin-top: 3px; }
+    .section-divider {
+      font-size: 11px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .6px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px; margin: 20px 0 14px;
+    }
+    .error-msg  { background: #fee2e2; color: #b91c1c; padding: 10px 14px; border-radius: 7px; font-size: 13px; margin-bottom: 14px; display: none; }
+    .success-msg { background: #dcfce7; color: #166534; padding: 10px 14px; border-radius: 7px; font-size: 13px; margin-bottom: 14px; display: none; }
+    .login-link { text-align: center; font-size: 13px; color: var(--muted); margin-top: 16px; }
+    .login-link a { color: var(--blue); text-decoration: none; font-weight: 600; }
   </style>
 </head>
 <body>
-  <h2>ลงทะเบียนนักเรียน</h2>
+  <div class="topbar">
+    <span class="topbar-title">คลังข้อสอบออนไลน์</span>
+    <div class="topbar-nav">
+      <a href="login.html">เข้าสู่ระบบ</a>
+    </div>
+  </div>
 
-  <form id="registerForm">
-    <input name="firstName" placeholder="ชื่อ" required />
-    <input name="lastName" placeholder="นามสกุล" required />
-    <input name="username" placeholder="ชื่อผู้ใช้" required />
-    <input type="password" name="password" placeholder="รหัสผ่าน" required />
-    <input name="email" placeholder="อีเมล" type="email" />
+  <div class="register-wrap">
+    <div class="register-card">
+      <div class="register-logo">
+        <h1>สมัครสมาชิก</h1>
+        <p>สร้างบัญชีเพื่อเริ่มใช้คลังข้อสอบออนไลน์ ป.4–ม.3</p>
+      </div>
 
-    <input name="academicYear" placeholder="ปีการศึกษา (เช่น 2567)" required />
-    <input name="school" placeholder="โรงเรียน" required />
-    <input name="district" placeholder="อำเภอ" required />
-    <input name="province" placeholder="จังหวัด" required />
-    <input name="grade" placeholder="ระดับชั้น (เช่น ป.6)" required />
-    <input name="classroom" placeholder="ห้อง (เช่น 6/1)" />
-    <input name="studentCode" placeholder="รหัสนักเรียน (ถ้ามี)" />
+      <div class="error-msg"   id="error-msg"></div>
+      <div class="success-msg" id="success-msg"></div>
 
-    <input type="hidden" name="role" value="student" />
+      <form id="registerForm" novalidate>
+        <div class="section-divider">ข้อมูลบัญชี</div>
 
-    <button type="submit">สมัครสมาชิก</button>
-  </form>
+        <div class="form-row">
+          <div class="form-group">
+            <label>ชื่อ <span style="color:#b91c1c">*</span></label>
+            <input name="firstName" placeholder="ชื่อจริง" required>
+          </div>
+          <div class="form-group">
+            <label>นามสกุล <span style="color:#b91c1c">*</span></label>
+            <input name="lastName" placeholder="นามสกุล" required>
+          </div>
+        </div>
 
-  <div id="message"></div>
+        <div class="form-group">
+          <label>ชื่อผู้ใช้ <span style="color:#b91c1c">*</span></label>
+          <input name="username" placeholder="username (ภาษาอังกฤษ ไม่มีเว้นวรรค)" required>
+        </div>
+
+        <div class="form-group">
+          <label>รหัสผ่าน <span style="color:#b91c1c">*</span></label>
+          <input type="password" name="password" placeholder="อย่างน้อย 6 ตัวอักษร" required>
+        </div>
+
+        <div class="form-group">
+          <label>อีเมล</label>
+          <input type="email" name="email" placeholder="example@email.com">
+        </div>
+
+        <div class="section-divider">ข้อมูลนักเรียน</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>ปีการศึกษา (พ.ศ.) <span style="color:#b91c1c">*</span></label>
+            <input name="academicYear" placeholder="เช่น 2568" maxlength="4" required>
+          </div>
+          <div class="form-group">
+            <label>ระดับชั้น <span style="color:#b91c1c">*</span></label>
+            <select name="grade" required>
+              <option value="">-- เลือก --</option>
+              <option>ป.4</option><option>ป.5</option><option>ป.6</option>
+              <option>ม.1</option><option>ม.2</option><option>ม.3</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>โรงเรียน <span style="color:#b91c1c">*</span></label>
+          <input name="school" placeholder="ชื่อโรงเรียน" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>อำเภอ / เขต</label>
+            <input name="district" placeholder="อำเภอ">
+          </div>
+          <div class="form-group">
+            <label>จังหวัด</label>
+            <input name="province" placeholder="จังหวัด">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>ห้อง</label>
+            <input name="classroom" placeholder="เช่น 6/1">
+          </div>
+          <div class="form-group">
+            <label>รหัสนักเรียน</label>
+            <input name="studentCode" placeholder="ถ้ามี">
+          </div>
+        </div>
+
+        <input type="hidden" name="role" value="student">
+
+        <button type="submit" class="btn btn-navy btn-full" id="submit-btn" style="margin-top:8px">
+          สมัครสมาชิก
+        </button>
+      </form>
+
+      <div class="login-link">
+        มีบัญชีแล้ว? <a href="login.html">เข้าสู่ระบบ</a>
+      </div>
+    </div>
+  </div>
 
   <script>
-    document.getElementById("registerForm").addEventListener("submit", async (e) => {
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const form = e.target;
+      const errEl = document.getElementById('error-msg');
+      const okEl  = document.getElementById('success-msg');
+      const btn   = document.getElementById('submit-btn');
+      errEl.style.display = 'none';
+      okEl.style.display  = 'none';
+
       const data = Object.fromEntries(new FormData(form).entries());
 
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-      });
+      // Basic client-side validation
+      if (!data.firstName || !data.lastName) { show('error', 'กรุณากรอกชื่อ-นามสกุล'); return; }
+      if (!data.username)   { show('error', 'กรุณากรอกชื่อผู้ใช้'); return; }
+      if (data.password.length < 6) { show('error', 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'); return; }
+      if (!data.academicYear || !data.grade || !data.school) { show('error', 'กรุณากรอกข้อมูลนักเรียนให้ครบ'); return; }
 
-      const result = await res.json();
-      const msgBox = document.getElementById("message");
+      btn.disabled = true;
+      btn.textContent = 'กำลังสมัคร...';
 
-      if (res.ok) {
-        msgBox.innerHTML = `<p class="success">✅ สมัครสำเร็จ! (userId: ${result.userId})</p>`;
-        form.reset();
-      } else {
-        msgBox.innerHTML = `<p class="error">❌ ${result.error || "สมัครไม่สำเร็จ"}</p>`;
+      try {
+        const res = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (res.ok) {
+          show('success', '✅ สมัครสำเร็จ! กำลังไปหน้าเข้าสู่ระบบ...');
+          form.reset();
+          setTimeout(() => location.href = 'login.html', 1500);
+        } else {
+          show('error', result.error || 'สมัครไม่สำเร็จ');
+        }
+      } catch {
+        show('error', 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'สมัครสมาชิก';
       }
     });
+
+    function show(type, msg) {
+      const el = document.getElementById(type === 'error' ? 'error-msg' : 'success-msg');
+      el.textContent = msg;
+      el.style.display = 'block';
+      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
   </script>
 </body>
 </html>

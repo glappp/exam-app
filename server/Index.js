@@ -1,15 +1,14 @@
 const cors = require('cors');
 const express = require('express');
-const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { PrismaClient } = require('@prisma/client');
 const session = require('express-session');
+const bcrypt = require('bcrypt');
+const { upload, getFilename, useR2 } = require('./storage');
 
 const prisma = new PrismaClient();
 const app = express();
-const upload = multer({ dest: 'uploads/' });
-const bcrypt = require('bcrypt');
 
 app.use(express.static(path.join(__dirname, '..', 'client'))); // สำหรับไฟล์ static
 
@@ -38,7 +37,16 @@ app.use(session({
 
 // ✅ Static files
 app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+if (useR2) {
+  // Redirect /uploads/:filename → R2 public URL
+  app.get('/uploads/:filename', (req, res) => {
+    const base = (process.env.R2_PUBLIC_URL || '').replace(/\/$/, '');
+    if (!base) return res.status(503).send('R2_PUBLIC_URL ยังไม่ได้ตั้งค่า');
+    res.redirect(`${base}/uploads/${req.params.filename}`);
+  });
+} else {
+  app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+}
 
 
 // ✅ Import route
@@ -66,7 +74,7 @@ app.put('/questions/:id', upload.fields([
       data.difficulty = String(attributes.difficulty ?? 1);
     }
     if (code !== undefined) data.code = code || null;
-    if (files.questionImage?.[0]) data.image = files.questionImage[0].filename;
+    if (files.questionImage?.[0]) data.image = getFilename(files.questionImage[0]);
 
     // Build choices if any choice text or image provided
     const choiceTexts = [0, 1, 2, 3].map(i => req.body[`choice${i}`]);
@@ -77,7 +85,7 @@ app.put('/questions/:id', upload.fields([
       data.choices = [0, 1, 2, 3].map(i => ({
         textTh: choiceTexts[i] ?? existingChoices[i]?.textTh ?? '',
         textEn: choiceTexts[i] ?? existingChoices[i]?.textEn ?? '',
-        image: files[`choiceImage${i}`]?.[0]?.filename ?? existingChoices[i]?.image ?? null
+        image: getFilename(files[`choiceImage${i}`]?.[0]) ?? existingChoices[i]?.image ?? null
       }));
     }
 
@@ -171,13 +179,13 @@ app.post('/add-question', upload.fields([
     const choices = [0, 1, 2, 3].map(i => ({
       textTh: req.body[`choice${i}`] || '',
       textEn: req.body[`choice${i}`] || '',
-      image: files[`choiceImage${i}`]?.[0]?.filename || null
+      image: getFilename(files[`choiceImage${i}`]?.[0]) || null
     }));
 
     const data = {
       textTh: questionText,
       textEn: questionText,
-      image: files.questionImage?.[0]?.filename || null,
+      image: getFilename(files.questionImage?.[0]) || null,
       answer: parseInt(answer),
       attributes,
       difficulty: String(attributes.difficulty ?? 1),

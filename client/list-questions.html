@@ -1,222 +1,274 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <title>📋 รายการโจทย์</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายการโจทย์ — คลังข้อสอบ</title>
+  <link rel="stylesheet" href="style.css">
   <style>
-    body { font-family: sans-serif; }
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background: #f0f0f0; }
-    .modal {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;
+    .filter-bar { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end; margin-bottom:16px; }
+    .filter-bar .form-group { margin:0; min-width:140px; }
+    .filter-bar input[type=text] { height:36px; padding:0 10px; border:1px solid var(--border); border-radius:6px; font-size:14px; width:100%; box-sizing:border-box; }
+    .pager { display:flex; align-items:center; gap:8px; margin-top:16px; }
+    .modal-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,.45);
+      display:flex; align-items:center; justify-content:center; z-index:100;
     }
-    .modal-content {
-      background: white; padding: 20px; border-radius: 5px; max-width: 600px; width: 90%;
-      max-height: 80vh; overflow: auto;
+    .modal-box {
+      background:#fff; border-radius:12px; padding:24px; max-width:640px; width:90%;
+      max-height:85vh; overflow-y:auto; box-shadow:0 8px 40px rgba(0,0,0,.2);
     }
+    .choice-item { padding:7px 10px; margin-bottom:6px; border-radius:6px; border:1px solid var(--border); font-size:14px; }
+    .choice-item.correct { background:#dcfce7; border-color:#16a34a; font-weight:600; }
   </style>
 </head>
 <body>
-  <h2>📋 รายการโจทย์</h2>
 
-  <div>
-    <label>🌐 ภาษา (Language):</label>
-    <select onchange="changeLang(this.value)">
-      <option value="th">🇹🇭 ไทย</option>
-      <option value="en">🇬🇧 English</option>
-    </select>
+<div class="topbar">
+  <span class="topbar-title">📋 รายการโจทย์</span>
+  <div class="topbar-nav">
+    <a href="add-question.html">+ เพิ่มโจทย์</a>
+    <a href="admin.html">Admin</a>
+    <a href="dashboard.html">หน้าหลัก</a>
   </div>
+</div>
 
-  <form id="filter-form">
-    <label>ประเภท attribute:</label>
-    <select id="attrType" required onchange="updateAttrValueOptions()">
-      <option value="">-- กรุณาเลือก --</option>
-      <option value="topic">topic</option>
-      <option value="subtopic">subtopic</option>
-      <option value="skill">skill</option>
-      <option value="trap">trap</option>
-    </select>
+<div class="page">
+  <div class="card">
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <div class="form-group">
+        <label>ประเภท</label>
+        <select id="attrType" onchange="updateAttrValueOptions()">
+          <option value="">-- ทุกประเภท --</option>
+          <option value="topic">topic</option>
+          <option value="skill">skill</option>
+          <option value="trap">trap</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>ค่า attribute</label>
+        <select id="attrValue" disabled>
+          <option value="all">-- ทั้งหมด --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>ความยาก</label>
+        <select id="difficulty">
+          <option value="all">-- ทุกระดับ --</option>
+          <option value="easy">ง่าย (1)</option>
+          <option value="medium">ปานกลาง (2)</option>
+          <option value="hard">ยาก (3)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>ภาษา</label>
+        <select id="language" onchange="currentLang=this.value; renderTable()">
+          <option value="th">ไทย</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+      <div class="form-group" style="flex:1;min-width:160px">
+        <label>ค้นหา</label>
+        <input type="text" id="keyword" placeholder="พิมพ์คำค้นหา...">
+      </div>
+      <button class="btn btn-primary" onclick="search()">ค้นหา</button>
+      <button class="btn btn-ghost" onclick="resetFilters()">รีเซ็ต</button>
+    </div>
 
-    <label>ค่า attribute:</label>
-    <select id="attrValue" disabled>
-      <option value="all">-- ทั้งหมด --</option>
-    </select>
+    <!-- Table -->
+    <div id="table-wrap"></div>
 
-    <label>ระดับความยาก:</label>
-    <select id="difficulty">
-      <option value="all">-- ทุกระดับ --</option>
-      <option value="easy">ง่าย</option>
-      <option value="medium">ปานกลาง</option>
-      <option value="hard">ยาก</option>
-    </select>
-
-    <label>คำค้นหา (โจทย์):</label>
-    <input type="text" id="keyword" placeholder="พิมพ์คำค้นหา">
-
-    <button type="submit">🔍 ค้นหา</button>
-    <button type="button" onclick="resetFilters()">♻️ รีเซ็ต</button>
-  </form>
-
-  <div id="question-table"></div>
-  <div id="pagination" style="margin-top: 20px;"></div>
-
-  <div id="modal" class="modal" style="display: none;">
-    <div class="modal-content" id="modal-content"></div>
+    <!-- Pagination -->
+    <div class="pager" id="pager"></div>
   </div>
+</div>
 
-  <script>
-    let currentPage = 1;
-    let currentQuestions = [];
-    let currentLang = "th";
+<!-- Modal -->
+<div class="modal-overlay" id="modal" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box" id="modal-content"></div>
+</div>
 
-    const attrOptions = {
-      topic: ["addition", "subtraction", "algebra"],
-      subtopic: ["rounding", "2-digit", "factoring"],
-      skill: ["mental-math", "visual-reasoning"],
-      trap: ["confusing-choice", "wrong-unit"]
-    };
+<script>
+  let currentPage = 1;
+  let currentLang = 'th';
+  let cachedQuestions = [];
+  let attrDict = {};
 
-    function getText(q) {
-      return currentLang === "th" ? q.textTh : q.textEn;
-    }
+  // Auth check
+  (async () => {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (!res.ok) { location.href = 'login.html'; return; }
+  })();
 
-    function getChoiceText(c) {
-      return currentLang === "th" ? c.textTh : c.textEn;
-    }
+  // โหลด attribute dict สำหรับ dropdown
+  (async () => {
+    try {
+      const res = await fetch('/api/attribute-dict', { credentials: 'include' });
+      const list = await res.json();
+      attrDict = {};
+      list.forEach(a => { attrDict[a.key] = a; });
+    } catch {}
+  })();
 
-    function changeLang(lang) {
-      currentLang = lang;
-      fetchQuestions(currentPage);
-    }
+  function getText(q) {
+    return currentLang === 'th' ? (q.textTh || q.text || '-') : (q.textEn || q.text || '-');
+  }
 
-    document.getElementById("filter-form").addEventListener("submit", (e) => {
-      e.preventDefault();
-      fetchQuestions(1);
+  function getChoiceText(c) {
+    return currentLang === 'th' ? (c.textTh || c.text || '') : (c.textEn || c.text || '');
+  }
+
+  async function updateAttrValueOptions() {
+    const type = document.getElementById('attrType').value;
+    const valSelect = document.getElementById('attrValue');
+    valSelect.innerHTML = '<option value="all">-- ทั้งหมด --</option>';
+    valSelect.disabled = !type;
+    if (!type) return;
+
+    const keys = Object.keys(attrDict).filter(k => k.startsWith(type + ':'));
+    keys.forEach(k => {
+      const opt = document.createElement('option');
+      opt.value = k.split(':').slice(1).join(':');
+      opt.textContent = attrDict[k]?.th || k;
+      valSelect.appendChild(opt);
     });
+  }
 
-    function updateAttrValueOptions() {
-      const type = document.getElementById("attrType").value;
-      const valSelect = document.getElementById("attrValue");
-      valSelect.innerHTML = `<option value="all">-- ทั้งหมด --</option>`;
-      valSelect.disabled = !type;
+  function search() { fetchQuestions(1); }
 
-      if (type && attrOptions[type]) {
-        attrOptions[type].forEach(val => {
-          const opt = document.createElement("option");
-          opt.value = val;
-          opt.textContent = val;
-          valSelect.appendChild(opt);
-        });
-      }
-    }
-
-    function resetFilters() {
-      document.getElementById("attrType").value = "";
-      document.getElementById("attrValue").innerHTML = `<option value="all">-- ทั้งหมด --</option>`;
-      document.getElementById("attrValue").disabled = true;
-      document.getElementById("difficulty").value = "all";
-      document.getElementById("keyword").value = "";
-      fetchQuestions(1);
-    }
-
-    async function fetchQuestions(page = 1) {
-      const params = new URLSearchParams();
-      const attrType = document.getElementById("attrType").value;
-      const attrValue = document.getElementById("attrValue").value;
-      const difficulty = document.getElementById("difficulty").value;
-      const keyword = document.getElementById("keyword").value;
-
-      if (attrType) params.append("attrType", attrType);
-      if (attrValue) params.append("attrValue", attrValue);
-      if (difficulty) params.append("difficulty", difficulty);
-      if (keyword) params.append("keyword", keyword);
-      params.append("page", page);
-
-      const res = await fetch(`/questions?${params}`);
-      const data = await res.json();
-
-      currentQuestions = data.questions;
-
-      const tableDiv = document.getElementById("question-table");
-      let html = `<table><thead><tr>
-        <th>ID</th><th>โจทย์</th><th>ภาพ</th><th>ระดับ</th><th>วันที่เพิ่ม</th><th>ดู</th>
-      </tr></thead><tbody>`;
-
-      data.questions.forEach(q => {
-        html += `<tr>
-          <td>${q.id}</td>
-          <td>${getText(q)}</td>
-          <td>${q.image ? `<img src="/uploads/${q.image}" height="40">` : '-'}</td>
-          <td>${q.difficulty || '-'}</td>
-          <td>${new Date(q.createdAt).toLocaleString()}</td>
-          <td style="white-space:nowrap">
-            <button class="view-btn" data-id="${q.id}" style="margin-right:4px">ดู</button>
-            <a href="/edit-question.html?id=${q.id}" style="font-size:12px;padding:4px 8px;background:#f0f0f0;border-radius:4px;text-decoration:none;color:#333">แก้ไข</a>
-          </td>
-        </tr>`;
-      });
-
-      html += `</tbody></table>`;
-      tableDiv.innerHTML = html;
-
-      // View buttons
-      document.querySelectorAll('.view-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const id = btn.getAttribute('data-id');
-          const q = currentQuestions.find(q => q.id == id);
-          if (q) showQuestion(q);
-        });
-      });
-
-      const pagDiv = document.getElementById("pagination");
-      let pagHTML = '';
-      if (data.currentPage > 1) {
-        pagHTML += `<button onclick="fetchQuestions(${data.currentPage - 1})">⬅️ ก่อนหน้า</button> `;
-      }
-      pagHTML += `หน้า ${data.currentPage} / ${data.totalPages} `;
-      if (data.currentPage < data.totalPages) {
-        pagHTML += `<button onclick="fetchQuestions(${data.currentPage + 1})">ถัดไป ➡️</button>`;
-      }
-      pagDiv.innerHTML = pagHTML;
-
-      currentPage = data.currentPage;
-    }
-
-    function showQuestion(q) {
-      let html = `<h3>🔍 โจทย์: ${getText(q)}</h3>`;
-      if (q.image) html += `<p><img src="/uploads/${q.image}" height="120"></p>`;
-
-      const choices = q.choices;
-      html += `<h4>📝 ตัวเลือก:</h4><ul style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">`;
-      choices.forEach((c, i) => {
-        const correct = q.answer === i ? "✔️ " : "";
-        const text = getChoiceText(c) || "-";
-        const imgHTML = c.image ? `<br><img src="/uploads/${c.image}" height="120">` : "";
-        html += `<li>${correct}${text}${imgHTML}</li>`;
-      });
-      html += `</ul>`;
-
-      if (q.attributes) {
-        html += `<h4>🏷️ Attributes:</h4><ul>`;
-        for (const [key, arr] of Object.entries(q.attributes)) {
-          if (Array.isArray(arr) && arr.length > 0) {
-            arr.forEach(val => html += `<li>${key}: ${val}</li>`);
-          }
-        }
-        html += `</ul>`;
-      }
-
-      document.getElementById("modal-content").innerHTML = html + `<br><button onclick="closeModal()">❌ ปิด</button>`;
-      document.getElementById("modal").style.display = "flex";
-    }
-
-    function closeModal() {
-      document.getElementById("modal").style.display = "none";
-    }
-
+  function resetFilters() {
+    document.getElementById('attrType').value = '';
+    document.getElementById('attrValue').innerHTML = '<option value="all">-- ทั้งหมด --</option>';
+    document.getElementById('attrValue').disabled = true;
+    document.getElementById('difficulty').value = 'all';
+    document.getElementById('keyword').value = '';
     fetchQuestions(1);
-  </script>
+  }
+
+  async function fetchQuestions(page = 1) {
+    document.getElementById('table-wrap').innerHTML =
+      '<p style="text-align:center;padding:24px;color:var(--muted)">กำลังโหลด...</p>';
+
+    const params = new URLSearchParams({ page });
+    const keyword    = document.getElementById('keyword').value.trim();
+    const difficulty = document.getElementById('difficulty').value;
+    const attrType   = document.getElementById('attrType').value;
+    const attrValue  = document.getElementById('attrValue').value;
+
+    if (keyword)    params.set('keyword', keyword);
+    if (difficulty && difficulty !== 'all') params.set('difficulty', difficulty);
+    if (attrType)   params.set('attrType', attrType);
+    if (attrValue && attrValue !== 'all') params.set('attrValue', attrValue);
+
+    try {
+      const res = await fetch(`/questions?${params}`, { credentials: 'include' });
+      if (!res.ok) throw new Error('โหลดไม่สำเร็จ');
+      const data = await res.json();
+      cachedQuestions = data.questions || [];
+      currentPage = data.currentPage || 1;
+      renderTable(data);
+      renderPager(data);
+    } catch (err) {
+      document.getElementById('table-wrap').innerHTML =
+        `<p class="msg msg-error">${err.message}</p>`;
+    }
+  }
+
+  function renderTable(data) {
+    if (!data || !data.questions || data.questions.length === 0) {
+      document.getElementById('table-wrap').innerHTML =
+        '<p style="text-align:center;padding:24px;color:var(--muted)">ไม่พบโจทย์</p>';
+      return;
+    }
+
+    const total = data.total ?? data.questions.length;
+    const rows = data.questions.map(q => {
+      const text = getText(q);
+      const short = text.length > 60 ? text.substring(0, 60) + '…' : text;
+      const diffLabel = { '1': 'ง่าย', '2': 'ปานกลาง', '3': 'ยาก' }[q.difficulty] || q.difficulty || '-';
+      const diffBadge = { '1': 'badge-success', '2': 'badge-warn', '3': 'badge-error' }[q.difficulty] || 'badge-info';
+      return `
+        <tr>
+          <td style="font-size:11px;color:var(--muted);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${q.code || q.id.substring(0, 8)}</td>
+          <td>${short}</td>
+          <td style="text-align:center">${q.image ? `<img src="/uploads/${q.image}" height="36" style="border-radius:4px">` : '-'}</td>
+          <td style="text-align:center"><span class="badge ${diffBadge}">${diffLabel}</span></td>
+          <td style="text-align:center;white-space:nowrap">
+            <button class="btn btn-ghost" style="padding:4px 10px;font-size:12px" onclick="showQuestion('${q.id}')">ดู</button>
+            <a href="/edit-question.html?id=${q.id}" class="btn btn-ghost" style="padding:4px 10px;font-size:12px;margin-left:4px">แก้ไข</a>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+    document.getElementById('table-wrap').innerHTML = `
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">พบ ${total} รายการ</div>
+      <table class="table">
+        <thead><tr><th>รหัส</th><th>โจทย์</th><th>รูป</th><th>ระดับ</th><th>จัดการ</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+  }
+
+  function renderPager(data) {
+    const { currentPage: cp, totalPages: tp } = data;
+    if (tp <= 1) { document.getElementById('pager').innerHTML = ''; return; }
+
+    let html = '';
+    if (cp > 1) html += `<button class="btn btn-ghost" style="padding:6px 12px" onclick="fetchQuestions(${cp - 1})">← ก่อนหน้า</button>`;
+    html += `<span style="font-size:14px;color:var(--muted)">หน้า ${cp} / ${tp}</span>`;
+    if (cp < tp) html += `<button class="btn btn-ghost" style="padding:6px 12px" onclick="fetchQuestions(${cp + 1})">ถัดไป →</button>`;
+    document.getElementById('pager').innerHTML = html;
+  }
+
+  function showQuestion(id) {
+    const q = cachedQuestions.find(q => q.id === id);
+    if (!q) return;
+
+    const text = getText(q);
+    const choicesHTML = (q.choices || []).map((c, i) => {
+      const isCorrect = i === q.answer;
+      return `
+        <div class="choice-item ${isCorrect ? 'correct' : ''}">
+          ${isCorrect ? '✔ ' : ''}<strong>${String.fromCharCode(65 + i)}.</strong> ${getChoiceText(c)}
+          ${c.image ? `<br><img src="/uploads/${c.image}" style="max-height:80px;margin-top:6px;border-radius:6px">` : ''}
+        </div>
+      `;
+    }).join('');
+
+    const attrs = q.attributes || {};
+    const attrRows = ['topic', 'skill', 'trap']
+      .filter(t => attrs[t]?.length)
+      .map(t => `<div style="margin-bottom:4px"><strong>${t}:</strong> ${
+        attrs[t].map(k => `<span class="badge badge-info" style="margin-left:4px">${attrDict[k]?.th || k}</span>`).join('')
+      }</div>`)
+      .join('');
+
+    document.getElementById('modal-content').innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <strong style="font-size:16px">รายละเอียดโจทย์</strong>
+        <button class="btn btn-ghost" style="padding:4px 10px" onclick="closeModal()">✕ ปิด</button>
+      </div>
+      <p style="font-size:15px;line-height:1.7;margin-bottom:12px">${text}</p>
+      ${q.image ? `<img src="/uploads/${q.image}" style="max-width:100%;border-radius:8px;margin-bottom:12px">` : ''}
+      <div style="margin-bottom:12px">${choicesHTML}</div>
+      ${attrRows ? `<div style="margin-bottom:12px">${attrRows}</div>` : ''}
+      <div style="font-size:12px;color:var(--muted)">รหัส: ${q.code || q.id}</div>
+      <a href="/edit-question.html?id=${q.id}" class="btn btn-primary" style="margin-top:14px;display:inline-block">แก้ไขโจทย์นี้</a>
+    `;
+    document.getElementById('modal').style.display = 'flex';
+  }
+
+  function closeModal() {
+    document.getElementById('modal').style.display = 'none';
+  }
+
+  document.getElementById('keyword').addEventListener('keydown', e => {
+    if (e.key === 'Enter') search();
+  });
+
+  fetchQuestions(1);
+</script>
 </body>
 </html>

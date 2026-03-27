@@ -1,195 +1,245 @@
-let currentAnswer = -1;
+let currentLang = 'th';
 let currentQuestion = null;
-let currentLang = 'th'; // 🌐 รองรับหลายภาษา
+let currentAnswer = -1;
 
-// ตรวจสอบว่า login แล้ว
-async function checkLogin() {
-  const res = await fetch("/api/me", { credentials: "include" });
-  if (!res.ok) {
-    alert("กรุณาเข้าสู่ระบบก่อนใช้งาน");
-    window.location.href = "login.html";
-    return;
-  }
-
-  const data = await res.json();
-  document.getElementById("greeting").innerText = `👋 สวัสดี, ${data.firstName || "ผู้ใช้"}`;
-}
-
-checkLogin();
-
+// Practice session state
+let sessionStartTime = null;
+let sessionQuestions = [];
+let sessionAnswers = [];
+let filteredQuestions = [];
+let usedIndices = new Set();
 
 function getText(q) {
-  return currentLang === 'th' ? q.textTh || q.text : q.textEn || q.text;
+  return currentLang === 'th' ? (q.textTh || q.text || '') : (q.textEn || q.text || '');
 }
 
 function getChoiceText(c) {
-  return currentLang === 'th' ? c.textTh || c.text : c.textEn || c.text;
+  return currentLang === 'th' ? (c.textTh || c.text || '') : (c.textEn || c.text || '');
 }
 
 function changeLang(lang) {
   currentLang = lang;
-  if (typeof renderCurrentQuestion === "function") renderCurrentQuestion();
+  if (currentQuestion) renderCurrentQuestion();
 }
 
 async function startExam() {
-  const topicKey = document.getElementById('chapter').value;
   const chapterText = document.getElementById('chapter').value;
-  const topicTag = topicMap[chapterText]; // แมปชื่อไทย → tag อังกฤษ
+  const topicTag = topicMap[chapterText];
 
-  const questionArea = document.getElementById('question-area');
+  document.getElementById('setup-panel').style.display = 'none';
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('question-area').innerHTML =
+    '<p style="text-align:center;padding:32px;color:var(--muted)">กำลังโหลดโจทย์...</p>';
 
-  const res = await fetch('/questions/all');
-  const data = await res.json();
-  const allQuestions = data.questions || [];
+  try {
+    const res = await fetch('/questions/all', { credentials: 'include' });
+    if (!res.ok) throw new Error('โหลดโจทย์ไม่สำเร็จ');
+    const data = await res.json();
+    const allQuestions = data.questions || [];
 
-  console.log("📦 allQuestions:", allQuestions);
+    filteredQuestions = topicTag
+      ? allQuestions.filter(q => q.attributes?.topic?.includes(`topic:${topicTag}`))
+      : allQuestions;
 
-const filtered = allQuestions.filter(q =>
-  q.attributes?.topic?.includes(`topic:${topicTag}`)
-);
+    if (filteredQuestions.length === 0) {
+      document.getElementById('question-area').innerHTML =
+        `<div class="card"><p class="msg msg-error">ไม่พบโจทย์ในหัวข้อ "${chapterText}"</p></div>`;
+      document.getElementById('setup-panel').style.display = '';
+      return;
+    }
 
-  if (filtered.length === 0) {
-    questionArea.innerHTML = `<p style="color:red;">❌ ไม่พบโจทย์ในบท "${chapterText}"</p>`;
-    return;
+    // Reset session
+    sessionStartTime = Date.now();
+    sessionQuestions = [];
+    sessionAnswers = [];
+    usedIndices = new Set();
+
+    loadNextQuestion();
+  } catch (err) {
+    document.getElementById('question-area').innerHTML =
+      `<div class="card"><p class="msg msg-error">เกิดข้อผิดพลาด: ${err.message}</p></div>`;
+    document.getElementById('setup-panel').style.display = '';
+  }
+}
+
+function loadNextQuestion() {
+  const available = filteredQuestions
+    .map((_, i) => i)
+    .filter(i => !usedIndices.has(i));
+
+  let idx;
+  if (available.length === 0) {
+    // ทำครบทุกข้อแล้ว วนใหม่
+    usedIndices.clear();
+    idx = Math.floor(Math.random() * filteredQuestions.length);
+  } else {
+    idx = available[Math.floor(Math.random() * available.length)];
   }
 
-  const q = filtered[Math.floor(Math.random() * filtered.length)];
-  currentAnswer = q.answer;
-  currentQuestion = q;
+  currentQuestion = filteredQuestions[idx];
+  currentAnswer = currentQuestion.answer;
+  usedIndices.add(idx);
 
   renderCurrentQuestion();
 }
 
 function renderCurrentQuestion() {
   const q = currentQuestion;
-  const questionArea = document.getElementById('question-area');
+  const answered = sessionQuestions.length;
 
-  const choicesHTML = q.choices.map((c, i) =>
-    `<button onclick="checkAnswer(${i})" style="margin: 8px;">
-      ${c.image ? `<img src="/uploads/${c.image}" style="max-height:40px;"><br>` : ""}
-      ${getChoiceText(c)}
+  const choicesHTML = (q.choices || []).map((c, i) =>
+    `<button class="choice-btn" id="choice-${i}" onclick="checkAnswer(${i})">
+      ${c.image ? `<img src="/uploads/${c.image}" style="max-height:50px;margin-bottom:4px;display:block">` : ''}
+      <strong>${String.fromCharCode(65 + i)}.</strong> ${getChoiceText(c)}
     </button>`
-  ).join(" ");
+  ).join('');
 
-  questionArea.innerHTML = `
-    <p><strong>โจทย์:</strong> ${getText(q)}</p>
-    ${q.image ? `<img src="/uploads/${q.image}" style="max-width:100%; height:auto;"><br>` : ''}
-    <div>${choicesHTML}</div>
-    <p id="result"></p>
+  const endBtn = answered > 0
+    ? `<button class="btn btn-ghost" style="margin-top:16px;width:100%" onclick="submitAndShowResults()">
+        จบการฝึก (ทำแล้ว ${answered} ข้อ)
+       </button>`
+    : '';
+
+  document.getElementById('question-area').innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span class="card-title" style="margin:0">ข้อที่ ${answered + 1}</span>
+        ${answered > 0 ? `<span style="font-size:13px;color:var(--muted)">ทำไปแล้ว ${answered} ข้อ</span>` : ''}
+      </div>
+      <div style="font-size:15px;line-height:1.7;margin-bottom:14px">${getText(q)}</div>
+      ${q.image ? `<img src="/uploads/${q.image}" style="max-width:100%;margin-bottom:14px;border-radius:8px">` : ''}
+      <div class="choices">${choicesHTML}</div>
+      <div id="answer-feedback" style="margin-top:12px"></div>
+      ${endBtn}
+    </div>
   `;
 }
 
-
 function checkAnswer(choiceIndex) {
-  const result = document.getElementById('result');
   const isCorrect = choiceIndex === currentAnswer;
 
-  result.innerHTML = isCorrect
-    ? "<span style='color:green;'>✔️ ตอบถูก!</span>"
-    : "<span style='color:red;'>❌ ตอบผิด</span>";
-
-  saveResult(currentQuestion, choiceIndex, isCorrect);
-  nextStepAfterAnswer(isCorrect);
-}
-
-async function saveResult(question, selected, isCorrect) {
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-
-  const res = await fetch('/results', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      userId: user.id || "unknown",
-      questionId: question.id,
-      selected,
-      isCorrect
-    })
+  // Disable all buttons + highlight
+  document.querySelectorAll('.choice-btn').forEach((btn, i) => {
+    btn.disabled = true;
+    btn.style.cursor = 'default';
+    if (i === currentAnswer) {
+      btn.style.background = '#dcfce7';
+      btn.style.borderColor = '#16a34a';
+      btn.style.color = '#15803d';
+    }
+    if (i === choiceIndex && !isCorrect) {
+      btn.style.background = '#fee2e2';
+      btn.style.borderColor = '#dc2626';
+      btn.style.color = '#b91c1c';
+    }
   });
 
-  if (!res.ok) {
-    console.error("❌ บันทึกผลล้มเหลว");
-  } else {
-    console.log("✅ บันทึกผลสำเร็จ");
+  document.getElementById('answer-feedback').innerHTML = isCorrect
+    ? `<span class="badge badge-success">✔ ถูกต้อง!</span>`
+    : `<span class="badge badge-error">✘ ผิด — เฉลยคือ ข้อ ${String.fromCharCode(65 + currentAnswer)}</span>`;
+
+  // Record
+  sessionQuestions.push(currentQuestion);
+  sessionAnswers.push(choiceIndex);
+
+  // โหลดข้อถัดไปหลัง 1.8 วินาที
+  setTimeout(loadNextQuestion, 1800);
+}
+
+async function submitAndShowResults() {
+  if (sessionQuestions.length === 0) return;
+
+  const durationSec = Math.round((Date.now() - sessionStartTime) / 1000);
+
+  document.getElementById('question-area').innerHTML =
+    '<p style="text-align:center;padding:32px;color:var(--muted)">กำลังบันทึกผล...</p>';
+
+  try {
+    const res = await fetch('/api/submit-exam', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'practice',
+        questions: sessionQuestions.map(q => q.id),
+        answers: sessionAnswers,
+        durationSec
+      })
+    });
+    if (!res.ok) throw new Error('บันทึกผลไม่สำเร็จ');
+    const data = await res.json();
+    showFinalResults(data, durationSec);
+  } catch (err) {
+    document.getElementById('question-area').innerHTML =
+      `<div class="card"><p class="msg msg-error">${err.message} — กรุณาลองใหม่</p>
+       <button class="btn btn-ghost" onclick="resetPractice()">กลับ</button></div>`;
   }
 }
 
-async function showResults() {
-  const res = await fetch('/results');
-  const results = await res.json();
+function showFinalResults(data, durationSec) {
+  const { correctCount, total } = data;
+  const pct = total > 0 ? Math.round(correctCount / total * 100) : 0;
+  const mins = Math.floor(durationSec / 60);
+  const secs = durationSec % 60;
 
-  const container = document.getElementById("results");
-  if (results.length === 0) {
-    container.innerHTML = "<p>ยังไม่มีผลการทำข้อสอบ</p>";
-    return;
-  }
+  const scoreColor = pct >= 80 ? '#16a34a' : pct >= 60 ? '#d97706' : '#dc2626';
 
-  container.innerHTML = results.map(r => `
-    <p>
-      [${new Date(r.createdAt).toLocaleString()}]<br>
-      <strong>${getText(r.question)}</strong><br>
-      ตอบ: <strong>${r.selected}</strong> →
-      ${r.correct ? '<span style="color:green;">✔️ ถูก</span>' : '<span style="color:red;">❌ ผิด</span>'}
-    </p>
-  `).join("");
-}
-
-async function analyzeWeakness() {
-  console.log("🧠 เริ่มวิเคราะห์จุดอ่อน...");
-  const res = await fetch('/analysis');
-  const data = await res.json();
-  console.log("📊 ผลลัพธ์จาก /analysis:", data);
-
-  const output = data.map(item => {
-    const chapterKey = item.chapter;
-    const chapterName = getTopicLabel(chapterKey); // ดึงชื่อบทภาษาไทยจาก reverseTopicMap
-    const suggestion = item.accuracy < 70 ? '→ 🔁 ควรทำซ้ำ' :
-                       item.accuracy < 85 ? '→ ⚠️ พอใช้ได้' :
-                                            '→ ✅ ดีมาก';
+  const rows = sessionQuestions.map((q, i) => {
+    const correct = sessionAnswers[i] === q.answer;
+    const text = getText(q);
     return `
-      <p>
-        บท <strong>${chapterName}</strong>:
-        ทำถูก ${item.correct}/${item.total} ครั้ง
-        (<strong>${item.accuracy}%</strong>) ${suggestion}
-      </p>
+      <tr>
+        <td style="text-align:center">${i + 1}</td>
+        <td>${text.length > 70 ? text.substring(0, 70) + '…' : text}</td>
+        <td style="text-align:center">${String.fromCharCode(65 + sessionAnswers[i])}</td>
+        <td style="text-align:center">${String.fromCharCode(65 + q.answer)}</td>
+        <td style="text-align:center">
+          <span class="badge ${correct ? 'badge-success' : 'badge-error'}">${correct ? 'ถูก' : 'ผิด'}</span>
+        </td>
+      </tr>
     `;
-  }).join("");
+  }).join('');
 
-  document.getElementById("analysis").innerHTML = output;
+  document.getElementById('question-area').innerHTML = '';
+  document.getElementById('results').innerHTML = `
+    <div class="card">
+      <div class="card-title">ผลการฝึกหัด</div>
+      <div style="text-align:center;padding:24px 0">
+        <div style="font-size:56px;font-weight:800;color:${scoreColor};line-height:1">${correctCount}/${total}</div>
+        <div style="font-size:22px;font-weight:600;color:${scoreColor};margin-top:6px">${pct}%</div>
+        <div style="color:var(--muted);margin-top:8px;font-size:14px">
+          เวลา: ${mins > 0 ? `${mins} นาที ` : ''}${secs} วินาที
+        </div>
+      </div>
+      ${total > 0 ? `
+      <table class="table" style="margin-top:8px">
+        <thead>
+          <tr><th>#</th><th>โจทย์</th><th>ตอบ</th><th>เฉลย</th><th>ผล</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>` : ''}
+      <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="resetPractice()">ฝึกต่อ</button>
+        <a href="dashboard.html" class="btn btn-ghost">กลับหน้าหลัก</a>
+      </div>
+    </div>
+  `;
 }
 
-function nextStepAfterAnswer(isCorrect) {
-  if (!isCorrect) {
-    showExplanation(currentQuestion); // ← สำหรับอนาคต
-    setTimeout(() => {
-      loadNextQuestion();
-    }, 2000);
-  } else {
-    setTimeout(() => {
-      loadNextQuestion();
-    }, 1000);
-  }
+function resetPractice() {
+  sessionStartTime = null;
+  sessionQuestions = [];
+  sessionAnswers = [];
+  filteredQuestions = [];
+  usedIndices = new Set();
+  currentQuestion = null;
+
+  document.getElementById('question-area').innerHTML = '';
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('setup-panel').style.display = '';
 }
 
-function showExplanation(question) {
-  const explanationBox = document.getElementById("explanation");
-  if (!explanationBox) return; // ป้องกันกรณีไม่มี element
-
-  explanationBox.innerHTML = question.explanation
-    ? `<p><strong>เฉลย:</strong> ${question.explanation}</p>`
-    : "";
+function logout() {
+  fetch('/api/logout', { method: 'POST', credentials: 'include' });
+  location.href = 'login.html';
 }
-
-
-async function logout() {
-  await fetch("/api/logout", {
-    method: "POST",
-    credentials: "include"
-  });
-  window.location.href = "login.html";
-}
-
-
-function loadNextQuestion() {
-  startExam();  // หรือ logic อื่นที่สุ่มข้อใหม่
-}
-

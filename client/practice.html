@@ -81,16 +81,6 @@
     <div id="analysis"></div>
   </div>
 
-  <script>
-    function changeLang(lang) {
-      currentLang = lang;
-      if (typeof renderCurrentQuestion === 'function') renderCurrentQuestion();
-    }
-    function logout() {
-      fetch('/api/logout', { method: 'POST', credentials: 'include' });
-      location.href = 'login.html';
-    }
-  </script>
   <script src="topicMap.js"></script>
   <script src="script.js"></script>
   <script>

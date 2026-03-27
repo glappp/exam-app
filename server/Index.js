@@ -26,10 +26,10 @@ app.use('/api/admin', adminRoute);
 app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 app.use(session({
-  secret: 'super-secret-key',
+  secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // สำหรับ dev, ใช้ true พร้อม HTTPS
+  cookie: { secure: process.env.NODE_ENV === 'production' }
 }));
 
 

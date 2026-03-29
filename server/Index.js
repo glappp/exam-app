@@ -110,6 +110,7 @@ app.use('/api/exam-sets', require('./routes/api/exam-sets'));
 app.use('/api/exam-set-official', require('./routes/api/exam-set-official'));
 app.use('/api/submit-exam', require('./routes/api/submit-exam'));
 app.use('/api/mock', require('./routes/api/mock'));
+app.use('/api/ai', require('./routes/api/ai-gen'));
 app.use('/api/announcements', require('./routes/api/announcements'));
 app.use('/api/classroom', require('./routes/api/csv-upload'));
 app.use('/api/teacher', require('./routes/api/teacher'));

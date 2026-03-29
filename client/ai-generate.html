@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI สร้างโจทย์ — คลังข้อสอบ</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .gen-form { max-width: 560px; }
+    .q-card {
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 14px;
+      background: #fff;
+      position: relative;
+    }
+    .q-card.approved { border-color: #16a34a; background: #f0fdf4; }
+    .q-card.rejected { opacity: .45; border-color: #e5e7eb; }
+
+    .q-field { width: 100%; padding: 7px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; font-family: inherit; resize: vertical; }
+    .choice-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .choice-row input[type=text] { flex: 1; }
+    .choice-row input[type=radio] { flex-shrink: 0; }
+
+    .badge-ai { background: #f0e6ff; color: #6b21a8; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+    .approve-bar { display: flex; gap: 8px; margin-top: 12px; }
+
+    #generate-area { display: none; }
+    .loading-dots::after { content: '...'; animation: dots 1.2s steps(4) infinite; }
+    @keyframes dots { 0%,20%{content:'.'} 40%{content:'..'} 60%,100%{content:'...'} }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <span class="topbar-title">✨ AI สร้างโจทย์</span>
+  <div class="topbar-nav">
+    <a href="admin.html">Admin Panel</a>
+    <a href="dashboard.html">หน้าหลัก</a>
+    <a href="#" onclick="logout()">ออกจากระบบ</a>
+  </div>
+</div>
+
+<div class="page">
+  <!-- Form -->
+  <div class="card gen-form">
+    <div class="card-title">ตั้งค่าการสร้างโจทย์</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div>
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">Topic tag</label>
+        <input type="text" id="gen-topic" placeholder="เช่น topic:fraction" class="q-field">
+      </div>
+      <div>
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ระดับชั้น</label>
+        <select id="gen-grade" class="q-field" style="resize:none">
+          <option value="p4">ป.4</option>
+          <option value="p5">ป.5</option>
+          <option value="p6" selected>ป.6</option>
+          <option value="m1">ม.1</option>
+          <option value="m2">ม.2</option>
+          <option value="m3">ม.3</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ความยาก</label>
+        <select id="gen-difficulty" class="q-field" style="resize:none">
+          <option value="1">1 — ง่าย</option>
+          <option value="2" selected>2 — กลาง</option>
+          <option value="3">3 — ยาก</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">จำนวนข้อ</label>
+        <input type="number" id="gen-count" value="5" min="1" max="15" class="q-field" style="resize:none">
+      </div>
+    </div>
+
+    <div style="margin-bottom:14px">
+      <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">หมายเหตุพิเศษ (ไม่บังคับ)</label>
+      <textarea id="gen-note" rows="2" placeholder="เช่น เน้นโจทย์ประยุกต์ชีวิตจริง, หลีกเลี่ยงตัวเลขทศนิยม..." class="q-field"></textarea>
+    </div>
+
+    <button class="btn btn-primary" id="gen-btn" onclick="generate()">✨ สร้างโจทย์</button>
+    <div id="gen-status" style="margin-top:10px;font-size:13px"></div>
+  </div>
+
+  <!-- Generated questions -->
+  <div id="generate-area">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <div class="card-title" style="margin:0">โจทย์ที่สร้างได้ <span class="badge-ai">AI</span></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" style="font-size:13px" onclick="approveAll()">อนุมัติทั้งหมด</button>
+        <button class="btn btn-primary" id="save-btn" onclick="saveApproved()" style="font-size:13px">บันทึกที่อนุมัติแล้ว</button>
+      </div>
+    </div>
+    <div id="q-list"></div>
+    <div id="save-status" style="margin-top:8px;font-size:13px"></div>
+  </div>
+</div>
+
+<script>
+  let generatedQuestions = []; // { ...q, _approved: bool, _rejected: bool }
+
+  function logout() {
+    fetch('/api/logout', { method: 'POST', credentials: 'include' });
+    location.href = 'login.html';
+  }
+
+  async function generate() {
+    const topic = document.getElementById('gen-topic').value.trim();
+    const grade = document.getElementById('gen-grade').value;
+    const difficulty = parseInt(document.getElementById('gen-difficulty').value);
+    const count = parseInt(document.getElementById('gen-count').value) || 5;
+    const styleNote = document.getElementById('gen-note').value.trim();
+    const statusEl = document.getElementById('gen-status');
+    const btn = document.getElementById('gen-btn');
+
+    if (!topic) { statusEl.style.color='#dc2626'; statusEl.textContent='กรุณาระบุ Topic tag'; return; }
+
+    btn.disabled = true;
+    statusEl.style.color = '#6b7280';
+    statusEl.innerHTML = '<span class="loading-dots">กำลังสร้างโจทย์</span>';
+    document.getElementById('generate-area').style.display = 'none';
+
+    try {
+      const r = await fetch('/api/ai/generate', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ topic, grade, difficulty, count, styleNote })
+      });
+      const d = await r.json();
+      if (!r.ok) {
+        statusEl.style.color = '#dc2626';
+        statusEl.textContent = '❌ ' + d.error;
+        btn.disabled = false;
+        return;
+      }
+      generatedQuestions = d.questions.map(q => ({ ...q, _approved: false, _rejected: false }));
+      statusEl.style.color = '#16a34a';
+      statusEl.textContent = `สร้างสำเร็จ ${generatedQuestions.length} ข้อ`;
+      renderQuestions();
+      document.getElementById('generate-area').style.display = 'block';
+    } catch {
+      statusEl.style.color = '#dc2626';
+      statusEl.textContent = '❌ เกิดข้อผิดพลาด';
+    }
+    btn.disabled = false;
+  }
+
+  function renderQuestions() {
+    document.getElementById('q-list').innerHTML = generatedQuestions.map((q, i) => {
+      const cls = q._rejected ? 'rejected' : q._approved ? 'approved' : '';
+      return `
+        <div class="q-card ${cls}" id="qcard-${i}">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <strong style="font-size:13px">ข้อ ${i + 1}</strong>
+            ${q._approved ? '<span class="badge badge-success" style="font-size:11px">อนุมัติแล้ว</span>' : ''}
+            ${q._rejected ? '<span class="badge badge-error" style="font-size:11px">ปฏิเสธ</span>' : ''}
+          </div>
+
+          <div style="margin-bottom:8px">
+            <label style="font-size:11px;color:#888">โจทย์ภาษาไทย</label>
+            <textarea class="q-field" rows="3" onchange="updateQ(${i},'textTh',this.value)">${escHtml(q.textTh)}</textarea>
+          </div>
+          <div style="margin-bottom:10px">
+            <label style="font-size:11px;color:#888">โจทย์ภาษาอังกฤษ</label>
+            <textarea class="q-field" rows="2" onchange="updateQ(${i},'textEn',this.value)">${escHtml(q.textEn)}</textarea>
+          </div>
+
+          <div style="margin-bottom:10px">
+            <label style="font-size:11px;color:#888;display:block;margin-bottom:6px">ตัวเลือก (คลิก ○ เพื่อเลือกคำตอบที่ถูก)</label>
+            ${(q.choices || []).map((c, ci) => `
+              <div class="choice-row">
+                <input type="radio" name="ans-${i}" value="${ci}" ${q.answer === ci ? 'checked' : ''} onchange="updateQ(${i},'answer',${ci})">
+                <span style="font-size:13px;font-weight:600;width:20px">${String.fromCharCode(65+ci)}.</span>
+                <input type="text" class="q-field" style="resize:none;padding:5px 8px" value="${escHtml(c.textTh)}" onchange="updateChoice(${i},${ci},this.value)">
+              </div>`).join('')}
+          </div>
+
+          ${q.explanation ? `<div style="font-size:12px;color:#6b7280;background:#f9fafb;border-radius:6px;padding:8px;margin-bottom:10px"><strong>💡 อธิบาย:</strong> ${escHtml(q.explanation)}</div>` : ''}
+
+          <div class="approve-bar">
+            ${!q._rejected ? `<button class="btn ${q._approved ? 'btn-ghost' : 'btn-primary'}" style="font-size:12px" onclick="toggleApprove(${i})">${q._approved ? 'ยกเลิกอนุมัติ' : '✔ อนุมัติ'}</button>` : ''}
+            ${!q._approved ? `<button class="btn btn-ghost" style="font-size:12px;color:#dc2626;border-color:#fca5a5" onclick="toggleReject(${i})">${q._rejected ? 'เลิกปฏิเสธ' : '✕ ปฏิเสธ'}</button>` : ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function updateQ(i, field, val) {
+    generatedQuestions[i][field] = val;
+  }
+
+  function updateChoice(i, ci, val) {
+    generatedQuestions[i].choices[ci].textTh = val;
+  }
+
+  function toggleApprove(i) {
+    generatedQuestions[i]._approved = !generatedQuestions[i]._approved;
+    generatedQuestions[i]._rejected = false;
+    renderQuestions();
+  }
+
+  function toggleReject(i) {
+    generatedQuestions[i]._rejected = !generatedQuestions[i]._rejected;
+    generatedQuestions[i]._approved = false;
+    renderQuestions();
+  }
+
+  function approveAll() {
+    generatedQuestions.forEach(q => { q._approved = true; q._rejected = false; });
+    renderQuestions();
+  }
+
+  async function saveApproved() {
+    const toSave = generatedQuestions.filter(q => q._approved);
+    if (!toSave.length) {
+      document.getElementById('save-status').style.color = '#dc2626';
+      document.getElementById('save-status').textContent = 'ยังไม่ได้อนุมัติข้อสอบข้อใด';
+      return;
+    }
+
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    btn.textContent = 'กำลังบันทึก...';
+
+    const grade = document.getElementById('gen-grade').value;
+    const topic = document.getElementById('gen-topic').value.trim();
+
+    const r = await fetch('/api/ai/save', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        questions: toSave,
+        grade,
+        source: `AI:${topic}`
+      })
+    });
+    const d = await r.json();
+    const statusEl = document.getElementById('save-status');
+    if (d.success) {
+      statusEl.style.color = '#16a34a';
+      statusEl.textContent = `บันทึกสำเร็จ ${d.count} ข้อ เข้าคลัง`;
+      // ทำเครื่องหมายว่าบันทึกแล้ว
+      generatedQuestions.forEach(q => { if (q._approved) q._saved = true; });
+    } else {
+      statusEl.style.color = '#dc2626';
+      statusEl.textContent = '❌ ' + d.error;
+    }
+    btn.disabled = false;
+    btn.textContent = 'บันทึกที่อนุมัติแล้ว';
+  }
+
+  async function init() {
+    const me = await fetch('/api/me', { credentials: 'include' });
+    if (!me.ok) { location.href = 'login.html'; return; }
+    const data = await me.json();
+    if (!['admin', 'teacher'].includes(data.role)) {
+      alert('หน้านี้สำหรับครู/admin เท่านั้น');
+      location.href = 'dashboard.html';
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

@@ -114,8 +114,28 @@ const examSetOfficialRoutes = require('./routes/api/exam-set-official');
 app.use(examSetOfficialRoutes);
 
 
+// ✅ Simple in-memory rate limiter: 5 attempts per IP per 15 min
+const loginAttempts = new Map();
+function isRateLimited(ip) {
+  const now = Date.now();
+  const windowMs = 15 * 60 * 1000;
+  const max = 5;
+  let entry = loginAttempts.get(ip);
+  if (!entry || now > entry.resetAt) {
+    entry = { count: 0, resetAt: now + windowMs };
+  }
+  entry.count++;
+  loginAttempts.set(ip, entry);
+  return entry.count > max;
+}
+
 // ✅ Auth APIs
 app.post('/api/login', async (req, res) => {
+  const ip = req.ip || req.socket.remoteAddress || 'unknown';
+  if (isRateLimited(ip)) {
+    return res.status(429).json({ message: 'พยายามเข้าสู่ระบบมากเกินไป กรุณารอ 15 นาทีแล้วลองใหม่' });
+  }
+
   const { username, password } = req.body;
   const user = await prisma.user.findUnique({ where: { username } });
 
@@ -207,7 +227,7 @@ app.post('/add-question', upload.fields([
 });
 
 // ✅ Start server
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`✅ Backend is running on http://localhost:${PORT}`);
 });

@@ -35,7 +35,7 @@
 </head>
 <body>
   <div class="topbar">
-    <span class="topbar-title">📗 โหมดฝึกหัด</span>
+    <span class="topbar-title" id="topbar-title">📗 โหมดฝึกหัด</span>
     <div class="topbar-nav">
       <span class="topbar-user" id="greeting"></span>
       <a href="dashboard.html">หน้าหลัก</a>
@@ -44,9 +44,15 @@
   </div>
 
   <div class="page">
+    <!-- adaptive banner (ซ่อนโดย default) -->
+    <div id="adaptive-banner" style="display:none;background:#dbeafe;border:1px solid #93c5fd;border-radius:10px;padding:14px 18px;margin-bottom:16px">
+      <div style="font-weight:700;color:#1e40af;font-size:14px">🎯 โหมดปรับจุดอ่อน</div>
+      <div id="adaptive-desc" style="font-size:13px;color:#1e3a8a;margin-top:4px">กำลังวิเคราะห์จุดอ่อน...</div>
+    </div>
+
     <!-- เลือกหัวข้อ + เริ่ม -->
     <div class="card" id="setup-panel">
-      <div class="card-title">เลือกหัวข้อที่ต้องการฝึก</div>
+      <div class="card-title" id="setup-title">เลือกหัวข้อที่ต้องการฝึก</div>
 
       <div class="form-row" style="margin-bottom:14px">
         <div class="form-group">
@@ -56,7 +62,7 @@
             <option value="en">English</option>
           </select>
         </div>
-        <div class="form-group">
+        <div class="form-group" id="chapter-group">
           <label>หัวข้อ</label>
           <select id="chapter">
             <option>บวก</option>
@@ -70,7 +76,7 @@
         </div>
       </div>
 
-      <button class="btn btn-primary" onclick="startExam()">เริ่มทำข้อสอบ</button>
+      <button class="btn btn-primary" id="start-btn" onclick="startExam()">เริ่มทำข้อสอบ</button>
     </div>
 
     <!-- โจทย์ -->

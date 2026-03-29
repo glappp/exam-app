@@ -109,9 +109,9 @@ app.use('/api/exam-set', require('./routes/api/exam-set-random'));
 app.use('/api/exam-sets', require('./routes/api/exam-sets'));
 app.use('/api/exam-set-official', require('./routes/api/exam-set-official'));
 app.use('/api/submit-exam', require('./routes/api/submit-exam'));
+app.use('/api/announcements', require('./routes/api/announcements'));
+app.use('/api/classroom', require('./routes/api/csv-upload'));
 
-const examSetOfficialRoutes = require('./routes/api/exam-set-official');
-app.use(examSetOfficialRoutes);
 
 
 // ✅ Simple in-memory rate limiter: 5 attempts per IP per 15 min

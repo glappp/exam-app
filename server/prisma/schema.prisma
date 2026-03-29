@@ -176,6 +176,39 @@ model ExamSetMetadata {
 
 
 
+// Announcement — ประกาศจาก admin/ครู
+model Announcement {
+  id          Int                @id @default(autoincrement())
+  title       String
+  body        String
+  targetRole  String?            // null=ทุกคน, 'student', 'teacher'
+  createdById Int
+  isActive    Boolean            @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime           @default(now())
+  reads       AnnouncementRead[]
+}
+
+model AnnouncementRead {
+  id             Int          @id @default(autoincrement())
+  userId         Int
+  announcementId Int
+  announcement   Announcement @relation(fields: [announcementId], references: [id])
+  readAt         DateTime     @default(now())
+  @@unique([userId, announcementId])
+}
+
+// ClassroomScoreUpload — คะแนนที่ครู upload ด้วย CSV
+model ClassroomScoreUpload {
+  id           Int      @id @default(autoincrement())
+  uploadedById Int
+  academicYear String
+  subject      String
+  scores       String   // JSON string: [{studentCode, name, score, fullScore, percentile?}]
+  stats        String?  // JSON string: {mean, sd, count, passCount}
+  createdAt    DateTime @default(now())
+}
+
 // PointTransaction — ledger คะแนนทุก transaction
 model PointTransaction {
   id           Int      @id @default(autoincrement())

@@ -120,6 +120,33 @@ router.post('/', async (req, res) => {
             note: `ภารกิจรายวัน ${today}`
           }
         });
+
+        // เช็คโบนัสสัปดาห์ (ทำครบ 5/7 วัน → +20)
+        const weekId = getISOWeek(new Date());
+        const { monday, sunday } = getWeekRange(new Date());
+        const [completedDays, bonusExists] = await Promise.all([
+          prisma.dailyMission.count({
+            where: {
+              userId: req.session.userId,
+              date: { gte: monday, lte: sunday },
+              baseCompleted: true
+            }
+          }),
+          prisma.pointTransaction.findFirst({
+            where: { userId: req.session.userId, type: 'weekly_bonus', note: { contains: weekId } }
+          })
+        ]);
+        if (completedDays >= 5 && !bonusExists) {
+          await prisma.pointTransaction.create({
+            data: {
+              userId: req.session.userId,
+              academicYear,
+              type: 'weekly_bonus',
+              amount: 20,
+              note: `โบนัสสัปดาห์ ${weekId}`
+            }
+          });
+        }
       }
     }
 
@@ -138,6 +165,28 @@ router.post('/', async (req, res) => {
     res.status(500).json({ error: 'ตรวจคำตอบล้มเหลว' });
   }
 });
+
+function getISOWeek(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+  const week1 = new Date(d.getFullYear(), 0, 4);
+  const weekNum = 1 + Math.round(((d - week1) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+  return `${d.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+}
+
+function getWeekRange(date) {
+  const d = new Date(date);
+  const day = (d.getDay() + 6) % 7; // 0=Mon
+  const monday = new Date(d);
+  monday.setDate(d.getDate() - day);
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  return {
+    monday: monday.toISOString().slice(0, 10),
+    sunday: sunday.toISOString().slice(0, 10)
+  };
+}
 
 function normalizeAnswer(ans) {
   const str = (typeof ans === 'string') ? ans.trim().replace(/\s+/g, '') : String(ans);

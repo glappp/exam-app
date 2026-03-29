@@ -127,6 +127,25 @@
     <p id="welcome-sub"></p>
   </div>
 
+  <!-- Daily Mission card -->
+  <div class="card" id="mission-card" style="margin-bottom:16px;display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="card-title" style="margin:0">ภารกิจวันนี้</div>
+      <div id="mission-points" style="font-size:13px;color:#888"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="flex:1">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+          <span id="mission-label">ทำโจทย์ 0/10 ข้อ</span>
+          <span id="mission-status"></span>
+        </div>
+        <div style="background:#f0f0f0;border-radius:99px;height:8px">
+          <div id="mission-bar" style="background:#3b82f6;height:8px;border-radius:99px;width:0%;transition:width .4s"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Stats row -->
   <div class="stats-row" id="stats-row" style="display:none">
     <div class="stat-box">
@@ -239,8 +258,11 @@
     document.getElementById('topbar-name').textContent = me.firstName || me.username || '';
     document.getElementById('welcome-name').textContent = `สวัสดี, ${me.firstName || 'นักเรียน'} 👋`;
 
-    // Load full student data
-    const r2 = await fetch('/api/student/me', { credentials: 'include' });
+    // Load full student data + daily mission พร้อมกัน
+    const [r2, r3] = await Promise.all([
+      fetch('/api/student/me', { credentials: 'include' }),
+      fetch('/api/student/daily-mission', { credentials: 'include' })
+    ]);
     if (r2.ok) {
       studentData = await r2.json();
       applyProfile(studentData.profile);
@@ -251,6 +273,10 @@
         document.getElementById('welcome-sub').textContent =
           `${studentData.profile.grade} • ${studentData.profile.school} • ปีการศึกษา ${studentData.profile.academicYear}`;
       }
+    }
+    if (r3.ok) {
+      const mission = await r3.json();
+      renderMission(mission);
     }
   }
 
@@ -296,29 +322,45 @@
     </table>`;
   }
 
+  function renderMission(m) {
+    document.getElementById('mission-card').style.display = '';
+    const count = Math.min(m.questionsCount, m.dailyGoal);
+    const pct = Math.round(count / m.dailyGoal * 100);
+    document.getElementById('mission-label').textContent = `ทำโจทย์ ${count}/${m.dailyGoal} ข้อ`;
+    document.getElementById('mission-bar').style.width = pct + '%';
+    document.getElementById('mission-bar').style.background = m.baseCompleted ? '#16a34a' : '#3b82f6';
+    document.getElementById('mission-status').innerHTML = m.baseCompleted
+      ? `<span style="color:#16a34a;font-weight:700">✅ ครบแล้ว! +${m.pointsEarnedToday} ⭐</span>`
+      : `<span style="color:#888">${m.dailyGoal - count} ข้อที่เหลือ</span>`;
+    document.getElementById('mission-points').textContent = `⭐ ${m.totalPoints} คะแนนสะสม`;
+  }
+
   function renderWeakness(results) {
     const el = document.getElementById('weakness-content');
-    // Aggregate weakAttributes from results
-    const tally = {};
-    results.forEach(r => {
-      const w = r.weakAttributes;
-      if (!w || typeof w !== 'object') return;
-      Object.entries(w).forEach(([k, v]) => {
-        tally[k] = (tally[k] || 0) + (typeof v === 'number' ? v : 0);
-      });
-    });
-    const entries = Object.entries(tally).sort((a, b) => a[1] - b[1]).slice(0, 5);
-    if (!entries.length) return;
+    // ใช้ weakAttributes จากการสอบแบบมีเวลา (competitive/official) ล่าสุด
+    const timedResult = results.find(r => r.mode === 'competitive' || r.mode === 'official');
+    const tags = Array.isArray(timedResult?.weakAttributes) ? timedResult.weakAttributes : [];
+    if (!tags.length) return;
 
-    const max = Math.max(...entries.map(e => Math.abs(e[1])), 1);
-    el.innerHTML = entries.map(([key, val]) => {
-      const pct = Math.round(Math.abs(val) / max * 100);
-      const label = key.replace(/^(topic|skill|trap):/, '');
-      const fillClass = pct > 70 ? 'danger' : pct > 40 ? 'warn' : '';
-      return `<div class="weak-bar-row">
-        <div class="weak-label" title="${key}">${label}</div>
-        <div class="weak-bar-bg"><div class="weak-bar-fill ${fillClass}" style="width:${pct}%"></div></div>
-        <div class="weak-pct">${val > 0 ? '+' : ''}${val}</div>
+    const grouped = {};
+    tags.forEach(tag => {
+      const type = tag.split(':')[0];
+      if (!grouped[type]) grouped[type] = [];
+      grouped[type].push(tag.replace(/^[^:]+:/, ''));
+    });
+
+    el.innerHTML = Object.entries(grouped).map(([type, items]) => {
+      const typeLabel = { topic: 'หัวข้อ', skill: 'ทักษะ', trap: 'กับดัก' }[type] || type;
+      return `<div style="margin-bottom:10px">
+        <div style="font-size:11px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:6px">${typeLabel}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${items.map(item => `
+            <span style="display:inline-flex;align-items:center;gap:4px;background:#fff7ed;border:1px solid #fed7aa;border-radius:99px;padding:3px 10px;font-size:12px">
+              <span style="color:#9a3412">${item}</span>
+              <a href="practice.html?mode=targeted&topic=${encodeURIComponent(type+':'+item)}"
+                 style="color:#3b82f6;font-size:11px;text-decoration:none;font-weight:600">ซ่อม</a>
+            </span>`).join('')}
+        </div>
       </div>`;
     }).join('');
   }

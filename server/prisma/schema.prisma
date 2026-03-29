@@ -11,18 +11,19 @@ datasource db {
 }
 
 model User {
-  id               Int              @id @default(autoincrement())
-  username         String           @unique
+  id               Int                @id @default(autoincrement())
+  username         String             @unique
   password         String
   firstName        String
   lastName         String
   email            String
-  role             String           // 'admin', 'teacher', 'student'
+  role             String             // 'admin', 'teacher', 'student'
   studentProfiles  StudentProfile[]
-  createdAt        DateTime         @default(now())
+  createdAt        DateTime           @default(now())
 
-  // ⬇️ เพิ่มความสัมพันธ์กลับจาก Result
   results          Result[]
+  pointTransactions PointTransaction[]
+  dailyMissions    DailyMission[]
 }
 
 
@@ -38,6 +39,7 @@ model StudentProfile {
   grade         String           // เช่น "ป.4"
   classroom     String?
   studentCode   String?
+  status        String           @default("active")  // "active" | "archived"
 
   examResults   ExamResult[]
   createdAt     DateTime         @default(now())
@@ -173,6 +175,32 @@ model ExamSetMetadata {
 
 
 
+
+// PointTransaction — ledger คะแนนทุก transaction
+model PointTransaction {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id])
+  academicYear String   // "2568"
+  type         String   // 'exam', 'streak', 'weekly_bonus', 'parent_deduct', 'admin_adjust'
+  amount       Int      // บวก = ได้คะแนน, ลบ = เสียคะแนน
+  note         String?  // เช่น "คณิต 8/10", "ดูการ์ตูน 1 ชม."
+  createdAt    DateTime @default(now())
+}
+
+// DailyMission — track ภารกิจรายวัน
+model DailyMission {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  user           User     @relation(fields: [userId], references: [id])
+  date           String   // "2026-03-29"
+  questionsCount Int      @default(0)   // จำนวนข้อที่ทำวันนี้ (รวมทุก mode)
+  baseCompleted  Boolean  @default(false) // ทำครบ 10 ข้อแล้ว
+  pointsEarned   Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, date])
+}
 
 /// 🗂️ AttributeDictionary (HK Project)
 ///

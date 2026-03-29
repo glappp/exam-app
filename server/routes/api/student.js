@@ -88,4 +88,34 @@ router.get('/history', requireLogin, async (req, res) => {
   }
 });
 
+// GET /api/student/daily-mission — สถานะภารกิจวันนี้ + คะแนนสะสม
+router.get('/daily-mission', requireLogin, async (req, res) => {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const academicYear = String(new Date().getFullYear() + 543);
+
+    const [mission, pointsAgg] = await Promise.all([
+      prisma.dailyMission.findUnique({
+        where: { userId_date: { userId: req.session.userId, date: today } }
+      }),
+      prisma.pointTransaction.aggregate({
+        where: { userId: req.session.userId, academicYear },
+        _sum: { amount: true }
+      })
+    ]);
+
+    res.json({
+      today,
+      questionsCount: mission?.questionsCount || 0,
+      baseCompleted: mission?.baseCompleted || false,
+      pointsEarnedToday: mission?.pointsEarned || 0,
+      totalPoints: pointsAgg._sum.amount || 0,
+      dailyGoal: 10
+    });
+  } catch (err) {
+    console.error('❌ daily-mission:', err);
+    res.status(500).json({ error: 'โหลดภารกิจล้มเหลว' });
+  }
+});
+
 module.exports = router;

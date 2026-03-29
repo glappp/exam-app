@@ -15,10 +15,11 @@ router.post('/', async (req, res) => {
       where: { id: { in: questions } }
     });
 
+    const TIMED_MODES = ['competitive', 'official'];
     let correctCount = 0;
     let score = 0;
     let fullScore = 0;
-    const wrongAttributes = {};
+    const weakTagSet = new Set();
 
     records.forEach((q, i) => {
       const userAns = answers[i];
@@ -29,15 +30,14 @@ router.post('/', async (req, res) => {
       if (correct) {
         correctCount++;
         score += thisScore;
-      } else {
+      } else if (TIMED_MODES.includes(mode)) {
         ['topic', 'skill', 'trap'].forEach(type => {
-          const attrs = q.attributes?.[type] || [];
-          attrs.forEach(attr => {
-            wrongAttributes[attr] = (wrongAttributes[attr] || 0) - 1;
-          });
+          (q.attributes?.[type] || []).forEach(attr => weakTagSet.add(attr));
         });
       }
     });
+
+    const weakAttributes = TIMED_MODES.includes(mode) ? [...weakTagSet] : null;
 
     // หา StudentProfile ของ user ที่ login อยู่
     let studentProfileId = null;
@@ -73,11 +73,54 @@ router.post('/', async (req, res) => {
           score,
           total: questions.length,
           durationSec: durationSec || 0,
-          weakAttributes: wrongAttributes,
+          weakAttributes,
           questionIds: questions,
           userAnswers: answers
         }
       });
+    }
+
+    // อัปเดต DailyMission (ทุก mode ยกเว้น targeted)
+    if (req.session?.userId && mode !== 'targeted') {
+      const today = new Date().toISOString().slice(0, 10);
+      const academicYear = String(new Date().getFullYear() + 543);
+      const DAILY_GOAL = 10;
+      const DAILY_POINTS = 10;
+
+      const existing = await prisma.dailyMission.findUnique({
+        where: { userId_date: { userId: req.session.userId, date: today } }
+      });
+      const prevCount = existing?.questionsCount || 0;
+      const newCount = prevCount + questions.length;
+      const wasComplete = existing?.baseCompleted || false;
+      const nowComplete = newCount >= DAILY_GOAL;
+
+      await prisma.dailyMission.upsert({
+        where: { userId_date: { userId: req.session.userId, date: today } },
+        update: {
+          questionsCount: newCount,
+          ...((!wasComplete && nowComplete) ? { baseCompleted: true, pointsEarned: DAILY_POINTS } : {})
+        },
+        create: {
+          userId: req.session.userId,
+          date: today,
+          questionsCount: newCount,
+          baseCompleted: nowComplete,
+          pointsEarned: nowComplete ? DAILY_POINTS : 0
+        }
+      });
+
+      if (!wasComplete && nowComplete) {
+        await prisma.pointTransaction.create({
+          data: {
+            userId: req.session.userId,
+            academicYear,
+            type: 'exam',
+            amount: DAILY_POINTS,
+            note: `ภารกิจรายวัน ${today}`
+          }
+        });
+      }
     }
 
     res.json({
@@ -86,7 +129,8 @@ router.post('/', async (req, res) => {
       score,
       fullScore,
       questions: records,
-      userAnswers: answers
+      userAnswers: answers,
+      weakAttributes
     });
 
   } catch (err) {

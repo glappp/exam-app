@@ -78,4 +78,35 @@ router.get('/adaptive', async (req, res) => {
   }
 });
 
+// GET /api/exam-set/targeted?tag=topic:fraction-multiply
+// ดึงโจทย์สำหรับ fix session — 10 ข้อ สุ่มจาก tag ที่ระบุ (วนซ้ำได้ถ้าโจทย์ไม่พอ)
+router.get('/targeted', async (req, res) => {
+  try {
+    if (!req.session?.userId) return res.status(401).json({ error: 'กรุณาเข้าสู่ระบบ' });
+
+    const { tag } = req.query;
+    if (!tag) return res.status(400).json({ error: 'ต้องระบุ tag' });
+
+    const allQ = await prisma.question.findMany();
+    const matched = allQ.filter(q =>
+      ['topic', 'skill', 'trap'].some(type =>
+        Array.isArray(q.attributes?.[type]) && q.attributes[type].includes(tag)
+      )
+    );
+
+    if (matched.length === 0) {
+      return res.status(404).json({ error: `ไม่พบโจทย์สำหรับ ${tag}` });
+    }
+
+    // สุ่ม 10 ข้อ วนซ้ำถ้าโจทย์มีน้อยกว่า 10
+    const shuffled = matched.sort(() => Math.random() - 0.5);
+    const questions = Array.from({ length: 10 }, (_, i) => shuffled[i % shuffled.length]);
+
+    res.json({ questions, tag });
+  } catch (error) {
+    console.error('❌ ERROR ใน /api/exam-set/targeted:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

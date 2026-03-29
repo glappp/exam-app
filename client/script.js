@@ -22,6 +22,110 @@ if (isAdaptive) {
   });
 }
 
+// Targeted mode (fix session)
+const isTargeted = new URLSearchParams(location.search).get('mode') === 'targeted';
+const targetedTag = new URLSearchParams(location.search).get('topic') || '';
+let targetedQueue = [];
+
+if (isTargeted) {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('topbar-title').textContent = '🔧 ซ่อมจุดอ่อน';
+    document.getElementById('setup-panel').style.display = 'none';
+    document.getElementById('targeted-banner').style.display = 'block';
+    document.getElementById('targeted-tag-label').textContent = targetedTag.replace(/^[^:]+:/, '');
+    startTargeted();
+  });
+}
+
+async function startTargeted() {
+  document.getElementById('question-area').innerHTML =
+    '<p style="text-align:center;padding:32px;color:var(--muted)">กำลังโหลดโจทย์...</p>';
+  try {
+    const res = await fetch(`/api/exam-set/targeted?tag=${encodeURIComponent(targetedTag)}`, { credentials: 'include' });
+    if (!res.ok) throw new Error('โหลดโจทย์ไม่สำเร็จ');
+    const data = await res.json();
+    targetedQueue = [...data.questions];
+    loadTargetedQuestion();
+  } catch (err) {
+    document.getElementById('question-area').innerHTML =
+      `<div class="card"><p class="msg msg-error">${err.message}</p></div>`;
+  }
+}
+
+function loadTargetedQuestion() {
+  if (targetedQueue.length === 0) {
+    showTargetedComplete();
+    return;
+  }
+  currentQuestion = targetedQueue[0];
+  currentAnswer = currentQuestion.answer;
+  renderTargetedQuestion();
+}
+
+function renderTargetedQuestion() {
+  const q = currentQuestion;
+  const done = 10 - targetedQueue.length;
+  const choicesHTML = (q.choices || []).map((c, i) =>
+    `<button class="choice-btn" id="choice-${i}" onclick="checkAnswerTargeted(${i})">
+      <strong>${String.fromCharCode(65 + i)}.</strong> ${getChoiceText(c)}
+    </button>`
+  ).join('');
+
+  document.getElementById('question-area').innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span class="card-title" style="margin:0">ข้อที่ ${done + 1}</span>
+        <span style="font-size:13px;color:var(--muted)">ถูกแล้ว ${done}/10</span>
+      </div>
+      <div style="background:#f0f0f0;border-radius:99px;height:6px;margin-bottom:16px">
+        <div style="background:#16a34a;height:6px;border-radius:99px;width:${done / 10 * 100}%;transition:width .3s"></div>
+      </div>
+      <div style="font-size:15px;line-height:1.7;margin-bottom:14px">${getText(q)}</div>
+      ${q.image ? `<img src="/uploads/${q.image}" style="max-width:100%;margin-bottom:14px;border-radius:8px">` : ''}
+      <div class="choices">${choicesHTML}</div>
+      <div id="answer-feedback" style="margin-top:12px"></div>
+    </div>
+  `;
+}
+
+function checkAnswerTargeted(choiceIndex) {
+  const isCorrect = choiceIndex === currentAnswer;
+
+  document.querySelectorAll('.choice-btn').forEach((btn, i) => {
+    btn.disabled = true;
+    btn.style.cursor = 'default';
+    if (i === currentAnswer) { btn.style.background = '#dcfce7'; btn.style.borderColor = '#16a34a'; btn.style.color = '#15803d'; }
+    if (i === choiceIndex && !isCorrect) { btn.style.background = '#fee2e2'; btn.style.borderColor = '#dc2626'; btn.style.color = '#b91c1c'; }
+  });
+
+  document.getElementById('answer-feedback').innerHTML = isCorrect
+    ? `<span class="badge badge-success">✔ ถูกต้อง!</span>`
+    : `<span class="badge badge-error">✘ ผิด — เฉลยคือ ข้อ ${String.fromCharCode(65 + currentAnswer)} (ข้อนี้จะกลับมาอีก)</span>`;
+
+  if (isCorrect) {
+    targetedQueue.shift();
+  } else {
+    targetedQueue.push(targetedQueue.shift());
+  }
+
+  setTimeout(loadTargetedQuestion, 1800);
+}
+
+function showTargetedComplete() {
+  const label = targetedTag.replace(/^[^:]+:/, '');
+  document.getElementById('question-area').innerHTML = `
+    <div class="card" style="text-align:center;padding:32px">
+      <div style="font-size:48px;margin-bottom:12px">🎉</div>
+      <div class="card-title">ซ่อมสำเร็จ!</div>
+      <p style="color:var(--muted)">ตอบถูกครบ 10 ข้อสำหรับ <strong>${label}</strong> แล้ว</p>
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="startTargeted()">ฝึกอีกครั้ง</button>
+        <a href="dashboard.html" class="btn btn-ghost">หน้าหลัก</a>
+      </div>
+    </div>
+  `;
+}
+
 function getText(q) {
   return currentLang === 'th' ? (q.textTh || q.text || '') : (q.textEn || q.text || '');
 }

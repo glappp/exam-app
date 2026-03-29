@@ -11,7 +11,7 @@
     .stat-num  { font-size:28px; font-weight:800; color:var(--navy); }
     .stat-lbl  { font-size:12px; color:var(--muted); margin-top:3px; }
 
-    .tabs { display:flex; gap:4px; margin-bottom:16px; }
+    .tabs { display:flex; gap:4px; margin-bottom:16px; flex-wrap:wrap; }
     .tab-btn {
       padding:8px 18px; border:1.5px solid var(--border); border-radius:7px;
       background:#fff; font-size:13px; font-weight:600; cursor:pointer; color:var(--muted);
@@ -29,6 +29,9 @@
 
     .pct-bar { height:6px; background:#f0f0f0; border-radius:3px; overflow:hidden; display:inline-block; width:60px; vertical-align:middle; }
     .pct-fill { height:100%; border-radius:3px; background:var(--blue); }
+
+    .bp-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid #f0f0f0; font-size:13px; }
+    .bp-row:last-child { border-bottom:none; }
   </style>
 </head>
 <body>
@@ -53,6 +56,7 @@
       <button class="tab-btn active" onclick="switchTab('users')">ผู้ใช้</button>
       <button class="tab-btn" onclick="switchTab('results')">ผลการสอบ</button>
       <button class="tab-btn" onclick="switchTab('announce')">ประกาศ</button>
+      <button class="tab-btn" onclick="switchTab('mock')">Mock Blueprint</button>
     </div>
 
     <!-- Users tab -->
@@ -71,7 +75,7 @@
         <div class="card-title">สร้างประกาศใหม่</div>
         <div class="form-group" style="margin-bottom:10px">
           <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">หัวข้อ</label>
-          <input type="text" id="ann-form-title" class="input" placeholder="หัวข้อประกาศ" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+          <input type="text" id="ann-form-title" placeholder="หัวข้อประกาศ" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
         </div>
         <div class="form-group" style="margin-bottom:10px">
           <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">เนื้อหา</label>
@@ -98,16 +102,70 @@
       <div class="card-title">ประกาศที่ใช้งานอยู่</div>
       <div id="ann-list"><div style="color:var(--muted);font-size:13px">กำลังโหลด...</div></div>
     </div>
+
+    <!-- Mock Blueprint tab -->
+    <div class="tab-panel card" id="tab-mock">
+      <div style="max-width:560px">
+        <div class="card-title">สร้าง Mock Blueprint</div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div>
+            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ชื่อชุดสอบ</label>
+            <input type="text" id="bp-name" placeholder="เช่น สอบเข้า ม.1 ร.ร. ก." style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+          </div>
+          <div>
+            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ระดับชั้น</label>
+            <input type="text" id="bp-grade" placeholder="เช่น p6, m1" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+          </div>
+          <div>
+            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">จำนวนข้อ</label>
+            <input type="number" id="bp-total" value="40" min="1" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+          </div>
+          <div>
+            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">เวลา (นาที)</label>
+            <input type="number" id="bp-time" value="60" min="1" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+          </div>
+          <div>
+            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">คะแนนเฉลี่ยผู้ผ่าน</label>
+            <input type="number" id="bp-avgpass" placeholder="เช่น 28.5" step="0.1" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+          </div>
+        </div>
+
+        <div style="margin-bottom:10px">
+          <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">สัดส่วน difficulty (%easy / %medium / %hard)</label>
+          <div style="display:flex;gap:8px">
+            <input type="number" id="bp-easy" value="30" min="0" max="100" placeholder="easy%" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+            <input type="number" id="bp-med"  value="50" min="0" max="100" placeholder="medium%" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+            <input type="number" id="bp-hard" value="20" min="0" max="100" placeholder="hard%" style="flex:1;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px">
+          <label style="font-size:12px;color:#666;display:block;margin-bottom:6px">หัวข้อ (tag : จำนวนข้อ)</label>
+          <div id="topic-rows"></div>
+          <button class="btn btn-ghost" style="margin-top:8px;font-size:12px" onclick="addTopicRow()">+ เพิ่มหัวข้อ</button>
+        </div>
+
+        <button class="btn btn-primary" onclick="createBlueprint()">บันทึก Blueprint</button>
+        <div id="bp-msg" style="margin-top:8px;font-size:13px"></div>
+      </div>
+
+      <hr style="margin:20px 0;border:none;border-top:1px solid #f0f0f0">
+      <div class="card-title">Blueprint ที่มีอยู่</div>
+      <div id="bp-list-admin"><div style="color:var(--muted);font-size:13px">กำลังโหลด...</div></div>
+    </div>
   </div>
 
   <script>
-    const TABS = ['users','results','announce'];
+    const TABS = ['users','results','announce','mock'];
     function switchTab(name) {
       document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', TABS[i] === name));
       document.querySelectorAll('.tab-panel').forEach((p,i) => p.classList.toggle('active', `tab-${TABS[i]}` === `tab-${name}`));
       if (name === 'announce') loadAnnList();
+      if (name === 'mock') loadBlueprintList();
     }
 
+    // ---- Announcements ----
     async function createAnn() {
       const title = document.getElementById('ann-form-title').value.trim();
       const body = document.getElementById('ann-form-body').value.trim();
@@ -122,23 +180,22 @@
       });
       const d = await r.json();
       if (d.success) {
-        msg.style.color='#16a34a'; msg.textContent='✅ ส่งประกาศสำเร็จ';
+        msg.style.color='#16a34a'; msg.textContent='ส่งประกาศสำเร็จ';
         document.getElementById('ann-form-title').value = '';
         document.getElementById('ann-form-body').value = '';
         loadAnnList();
         setTimeout(() => msg.textContent = '', 3000);
       } else {
-        msg.style.color='#dc2626'; msg.textContent=`❌ ${d.error}`;
+        msg.style.color='#dc2626'; msg.textContent=d.error;
       }
     }
 
     async function loadAnnList() {
       const el = document.getElementById('ann-list');
-      // admin ดูผ่าน direct DB query ยังไม่มี endpoint แสดงทั้งหมด ใช้ /api/announcements ชั่วคราว
       const r = await fetch('/api/announcements', { credentials:'include' });
       if (!r.ok) { el.innerHTML = '<p style="color:#aaa;font-size:13px">โหลดไม่ได้</p>'; return; }
       const { announcements } = await r.json();
-      if (!announcements.length) { el.innerHTML = '<p style="color:#aaa;font-size:13px">ไม่มีประกาศที่ยังไม่ได้อ่าน</p>'; return; }
+      if (!announcements.length) { el.innerHTML = '<p style="color:#aaa;font-size:13px">ไม่มีประกาศ</p>'; return; }
       el.innerHTML = announcements.map(a => `
         <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f0f0f0">
           <div>
@@ -156,6 +213,92 @@
       loadAnnList();
     }
 
+    // ---- Mock Blueprints ----
+    function addTopicRow(tag = '', count = '') {
+      const div = document.createElement('div');
+      div.style.cssText = 'display:flex;gap:8px;margin-bottom:6px;align-items:center';
+      div.innerHTML = `
+        <input type="text" class="bp-tag-input" value="${tag}" placeholder="tag เช่น topic:fraction" style="flex:2;padding:6px 8px;border:1px solid #ddd;border-radius:5px;font-size:12px;font-family:inherit">
+        <input type="number" class="bp-count-input" value="${count}" placeholder="จำนวน" min="1" style="flex:1;padding:6px 8px;border:1px solid #ddd;border-radius:5px;font-size:12px;font-family:inherit">
+        <button onclick="this.parentElement.remove()" style="padding:4px 8px;background:#fee2e2;color:#dc2626;border:none;border-radius:5px;font-size:12px;cursor:pointer">✕</button>
+      `;
+      document.getElementById('topic-rows').appendChild(div);
+    }
+
+    async function createBlueprint() {
+      const name = document.getElementById('bp-name').value.trim();
+      const grade = document.getElementById('bp-grade').value.trim();
+      const totalQuestions = parseInt(document.getElementById('bp-total').value) || 40;
+      const timeLimitSec = (parseInt(document.getElementById('bp-time').value) || 60) * 60;
+      const avgPassScore = parseFloat(document.getElementById('bp-avgpass').value);
+      const easy = parseInt(document.getElementById('bp-easy').value) || 30;
+      const med  = parseInt(document.getElementById('bp-med').value)  || 50;
+      const hard = parseInt(document.getElementById('bp-hard').value) || 20;
+      const msg = document.getElementById('bp-msg');
+
+      const tagInputs   = document.querySelectorAll('.bp-tag-input');
+      const countInputs = document.querySelectorAll('.bp-count-input');
+      const topics = [];
+      tagInputs.forEach((t, i) => {
+        const tag = t.value.trim();
+        const count = parseInt(countInputs[i].value);
+        if (tag && count > 0) topics.push({ tag, count });
+      });
+
+      if (!name || !grade || isNaN(avgPassScore) || !topics.length) {
+        msg.style.color = '#dc2626';
+        msg.textContent = 'กรอกข้อมูลไม่ครบ (ชื่อ / ชั้น / คะแนนเฉลี่ย / หัวข้ออย่างน้อย 1 รายการ)';
+        return;
+      }
+
+      const r = await fetch('/api/mock/blueprints', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, grade, timeLimitSec, totalQuestions, avgPassScore, topics, difficulty: { easy, medium: med, hard } })
+      });
+      const d = await r.json();
+      if (d.success) {
+        msg.style.color = '#16a34a';
+        msg.textContent = 'บันทึก Blueprint สำเร็จ';
+        document.getElementById('topic-rows').innerHTML = '';
+        ['bp-name','bp-grade','bp-avgpass'].forEach(id => document.getElementById(id).value = '');
+        addTopicRow();
+        loadBlueprintList();
+        setTimeout(() => msg.textContent = '', 3000);
+      } else {
+        msg.style.color = '#dc2626';
+        msg.textContent = d.error || 'เกิดข้อผิดพลาด';
+      }
+    }
+
+    async function loadBlueprintList() {
+      const el = document.getElementById('bp-list-admin');
+      const r = await fetch('/api/mock/blueprints', { credentials: 'include' });
+      if (!r.ok) { el.innerHTML = '<p style="color:#aaa;font-size:13px">โหลดไม่ได้</p>'; return; }
+      const { blueprints } = await r.json();
+      if (!blueprints.length) { el.innerHTML = '<p style="color:#aaa;font-size:13px">ยังไม่มี Blueprint</p>'; return; }
+
+      el.innerHTML = blueprints.map(bp => {
+        const topicSummary = (bp.topics || []).map(t => `${t.tag.replace(/^[^:]+:/,'')}(${t.count})`).join(', ');
+        return `<div class="bp-row">
+          <div>
+            <div style="font-weight:600">${bp.name}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">${bp.grade} · ${bp.totalQuestions} ข้อ · ${Math.round(bp.timeLimitSec/60)} นาที · ผ่าน ${bp.avgPassScore}</div>
+            <div style="font-size:11px;color:#6b7280;margin-top:2px">${topicSummary}</div>
+          </div>
+          <button onclick="deleteBlueprint(${bp.id}, this)" style="padding:4px 12px;background:#fee2e2;color:#dc2626;border:none;border-radius:5px;font-size:12px;cursor:pointer">ลบ</button>
+        </div>`;
+      }).join('');
+    }
+
+    async function deleteBlueprint(id, btn) {
+      if (!confirm('ลบ Blueprint นี้ใช่ไหม?')) return;
+      btn.disabled = true;
+      await fetch(`/api/mock/blueprints/${id}`, { method: 'DELETE', credentials: 'include' });
+      loadBlueprintList();
+    }
+
+    // ---- Stats / Users / Results ----
     async function loadStats() {
       const r = await fetch('/api/admin/stats', { credentials:'include' });
       if (!r.ok) { location.href = 'dashboard.html'; return; }
@@ -206,7 +349,7 @@
       const el = document.getElementById('results-content');
       if (!d.results?.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px">ยังไม่มีผลสอบ</p>'; return; }
 
-      const modeClass = { practice:'badge-success', competitive:'badge-warn', adaptive:'badge-info', official:'badge-error' };
+      const modeClass = { practice:'badge-success', competitive:'badge-warn', adaptive:'badge-info', official:'badge-error', mock:'badge-warn' };
       const rows = d.results.map(r => {
         const u = r.studentProfile?.user;
         const pct = r.total ? Math.round(r.score / r.total * 100) : 0;
@@ -256,6 +399,7 @@
       if (data.role !== 'admin') { alert('คุณไม่มีสิทธิ์เข้าหน้านี้'); location.href = 'dashboard.html'; return; }
 
       await Promise.all([loadStats(), loadUsers(), loadResults()]);
+      addTopicRow();
     }
 
     init();

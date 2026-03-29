@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mock สอบแข่งขัน — คลังข้อสอบ</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>
+  <style>
+    .timer { font-size: 20px; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; }
+    .timer.warn   { color: #d97706; }
+    .timer.danger { color: #dc2626; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100% { opacity:1 } 50% { opacity:.5 } }
+
+    .question-text { font-size: 15px; line-height: 1.7; margin-bottom: 12px; }
+    .answer-section label {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 7px;
+      margin-bottom: 8px; cursor: pointer; font-size: 14px; background: #fff;
+      transition: border-color .1s, background .1s;
+    }
+    .answer-section label:hover { border-color: var(--blue); background: #eff6ff; }
+    .answer-section label:has(input:checked) { border-color: var(--blue); background: #dbeafe; font-weight: 600; }
+    .answer-section input[type=radio] { margin-top: 2px; flex-shrink: 0; }
+
+    .q-nav { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 0; }
+    .q-dot {
+      width: 30px; height: 30px; border-radius: 6px;
+      border: 1.5px solid var(--border); background: #fff;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all .1s;
+    }
+    .q-dot.answered { background: #dbeafe; border-color: var(--blue); color: #1e40af; }
+    .q-dot.current  { background: var(--navy); border-color: var(--navy); color: #fff; }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <span class="topbar-title" id="bp-title">🏆 Mock</span>
+  <div class="topbar-nav">
+    <span id="timer-display" class="timer"></span>
+    <span style="font-size:13px;color:var(--muted);font-weight:600" id="progress-label"></span>
+  </div>
+</div>
+
+<div class="page">
+  <div id="loading-msg" style="text-align:center;padding:40px;color:var(--muted)">กำลังโหลด...</div>
+
+  <div id="exam-body" style="display:none">
+    <div class="card" style="margin-bottom:12px">
+      <div id="question-container"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:14px;gap:10px">
+        <button class="btn btn-ghost" id="prev-btn" onclick="goTo(currentIndex - 1)">← ก่อนหน้า</button>
+        <button class="btn btn-primary" id="next-btn" onclick="goNext()">ถัดไป →</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:8px">ข้อที่ตอบแล้ว</div>
+      <div class="q-nav" id="q-nav"></div>
+      <button class="btn btn-primary btn-full" id="submit-btn" onclick="confirmSubmit()" style="margin-top:14px">
+        ส่งคำตอบทั้งหมด
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const stored = JSON.parse(localStorage.getItem('mockExam') || 'null');
+  if (!stored) { location.href = 'mock-setup.html'; }
+
+  const { blueprint, questions } = stored;
+  let answers = new Array(questions.length).fill(null);
+  let currentIndex = 0;
+  let startTime = Date.now();
+  let timerInterval = null;
+  let timeLeft = blueprint.timeLimitSec;
+
+  document.getElementById('bp-title').textContent = `🏆 ${blueprint.name}`;
+
+  function startTimer() {
+    const el = document.getElementById('timer-display');
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      const mm = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+      const ss = String(timeLeft % 60).padStart(2, '0');
+      el.textContent = `${mm}:${ss}`;
+      el.className = 'timer' + (timeLeft <= 60 ? ' danger' : timeLeft <= 300 ? ' warn' : '');
+      if (timeLeft <= 0) { clearInterval(timerInterval); submitExam(); }
+    }, 1000);
+    const mm = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+    const ss = String(timeLeft % 60).padStart(2, '0');
+    el.textContent = `${mm}:${ss}`;
+  }
+
+  function renderQuestion() {
+    const q = questions[currentIndex];
+    document.getElementById('progress-label').textContent = `${currentIndex + 1} / ${questions.length}`;
+    document.getElementById('prev-btn').disabled = currentIndex === 0;
+    document.getElementById('next-btn').textContent = currentIndex === questions.length - 1 ? '✔ เสร็จ' : 'ถัดไป →';
+
+    document.getElementById('question-container').innerHTML = `
+      <div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:8px">ข้อ ${currentIndex + 1}</div>
+      <div class="question-text">${(q.textTh || '').replace(/\n/g, '<br>')}</div>
+      ${q.image ? `<img src="${q.image.startsWith('/') ? q.image : '/uploads/' + q.image}" style="max-width:100%;border-radius:6px;margin-bottom:10px">` : ''}
+      <div class="answer-section">
+        ${(q.choices || []).map((c, i) => `
+          <label>
+            <input type="radio" name="answer" value="${i}" ${answers[currentIndex] === i ? 'checked' : ''}>
+            ${c.image ? `<img src="/uploads/${c.image}" style="max-height:40px">` : ''}
+            <strong>${String.fromCharCode(65 + i)}.</strong>&nbsp;${c.textTh || ''}
+          </label>
+        `).join('')}
+      </div>
+    `;
+
+    document.querySelectorAll('input[name="answer"]').forEach(input => {
+      input.addEventListener('change', e => {
+        answers[currentIndex] = parseInt(e.target.value);
+        renderNav();
+      });
+    });
+
+    if (window.MathJax) MathJax.typesetPromise();
+    renderNav();
+  }
+
+  function renderNav() {
+    document.getElementById('q-nav').innerHTML = questions.map((_, i) => {
+      let cls = 'q-dot';
+      if (i === currentIndex) cls += ' current';
+      else if (answers[i] !== null) cls += ' answered';
+      return `<div class="${cls}" onclick="goTo(${i})">${i + 1}</div>`;
+    }).join('');
+  }
+
+  function goTo(i) {
+    if (i < 0 || i >= questions.length) return;
+    currentIndex = i;
+    renderQuestion();
+  }
+
+  function goNext() {
+    if (currentIndex < questions.length - 1) { goTo(currentIndex + 1); }
+    else { confirmSubmit(); }
+  }
+
+  function confirmSubmit() {
+    const unanswered = answers.filter(a => a === null).length;
+    const msg = unanswered > 0
+      ? `ยังไม่ได้ตอบ ${unanswered} ข้อ ต้องการส่งเลยไหม?`
+      : 'ส่งคำตอบทั้งหมดใช่ไหม?';
+    if (!confirm(msg)) return;
+    submitExam();
+  }
+
+  async function submitExam() {
+    if (timerInterval) clearInterval(timerInterval);
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'กำลังส่ง...';
+
+    const durationSec = Math.round((Date.now() - startTime) / 1000);
+    const questionIds = questions.map(q => q.id);
+    const finalAnswers = answers.map(a => a === null ? -1 : a);
+
+    try {
+      const r = await fetch('/api/submit-exam', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          mode: 'mock',
+          examSetCode: `mock-${blueprint.id}`,
+          questions: questionIds,
+          answers: finalAnswers,
+          durationSec
+        })
+      });
+      const result = await r.json();
+      // เพิ่มข้อมูล blueprint สำหรับแสดงดาว
+      result.mode = 'mock';
+      result.blueprintId = blueprint.id;
+      result.blueprintName = blueprint.name;
+      result.avgPassScore = blueprint.avgPassScore;
+      result.durationSec = durationSec;
+      localStorage.setItem('examResult', JSON.stringify(result));
+      localStorage.removeItem('mockExam');
+      location.href = 'result-competitive.html';
+    } catch {
+      btn.disabled = false;
+      btn.textContent = 'ส่งคำตอบทั้งหมด';
+      alert('เกิดข้อผิดพลาด กรุณาลองใหม่');
+    }
+  }
+
+  async function init() {
+    const me = await fetch('/api/me', { credentials: 'include' });
+    if (!me.ok) { location.href = 'login.html'; return; }
+    document.getElementById('loading-msg').style.display = 'none';
+    document.getElementById('exam-body').style.display = 'block';
+    startTimer();
+    renderQuestion();
+  }
+
+  init();
+</script>
+</body>
+</html>

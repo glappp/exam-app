@@ -7,6 +7,9 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>
   <style>
+    .star-row { display: flex; gap: 6px; justify-content: center; margin: 12px 0 4px; }
+    .star { font-size: 36px; color: #d1d5db; transition: color .2s; }
+    .star.lit { color: #f59e0b; }
     .result-question-card {
       border-left: 4px solid var(--border);
       padding: 14px 16px;
@@ -120,18 +123,40 @@
       `;
     }).join('');
 
+    // คำนวณดาว mock
+    let starsHTML = '';
+    if (result.mode === 'mock' && result.avgPassScore != null) {
+      const diff = correctCount - result.avgPassScore;
+      const stars = diff >= 15 ? 5 : diff >= 8 ? 4 : diff >= 1 ? 3 : diff >= -7 ? 2 : 1;
+      const starLabel = ['', 'ต้องฝึกเพิ่ม', 'พอผ่าน', 'ดี', 'ดีมาก', 'ยอดเยี่ยม!'][stars];
+      starsHTML = `
+        <div style="margin-bottom:8px">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:4px">ผลการประเมิน (เทียบคะแนนเฉลี่ยผู้ผ่าน ${result.avgPassScore} คะแนน)</div>
+          <div class="star-row">
+            ${Array.from({length:5},(_,i) => `<span class="star ${i < stars ? 'lit' : ''}">★</span>`).join('')}
+          </div>
+          <div style="font-size:14px;font-weight:700;color:#f59e0b">${starLabel}</div>
+        </div>`;
+    }
+
+    const backBtn = result.mode === 'mock'
+      ? `<a href="mock-setup.html" class="btn btn-primary">กลับเลือก Mock</a>`
+      : `<a href="exam.html" class="btn btn-primary">ทำอีกครั้ง</a>`;
+
     document.getElementById('main-content').innerHTML = `
       <!-- สรุปคะแนน -->
       <div class="card" style="text-align:center">
+        ${result.mode === 'mock' && result.blueprintName ? `<div style="font-size:13px;color:var(--muted);margin-bottom:4px">${result.blueprintName}</div>` : ''}
         <div class="card-title">สรุปผลสอบ</div>
         <div style="font-size:60px;font-weight:800;color:${scoreColor};line-height:1;margin:16px 0 4px">${correctCount}/${total}</div>
         <div style="font-size:24px;font-weight:700;color:${scoreColor}">${pct}%</div>
+        ${starsHTML}
         <div style="color:var(--muted);margin-top:8px;font-size:14px">
           ตอบถูก ${correctCount} ข้อ จาก ${total} ข้อ
           ${result.durationSec ? ` · เวลา ${Math.floor(result.durationSec/60)} นาที ${result.durationSec%60} วินาที` : ''}
         </div>
         <div style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap">
-          <a href="exam.html" class="btn btn-primary">ทำอีกครั้ง</a>
+          ${backBtn}
           <a href="dashboard.html" class="btn btn-ghost">กลับหน้าหลัก</a>
           <button class="btn btn-ghost" onclick="window.print()">พิมพ์ผล</button>
         </div>

@@ -4,7 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 router.post('/', async (req, res) => {
-  const { mode, questions, answers, durationSec } = req.body;
+  const { mode, questions, answers, durationSec, examSetCode } = req.body;
 
   try {
     if (!Array.isArray(answers) || answers.length !== questions.length) {
@@ -69,6 +69,7 @@ router.post('/', async (req, res) => {
         data: {
           studentProfileId,
           mode: mode || 'practice',
+          examSetCode: examSetCode || null,
           topicTagsJson: [],
           score,
           total: questions.length,

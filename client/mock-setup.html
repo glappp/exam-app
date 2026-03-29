@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mock สอบแข่งขัน — คลังข้อสอบ</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .bp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 16px; }
+    .bp-card {
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      background: #fff;
+      cursor: pointer;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .bp-card:hover { border-color: var(--blue); box-shadow: 0 4px 14px rgba(0,0,0,.08); }
+    .bp-card .bp-name { font-size: 16px; font-weight: 700; color: var(--navy); margin-bottom: 6px; }
+    .bp-card .bp-meta { font-size: 12px; color: var(--muted); margin-bottom: 10px; display: flex; gap: 12px; flex-wrap: wrap; }
+    .bp-card .bp-topics { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+    .bp-tag { font-size: 11px; padding: 3px 8px; background: #f0f4ff; color: #1e40af; border-radius: 20px; }
+    .bp-card .bp-avg { font-size: 13px; color: #6b7280; }
+    .bp-card .bp-avg span { font-weight: 700; color: var(--navy); }
+    .bp-card .start-row { margin-top: 14px; }
+
+    .history-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; }
+    .history-row:last-child { border-bottom: none; }
+    .stars { color: #f59e0b; font-size: 15px; letter-spacing: 1px; }
+    .stars .empty { color: #d1d5db; }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <span class="topbar-title">🏆 Mock สอบแข่งขัน</span>
+  <div class="topbar-nav">
+    <a href="dashboard.html">หน้าหลัก</a>
+    <a href="#" onclick="logout()">ออกจากระบบ</a>
+  </div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <div class="card-title">เลือกชุดสอบ</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:0">เลือกชุดสอบที่ต้องการฝึก ระบบจะสุ่มข้อสอบตามโครงสร้างจริงของสนามสอบนั้น</p>
+    <div id="bp-list" class="bp-grid">
+      <p style="color:var(--muted);font-size:13px;grid-column:1/-1">กำลังโหลด...</p>
+    </div>
+  </div>
+
+  <div class="card" id="history-card" style="display:none">
+    <div class="card-title">ประวัติการทำ Mock</div>
+    <div id="history-list"></div>
+  </div>
+</div>
+
+<script>
+  function logout() {
+    fetch('/api/logout', { method: 'POST', credentials: 'include' });
+    location.href = 'login.html';
+  }
+
+  function renderStars(stars) {
+    return Array.from({ length: 5 }, (_, i) =>
+      `<span class="${i < stars ? '' : 'empty'}">★</span>`
+    ).join('');
+  }
+
+  function fmtTime(sec) {
+    if (!sec) return '—';
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    return h > 0 ? `${h} ชม. ${m} นาที` : `${m} นาที`;
+  }
+
+  async function loadBlueprints() {
+    const r = await fetch('/api/mock/blueprints', { credentials: 'include' });
+    if (!r.ok) { document.getElementById('bp-list').innerHTML = '<p style="color:#b91c1c">โหลดไม่ได้</p>'; return; }
+    const { blueprints } = await r.json();
+    const el = document.getElementById('bp-list');
+
+    if (!blueprints.length) {
+      el.innerHTML = '<p style="color:var(--muted);font-size:13px;grid-column:1/-1">ยังไม่มีชุดสอบ Mock</p>';
+      return;
+    }
+
+    el.innerHTML = blueprints.map(bp => {
+      const topicTags = (bp.topics || []).slice(0, 4).map(t =>
+        `<span class="bp-tag">${t.tag.replace(/^[^:]+:/, '')} (${t.count})</span>`
+      ).join('') + (bp.topics.length > 4 ? `<span class="bp-tag">+${bp.topics.length - 4}</span>` : '');
+
+      return `
+        <div class="bp-card" onclick="startMock(${bp.id}, this)">
+          <div class="bp-name">${bp.name}</div>
+          <div class="bp-meta">
+            <span>📚 ${bp.grade}</span>
+            <span>📝 ${bp.totalQuestions} ข้อ</span>
+            <span>⏱️ ${fmtTime(bp.timeLimitSec)}</span>
+          </div>
+          <div class="bp-topics">${topicTags}</div>
+          <div class="bp-avg">คะแนนเฉลี่ยผู้ผ่าน: <span>${bp.avgPassScore}</span> คะแนน</div>
+          <div class="start-row">
+            <button class="btn btn-primary" style="width:100%">เริ่มสอบ</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function startMock(blueprintId, card) {
+    const btn = card.querySelector('button');
+    btn.disabled = true;
+    btn.textContent = 'กำลังสร้างชุดข้อสอบ...';
+
+    try {
+      const r = await fetch(`/api/mock/exam?blueprintId=${blueprintId}`, { credentials: 'include' });
+      if (!r.ok) { alert('ไม่สามารถสร้างชุดข้อสอบได้'); btn.disabled = false; btn.textContent = 'เริ่มสอบ'; return; }
+      const data = await r.json();
+      localStorage.setItem('mockExam', JSON.stringify(data));
+      location.href = 'mock-exam.html';
+    } catch {
+      alert('เกิดข้อผิดพลาด'); btn.disabled = false; btn.textContent = 'เริ่มสอบ';
+    }
+  }
+
+  async function loadHistory() {
+    const r = await fetch('/api/mock/history', { credentials: 'include' });
+    if (!r.ok) return;
+    const { history } = await r.json();
+    if (!history.length) return;
+
+    document.getElementById('history-card').style.display = 'block';
+    document.getElementById('history-list').innerHTML = history.map(h => {
+      const date = new Date(h.createdAt).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
+      const pct = h.total ? Math.round(h.score / h.total * 100) : 0;
+      const scoreColor = pct >= 70 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626';
+      return `
+        <div class="history-row">
+          <div>
+            <div style="font-weight:600">${h.bpName}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">${date}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-weight:700;color:${scoreColor}">${h.score}/${h.total} (${pct}%)</div>
+            <div class="stars">${h.stars ? renderStars(h.stars) : ''}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function init() {
+    const me = await fetch('/api/me', { credentials: 'include' });
+    if (!me.ok) { location.href = 'login.html'; return; }
+    await Promise.all([loadBlueprints(), loadHistory()]);
+  }
+
+  init();
+</script>
+</body>
+</html>

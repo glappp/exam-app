@@ -9,6 +9,19 @@ let sessionAnswers = [];
 let filteredQuestions = [];
 let usedIndices = new Set();
 
+// Adaptive mode
+const isAdaptive = new URLSearchParams(location.search).get('mode') === 'adaptive';
+
+if (isAdaptive) {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('topbar-title').textContent = '🎯 โหมดปรับจุดอ่อน';
+    document.getElementById('setup-title').textContent = 'ปรับจุดอ่อนของคุณ';
+    document.getElementById('chapter-group').style.display = 'none';
+    document.getElementById('start-btn').textContent = 'เริ่มฝึกจุดอ่อน';
+    document.getElementById('adaptive-banner').style.display = 'block';
+  });
+}
+
 function getText(q) {
   return currentLang === 'th' ? (q.textTh || q.text || '') : (q.textEn || q.text || '');
 }
@@ -23,27 +36,56 @@ function changeLang(lang) {
 }
 
 async function startExam() {
-  const chapterText = document.getElementById('chapter').value;
-  const topicTag = topicMap[chapterText];
-
   document.getElementById('setup-panel').style.display = 'none';
   document.getElementById('results').innerHTML = '';
   document.getElementById('question-area').innerHTML =
     '<p style="text-align:center;padding:32px;color:var(--muted)">กำลังโหลดโจทย์...</p>';
 
   try {
-    const res = await fetch('/questions/all', { credentials: 'include' });
-    if (!res.ok) throw new Error('โหลดโจทย์ไม่สำเร็จ');
-    const data = await res.json();
-    const allQuestions = data.questions || [];
+    let allQuestions;
 
-    filteredQuestions = topicTag
-      ? allQuestions.filter(q => q.attributes?.topic?.includes(`topic:${topicTag}`))
-      : allQuestions;
+    if (isAdaptive) {
+      const res = await fetch('/api/exam-set/adaptive', { credentials: 'include' });
+      if (!res.ok) throw new Error('โหลดโจทย์ไม่สำเร็จ');
+      const data = await res.json();
+      allQuestions = data.questions || [];
+
+      // แสดง banner ว่าเน้นหัวข้อไหน
+      const desc = document.getElementById('adaptive-desc');
+      if (data.weakTopicTags?.length > 0) {
+        const labels = data.weakTopicTags.map(t => {
+          const key = t.replace('topic:', '');
+          return reverseTopicMap[key] || key;
+        });
+        desc.textContent = `เน้นจุดอ่อน: ${labels.join(', ')}`;
+      } else {
+        desc.textContent = 'ยังไม่มีประวัติสอบ — สุ่มโจทย์ทั่วไปให้';
+      }
+      document.getElementById('adaptive-banner').style.display = 'block';
+    } else {
+      const chapterText = document.getElementById('chapter').value;
+      const topicTag = topicMap[chapterText];
+      const res = await fetch('/questions/all', { credentials: 'include' });
+      if (!res.ok) throw new Error('โหลดโจทย์ไม่สำเร็จ');
+      const data = await res.json();
+      allQuestions = data.questions || [];
+      filteredQuestions = topicTag
+        ? allQuestions.filter(q => q.attributes?.topic?.includes(`topic:${topicTag}`))
+        : allQuestions;
+
+      if (filteredQuestions.length === 0) {
+        document.getElementById('question-area').innerHTML =
+          `<div class="card"><p class="msg msg-error">ไม่พบโจทย์ในหัวข้อ "${chapterText}"</p></div>`;
+        document.getElementById('setup-panel').style.display = '';
+        return;
+      }
+    }
+
+    if (isAdaptive) filteredQuestions = allQuestions;
 
     if (filteredQuestions.length === 0) {
       document.getElementById('question-area').innerHTML =
-        `<div class="card"><p class="msg msg-error">ไม่พบโจทย์ในหัวข้อ "${chapterText}"</p></div>`;
+        `<div class="card"><p class="msg msg-error">ไม่พบโจทย์ในระบบ</p></div>`;
       document.getElementById('setup-panel').style.display = '';
       return;
     }
@@ -160,7 +202,7 @@ async function submitAndShowResults() {
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        mode: 'practice',
+        mode: isAdaptive ? 'adaptive' : 'practice',
         questions: sessionQuestions.map(q => q.id),
         answers: sessionAnswers,
         durationSec

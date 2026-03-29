@@ -52,6 +52,7 @@
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('users')">ผู้ใช้</button>
       <button class="tab-btn" onclick="switchTab('results')">ผลการสอบ</button>
+      <button class="tab-btn" onclick="switchTab('announce')">ประกาศ</button>
     </div>
 
     <!-- Users tab -->
@@ -63,12 +64,96 @@
     <div class="tab-panel card" id="tab-results">
       <div id="results-content"><div style="color:var(--muted);font-size:13px">กำลังโหลด...</div></div>
     </div>
+
+    <!-- Announce tab -->
+    <div class="tab-panel card" id="tab-announce">
+      <div style="max-width:520px">
+        <div class="card-title">สร้างประกาศใหม่</div>
+        <div class="form-group" style="margin-bottom:10px">
+          <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">หัวข้อ</label>
+          <input type="text" id="ann-form-title" class="input" placeholder="หัวข้อประกาศ" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+        </div>
+        <div class="form-group" style="margin-bottom:10px">
+          <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">เนื้อหา</label>
+          <textarea id="ann-form-body" rows="3" placeholder="เนื้อหาประกาศ..." style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;resize:vertical"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:14px">
+          <div style="flex:1">
+            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ส่งถึง</label>
+            <select id="ann-form-role" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+              <option value="">ทุกคน</option>
+              <option value="student">นักเรียนเท่านั้น</option>
+              <option value="teacher">ครูเท่านั้น</option>
+            </select>
+          </div>
+          <div style="flex:1">
+            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">หมดอายุ (ไม่บังคับ)</label>
+            <input type="date" id="ann-form-expires" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="createAnn()">ส่งประกาศ</button>
+        <div id="ann-form-msg" style="margin-top:8px;font-size:13px"></div>
+      </div>
+      <hr style="margin:20px 0;border:none;border-top:1px solid #f0f0f0">
+      <div class="card-title">ประกาศที่ใช้งานอยู่</div>
+      <div id="ann-list"><div style="color:var(--muted);font-size:13px">กำลังโหลด...</div></div>
+    </div>
   </div>
 
   <script>
+    const TABS = ['users','results','announce'];
     function switchTab(name) {
-      document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', ['users','results'][i] === name));
-      document.querySelectorAll('.tab-panel').forEach((p,i) => p.classList.toggle('active', ['tab-users','tab-results'][i] === `tab-${name}`));
+      document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', TABS[i] === name));
+      document.querySelectorAll('.tab-panel').forEach((p,i) => p.classList.toggle('active', `tab-${TABS[i]}` === `tab-${name}`));
+      if (name === 'announce') loadAnnList();
+    }
+
+    async function createAnn() {
+      const title = document.getElementById('ann-form-title').value.trim();
+      const body = document.getElementById('ann-form-body').value.trim();
+      const targetRole = document.getElementById('ann-form-role').value;
+      const expiresAt = document.getElementById('ann-form-expires').value;
+      const msg = document.getElementById('ann-form-msg');
+      if (!title || !body) { msg.style.color='#dc2626'; msg.textContent='กรุณากรอกหัวข้อและเนื้อหา'; return; }
+      const r = await fetch('/api/announcements', {
+        method:'POST', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ title, body, targetRole: targetRole || null, expiresAt: expiresAt || null })
+      });
+      const d = await r.json();
+      if (d.success) {
+        msg.style.color='#16a34a'; msg.textContent='✅ ส่งประกาศสำเร็จ';
+        document.getElementById('ann-form-title').value = '';
+        document.getElementById('ann-form-body').value = '';
+        loadAnnList();
+        setTimeout(() => msg.textContent = '', 3000);
+      } else {
+        msg.style.color='#dc2626'; msg.textContent=`❌ ${d.error}`;
+      }
+    }
+
+    async function loadAnnList() {
+      const el = document.getElementById('ann-list');
+      // admin ดูผ่าน direct DB query ยังไม่มี endpoint แสดงทั้งหมด ใช้ /api/announcements ชั่วคราว
+      const r = await fetch('/api/announcements', { credentials:'include' });
+      if (!r.ok) { el.innerHTML = '<p style="color:#aaa;font-size:13px">โหลดไม่ได้</p>'; return; }
+      const { announcements } = await r.json();
+      if (!announcements.length) { el.innerHTML = '<p style="color:#aaa;font-size:13px">ไม่มีประกาศที่ยังไม่ได้อ่าน</p>'; return; }
+      el.innerHTML = announcements.map(a => `
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid #f0f0f0">
+          <div>
+            <div style="font-weight:600;font-size:13px">${a.title}</div>
+            <div style="font-size:12px;color:#666;margin-top:2px">${a.body.substring(0,80)}${a.body.length>80?'...':''}</div>
+            <div style="font-size:11px;color:#aaa;margin-top:3px">${new Date(a.createdAt).toLocaleDateString('th-TH')}</div>
+          </div>
+          <button onclick="deleteAnn(${a.id},this)" style="padding:4px 12px;background:#fee2e2;color:#dc2626;border:none;border-radius:5px;font-size:12px;cursor:pointer">ลบ</button>
+        </div>`).join('');
+    }
+
+    async function deleteAnn(id, btn) {
+      btn.disabled = true;
+      await fetch(`/api/announcements/${id}`, { method:'DELETE', credentials:'include' });
+      loadAnnList();
     }
 
     async function loadStats() {

@@ -141,6 +141,20 @@
     <p id="welcome-sub"></p>
   </div>
 
+  <!-- Character card -->
+  <div class="card" id="char-card" style="display:none;margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div id="char-icon" style="font-size:36px;line-height:1"></div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:15px" id="char-name"></div>
+        <div style="font-size:12px;color:#888;margin:4px 0" id="char-xp"></div>
+        <div style="background:#f0f0f0;border-radius:99px;height:6px">
+          <div id="char-bar" style="background:#7c3aed;height:6px;border-radius:99px;width:0%;transition:width .4s"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Daily Mission card -->
   <div class="card" id="mission-card" style="margin-bottom:16px;display:none">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -194,6 +208,12 @@
           </button>
           <button class="mode-btn purple" onclick="location.href='exam.html?type=official'">
             <span class="icon">📄</span>ข้อสอบจริง
+          </button>
+          <button class="mode-btn" style="background:#fce7f3;color:#9d174d" onclick="location.href='parent.html'">
+            <span class="icon">👨‍👩‍👧</span>ผู้ปกครอง
+          </button>
+          <button class="mode-btn" id="teacher-btn" style="display:none;background:#f0fdf4;color:#166534" onclick="location.href='teacher-report.html'">
+            <span class="icon">👩‍🏫</span>รายงานครู
           </button>
         </div>
       </div>
@@ -270,6 +290,9 @@
     const me = await res.json();
 
     document.getElementById('topbar-name').textContent = me.firstName || me.username || '';
+    if (['admin','teacher'].includes(me.role)) {
+      document.getElementById('teacher-btn').style.display = '';
+    }
     document.getElementById('welcome-name').textContent = `สวัสดี, ${me.firstName || 'นักเรียน'} 👋`;
 
     // Load full student data + daily mission พร้อมกัน
@@ -291,6 +314,13 @@
     if (r3.ok) {
       const mission = await r3.json();
       renderMission(mission);
+    }
+
+    // โหลด character
+    const r6 = await fetch('/api/student/character', { credentials: 'include' });
+    if (r6.ok) {
+      const char = await r6.json();
+      renderCharacter(char);
     }
 
     // โหลดประกาศที่ยังไม่ได้อ่าน
@@ -430,6 +460,15 @@
       msg.style.color = '#b91c1c';
       msg.textContent = '❌ ไม่สามารถเชื่อมต่อได้';
     }
+  }
+
+  function renderCharacter(c) {
+    document.getElementById('char-card').style.display = '';
+    document.getElementById('char-icon').textContent = c.classIcon;
+    document.getElementById('char-name').textContent = `LV ${c.level} ${c.className}`;
+    document.getElementById('char-xp').textContent = `${c.xpProgress} / ${c.xpNeeded} XP`;
+    const pct = Math.min(Math.round(c.xpProgress / c.xpNeeded * 100), 100);
+    document.getElementById('char-bar').style.width = pct + '%';
   }
 
   // Announcement popup

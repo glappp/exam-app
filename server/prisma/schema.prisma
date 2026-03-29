@@ -209,6 +209,15 @@ model ClassroomScoreUpload {
   createdAt    DateTime @default(now())
 }
 
+// CharacterState — LV ตัวละคร (ไม่ reset ทุกปี)
+model CharacterState {
+  id       Int      @id @default(autoincrement())
+  userId   Int      @unique
+  level    Int      @default(1)
+  totalXp  Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
 // PointTransaction — ledger คะแนนทุก transaction
 model PointTransaction {
   id           Int      @id @default(autoincrement())

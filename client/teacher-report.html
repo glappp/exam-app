@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>รายงานครู</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .filter-bar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; align-items:flex-end; }
+    .filter-bar select, .filter-bar input { padding:8px 10px; border:1px solid #ddd; border-radius:6px; font-size:13px; font-family:inherit; }
+    .stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+    .stat-box { background:#fff; border-radius:10px; padding:16px; text-align:center; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+    .stat-num { font-size:28px; font-weight:800; color:#1e3a5f; }
+    .stat-label { font-size:11px; color:#888; margin-top:2px; }
+    .student-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .student-table th { text-align:left; padding:9px 10px; background:#f8fafc; color:#666; font-weight:600; border-bottom:2px solid #e8e8e8; }
+    .student-table td { padding:9px 10px; border-bottom:1px solid #f0f0f0; vertical-align:top; }
+    .student-table tr:hover td { background:#fafafa; }
+    .tag-pill { display:inline-block; background:#fff7ed; border:1px solid #fed7aa; border-radius:99px; padding:2px 8px; font-size:11px; color:#9a3412; margin:2px 2px 0 0; }
+    .alert-row td { background:#fff5f5; }
+    .section-title { font-size:13px; font-weight:700; color:#444; margin:20px 0 10px; text-transform:uppercase; letter-spacing:.5px; }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <span class="topbar-title">👩‍🏫 รายงานครู</span>
+  <div class="topbar-nav">
+    <span id="greeting"></span>
+    <a href="dashboard.html">แดชบอร์ด</a>
+    <a href="#" onclick="logout()">ออกจากระบบ</a>
+  </div>
+</div>
+
+<div class="page">
+  <!-- Filter -->
+  <div class="filter-bar">
+    <div>
+      <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ระดับชั้น</label>
+      <select id="f-grade"><option value="">ทุกชั้น</option></select>
+    </div>
+    <div>
+      <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">โรงเรียน</label>
+      <select id="f-school"><option value="">ทุกโรงเรียน</option></select>
+    </div>
+    <div>
+      <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ปีการศึกษา</label>
+      <input type="text" id="f-year" style="width:90px">
+    </div>
+    <button class="btn btn-primary" style="padding:8px 20px" onclick="load()">ดูรายงาน</button>
+  </div>
+
+  <div id="content"><p style="color:var(--muted);text-align:center;padding:40px">เลือก filter แล้วกด "ดูรายงาน"</p></div>
+</div>
+
+<script>
+  async function init() {
+    const r = await fetch('/api/me', { credentials: 'include' });
+    if (!r.ok) { location.href = 'login.html'; return; }
+    const me = await r.json();
+    if (!['admin','teacher'].includes(me.role)) { location.href = 'dashboard.html'; return; }
+    document.getElementById('greeting').textContent = me.firstName || me.username;
+
+    document.getElementById('f-year').value = String(new Date().getFullYear() + 543);
+
+    const rf = await fetch('/api/teacher/filters', { credentials: 'include' });
+    if (rf.ok) {
+      const { grades, schools } = await rf.json();
+      const gSel = document.getElementById('f-grade');
+      grades.forEach(g => gSel.innerHTML += `<option>${g}</option>`);
+      const sSel = document.getElementById('f-school');
+      schools.forEach(s => sSel.innerHTML += `<option>${s}</option>`);
+    }
+    load();
+  }
+
+  async function load() {
+    const grade = document.getElementById('f-grade').value;
+    const school = document.getElementById('f-school').value;
+    const year = document.getElementById('f-year').value;
+    const params = new URLSearchParams({ academicYear: year, ...(grade && {grade}), ...(school && {school}) });
+
+    document.getElementById('content').innerHTML = '<p style="text-align:center;padding:32px;color:var(--muted)">กำลังโหลด...</p>';
+    const r = await fetch(`/api/teacher/class-overview?${params}`, { credentials: 'include' });
+    if (!r.ok) { document.getElementById('content').innerHTML = '<p class="msg msg-error">โหลดข้อมูลล้มเหลว</p>'; return; }
+    const data = await r.json();
+    render(data);
+  }
+
+  function render({ students, classWeakTopics, needAttention, total }) {
+    const hasSoExam = students.filter(s => s.examCount > 0);
+    const avgAll = hasSoExam.length
+      ? Math.round(hasSoExam.filter(s => s.avgPct !== null).reduce((a, s) => a + s.avgPct, 0) / hasSoExam.filter(s => s.avgPct !== null).length)
+      : null;
+
+    const weakHtml = classWeakTopics.length
+      ? classWeakTopics.map(w => `
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <div style="flex:1;font-size:13px">${w.label}</div>
+            <div style="background:#fee2e2;border-radius:99px;height:8px;width:120px;overflow:hidden">
+              <div style="background:#ef4444;height:8px;border-radius:99px;width:${Math.min(w.count/total*100*3,100)}%"></div>
+            </div>
+            <div style="font-size:12px;color:#888;width:50px">${w.count} คน</div>
+          </div>`).join('')
+      : '<p style="color:var(--muted);font-size:13px">ยังไม่มีข้อมูล</p>';
+
+    const rows = students.map(s => {
+      const isAlert = needAttention.some(n => n.userId === s.userId);
+      const pctColor = s.avgPct === null ? '#aaa' : s.avgPct >= 75 ? '#16a34a' : s.avgPct >= 50 ? '#d97706' : '#dc2626';
+      return `<tr class="${isAlert ? 'alert-row' : ''}">
+        <td>${s.name}<br><span style="font-size:11px;color:#aaa">${s.username}</span></td>
+        <td style="text-align:center">${s.grade}</td>
+        <td style="text-align:center;font-weight:700;color:${pctColor}">${s.avgPct !== null ? s.avgPct+'%' : '—'}</td>
+        <td style="text-align:center">${s.examCount}</td>
+        <td>${s.weakTags.map(t => `<span class="tag-pill">${t.replace(/^[^:]+:/,'')}</span>`).join('')}</td>
+        ${isAlert ? '<td style="color:#dc2626;font-size:12px">⚠️ ต้องดูแล</td>' : '<td></td>'}
+      </tr>`;
+    }).join('');
+
+    document.getElementById('content').innerHTML = `
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-num">${total}</div><div class="stat-label">นักเรียนทั้งหมด</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:${avgAll >= 75 ? '#16a34a' : avgAll >= 50 ? '#d97706' : '#dc2626'}">${avgAll !== null && !isNaN(avgAll) ? avgAll+'%' : '—'}</div><div class="stat-label">คะแนนเฉลี่ย</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:#dc2626">${needAttention.length}</div><div class="stat-label">ต้องดูแลพิเศษ</div></div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px">
+        <div class="section-title">หัวข้อที่ทั้งห้องทำได้แย่</div>
+        ${weakHtml}
+      </div>
+
+      <div class="card">
+        <div class="section-title">รายชื่อนักเรียน</div>
+        <div style="overflow-x:auto">
+          <table class="student-table">
+            <thead><tr><th>ชื่อ</th><th>ชั้น</th><th>คะแนนเฉลี่ย</th><th>ครั้งที่สอบ</th><th>จุดอ่อน</th><th></th></tr></thead>
+            <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px">ไม่พบข้อมูล</td></tr>'}</tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }
+
+  function logout() { fetch('/api/logout', { method:'POST', credentials:'include' }); location.href='login.html'; }
+  init();
+</script>
+</body>
+</html>

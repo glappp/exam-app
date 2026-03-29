@@ -150,6 +150,25 @@ router.post('/', async (req, res) => {
       }
     }
 
+    // อัปเดต XP (1 XP ต่อข้อที่ตอบถูก)
+    let characterLevel = null;
+    if (req.session?.userId && correctCount > 0) {
+      const xpGain = correctCount;
+      const char = await prisma.characterState.upsert({
+        where: { userId: req.session.userId },
+        update: { totalXp: { increment: xpGain } },
+        create: { userId: req.session.userId, totalXp: xpGain, level: 1 }
+      });
+      const newLevel = calcLevel(char.totalXp + xpGain);
+      if (newLevel !== char.level) {
+        await prisma.characterState.update({
+          where: { userId: req.session.userId },
+          data: { level: newLevel }
+        });
+      }
+      characterLevel = { level: newLevel, totalXp: char.totalXp + xpGain, xpGain };
+    }
+
     res.json({
       correctCount,
       total: questions.length,
@@ -157,7 +176,8 @@ router.post('/', async (req, res) => {
       fullScore,
       questions: records,
       userAnswers: answers,
-      weakAttributes
+      weakAttributes,
+      characterLevel
     });
 
   } catch (err) {
@@ -165,6 +185,21 @@ router.post('/', async (req, res) => {
     res.status(500).json({ error: 'ตรวจคำตอบล้มเหลว' });
   }
 });
+
+// XP thresholds ต่อ level (สะสม)
+const XP_TABLE = [0,50,120,220,360,550,800,1120,1520,2020,2620,3320,4120,5020,6120,7420,8920,10620,12620,15020,18020];
+function calcLevel(xp) {
+  for (let i = XP_TABLE.length - 1; i >= 0; i--) {
+    if (xp >= XP_TABLE[i]) return i + 1;
+  }
+  return 1;
+}
+
+const CLASS_NAME = ['', 'นักเรียนใหม่','นักเรียนใหม่','นักเรียนใหม่','นักเรียนใหม่','นักเรียนใหม่',
+  'นักสู้','นักสู้','นักสู้','นักสู้','นักสู้',
+  'จอมเวทย์','จอมเวทย์','จอมเวทย์','จอมเวทย์','จอมเวทย์',
+  'อัศวิน','อัศวิน','อัศวิน','อัศวิน','อัศวิน'];
+const CLASS_ICON = ['','🌱','🌱','🌱','🌱','🌱','⚔️','⚔️','⚔️','⚔️','⚔️','🧙','🧙','🧙','🧙','🧙','🦅','🦅','🦅','🦅','🦅'];
 
 function getISOWeek(date) {
   const d = new Date(date);

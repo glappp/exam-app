@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>แท็บผู้ปกครอง</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .tx-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #f0f0f0; font-size:14px; }
+    .tx-row:last-child { border-bottom:none; }
+    .tx-earn  { color:#16a34a; font-weight:700; }
+    .tx-spend { color:#dc2626; font-weight:700; }
+    .tx-meta  { color:#888; font-size:12px; margin-top:2px; }
+    .balance-box { background:#1e3a5f; color:#fff; border-radius:12px; padding:24px; text-align:center; margin-bottom:16px; }
+    .balance-num { font-size:52px; font-weight:800; line-height:1; }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <span class="topbar-title">👨‍👩‍👧 แท็บผู้ปกครอง</span>
+  <div class="topbar-nav">
+    <span id="greeting"></span>
+    <a href="dashboard.html">กลับแดชบอร์ด</a>
+  </div>
+</div>
+
+<div class="page">
+  <!-- ยอดคะแนน -->
+  <div class="balance-box">
+    <div style="font-size:13px;opacity:.7;margin-bottom:6px">คะแนนสะสมปัจจุบัน</div>
+    <div class="balance-num" id="balance">—</div>
+    <div style="font-size:16px;margin-top:4px;opacity:.8">⭐ คะแนน</div>
+  </div>
+
+  <!-- หักคะแนน -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">แลกรางวัล (หักคะแนน)</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>จำนวนคะแนนที่หัก</label>
+        <input type="number" id="deduct-amount" min="1" placeholder="เช่น 50">
+      </div>
+      <div class="form-group">
+        <label>หมายเหตุ</label>
+        <input type="text" id="deduct-note" placeholder="เช่น ดูการ์ตูน 1 ชม.">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="doDeduct()">หักคะแนน</button>
+    <div id="deduct-msg" style="margin-top:8px;font-size:13px"></div>
+  </div>
+
+  <!-- ประวัติ -->
+  <div class="card">
+    <div class="card-title">ประวัติคะแนนทั้งหมด</div>
+    <div id="tx-list"><p style="color:var(--muted);text-align:center;padding:16px">กำลังโหลด...</p></div>
+  </div>
+</div>
+
+<script>
+  const typeLabel = {
+    exam: '📝 ทำข้อสอบ',
+    streak: '🔥 Streak',
+    weekly_bonus: '🎁 โบนัสสัปดาห์',
+    parent_deduct: '🎀 แลกรางวัล',
+    admin_adjust: '⚙️ ปรับโดยระบบ'
+  };
+
+  async function init() {
+    const r = await fetch('/api/me', { credentials: 'include' });
+    if (!r.ok) { location.href = 'login.html'; return; }
+    const me = await r.json();
+    document.getElementById('greeting').textContent = me.firstName || me.username;
+    loadLog();
+  }
+
+  async function loadLog() {
+    const r = await fetch('/api/student/point-log', { credentials: 'include' });
+    if (!r.ok) return;
+    const { transactions, totalPoints } = await r.json();
+    document.getElementById('balance').textContent = totalPoints;
+    const el = document.getElementById('tx-list');
+    if (!transactions.length) { el.innerHTML = '<p style="color:var(--muted);text-align:center;padding:16px">ยังไม่มีประวัติ</p>'; return; }
+    el.innerHTML = transactions.map(t => {
+      const date = new Date(t.createdAt).toLocaleDateString('th-TH', { day:'2-digit', month:'short' });
+      const isEarn = t.amount > 0;
+      return `<div class="tx-row">
+        <div>
+          <div>${typeLabel[t.type] || t.type}</div>
+          ${t.note ? `<div class="tx-meta">${t.note}</div>` : ''}
+        </div>
+        <div>
+          <div class="${isEarn ? 'tx-earn' : 'tx-spend'}">${isEarn ? '+' : ''}${t.amount} ⭐</div>
+          <div class="tx-meta" style="text-align:right">${date}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  async function doDeduct() {
+    const amount = parseInt(document.getElementById('deduct-amount').value);
+    const note = document.getElementById('deduct-note').value.trim();
+    const msg = document.getElementById('deduct-msg');
+    if (!amount || amount <= 0) { msg.style.color='#dc2626'; msg.textContent='กรุณาใส่จำนวนคะแนน'; return; }
+
+    const r = await fetch('/api/student/parent-deduct', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount, note })
+    });
+    const data = await r.json();
+    if (data.success) {
+      msg.style.color = '#16a34a';
+      msg.textContent = `✅ หักสำเร็จ — เหลือ ${data.newBalance} ⭐`;
+      document.getElementById('deduct-amount').value = '';
+      document.getElementById('deduct-note').value = '';
+      loadLog();
+    } else {
+      msg.style.color = '#dc2626';
+      msg.textContent = `❌ ${data.error}`;
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

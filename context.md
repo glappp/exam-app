@@ -1,7 +1,7 @@
 # context.md — exam-app
 
 > อ่านไฟล์นี้ก่อนเริ่มงานทุกครั้ง
-> อัปเดตล่าสุด: 2026-04-03
+> อัปเดตล่าสุด: 2026-04-03 (commit d7fa2b7)
 
 ---
 
@@ -21,12 +21,13 @@
 
 Authentication ใช้ **session-based** (`express-session`) ทุกหน้าแล้ว — ไม่มี localStorage อีกต่อไป
 
-**Phase 3 (AI + Mock + Classroom)** เสร็จแล้ว:
-- AI generate questions (teacher review) ✅
-- Mock exam (blueprint + timed + star rating) ✅
-- Classroom score upload / CSV / matrix-entry ✅
+**ทุก Phase เสร็จสมบูรณ์แล้ว:**
+- Phase 3: AI generate questions, Mock exam, Classroom scores ✅
 - Student score report (`/student-report.html`) ✅
-- Dashboard แสดง aggregate summary (คะแนนรวม, อันดับ, เฉลี่ย, SD) ✅
+- Dashboard aggregate summary (คะแนนรวม, อันดับ, เฉลี่ย, SD) ✅
+- Classroom term support (ภาคเรียน 1/2, aggregate key = `year|term`) ✅
+- Phase B: Adaptive mode + Recommendation card ✅
+- Phase C: Rate limiting `/api/login` (5 req/15 min/IP) ✅
 
 ---
 
@@ -166,7 +167,7 @@ node prisma/seed-demo-students.js
 - ตาราง 8 วิชาล่าสุด + grade color + rank emoji
 - ลิงก์ "ดูรายงานเต็ม →" ไป student-report.html
 
-**งานที่ค้างอยู่:** ปรับปรุง dashboard เพิ่มเติม + Phase B + Phase C (เริ่ม 2026-04-04)
+**สถานะ:** พร้อม fine-tune ทีละหน้า
 
 ---
 
@@ -214,26 +215,6 @@ NODE_ENV=production
 ### 2. Build & Start
 - Build: `npm install`
 - Start: `npm start`
-
----
-
-## งานที่ยังค้าง (เริ่ม 2026-04-04)
-
-### Phase B — Adaptive & Recommendation
-
-1. **Adaptive mode** — endpoint `/api/exam-set/adaptive` และปุ่ม "ปรับจุดอ่อน" มีอยู่แล้ว **ทำงานได้จริงแล้ว**
-   - `practice.html?mode=adaptive` → script.js เรียก `/api/exam-set/adaptive` → โหลดโจทย์ตาม weakTopicTags
-   - submit กลับมาด้วย `mode: 'adaptive'`
-
-2. **Recommendation section บน Dashboard** — **เสร็จแล้ว**
-   - card "แนะนำให้ฝึก" ใต้ weakness card
-   - aggregate weakAttributes จากทุกผลสอบ → top 3 topic (เรียงตามความถี่)
-   - แต่ละ topic มีปุ่ม "ฝึกเลย" → targeted mode
-   - ปุ่ม "ปรับจุดอ่อนทั้งหมด" → adaptive mode
-
-### Phase C — Rate Limiting
-
-**ทำเสร็จแล้ว** — in-memory rate limiter ที่ Index.js (5 attempts / 15 min / IP)
 
 ---
 

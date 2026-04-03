@@ -226,6 +226,14 @@
         <div id="weakness-content"><div class="empty-msg">ยังไม่มีข้อมูล</div></div>
       </div>
 
+      <div class="card" id="recommend-card" style="display:none">
+        <div class="card-title">แนะนำให้ฝึก</div>
+        <div id="recommend-content"></div>
+        <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="location.href='practice.html?mode=adaptive'">
+          🎯 ปรับจุดอ่อนทั้งหมด
+        </button>
+      </div>
+
     </div>
 
     <!-- Right: Profile form + History -->
@@ -309,6 +317,7 @@
       renderStats(studentData.examResults);
       renderHistory(studentData.examResults);
       renderWeakness(studentData.examResults);
+      renderRecommendation(studentData.examResults);
       if (studentData.profile) {
         document.getElementById('welcome-sub').textContent =
           `${studentData.profile.grade} • ${studentData.profile.school} • ปีการศึกษา ${studentData.profile.academicYear}`;
@@ -336,8 +345,8 @@
     // โหลดคะแนนจากครู
     const r5 = await fetch('/api/classroom/my-scores', { credentials: 'include' });
     if (r5.ok) {
-      const { scores } = await r5.json();
-      if (scores.length) renderClassroomScores(scores);
+      const data = await r5.json();
+      if (data.results && data.results.length) renderClassroomScores(data.results, data.aggregates);
     }
   }
 
@@ -394,6 +403,40 @@
       ? `<span style="color:#16a34a;font-weight:700">✅ ครบแล้ว! +${m.pointsEarnedToday} ⭐</span>`
       : `<span style="color:#888">${m.dailyGoal - count} ข้อที่เหลือ</span>`;
     document.getElementById('mission-points').textContent = `⭐ ${m.totalPoints} คะแนนสะสม`;
+  }
+
+  function renderRecommendation(results) {
+    // รวม weakAttributes จากทุกผลสอบ (ทุก mode ที่มีข้อมูล)
+    const tally = {};
+    results.forEach(r => {
+      if (!Array.isArray(r.weakAttributes)) return;
+      r.weakAttributes.forEach(tag => {
+        tally[tag] = (tally[tag] || 0) + 1;
+      });
+    });
+
+    // เอาเฉพาะ topic tags เรียงตามความถี่
+    const topTopics = Object.entries(tally)
+      .filter(([k]) => k.startsWith('topic:'))
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+
+    if (!topTopics.length) return;
+
+    const card = document.getElementById('recommend-card');
+    const el = document.getElementById('recommend-content');
+    el.innerHTML = topTopics.map(([tag, count], i) => {
+      const label = tag.replace('topic:', '');
+      const medal = ['🥇','🥈','🥉'][i] || '';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;${i < topTopics.length-1 ? 'border-bottom:1px solid #f1f5f9' : ''}">
+        <span style="font-size:13px">${medal} <strong>${label}</strong>
+          <span style="font-size:11px;color:#94a3b8;margin-left:4px">ผิด ${count} ครั้ง</span>
+        </span>
+        <a href="practice.html?mode=targeted&topic=${encodeURIComponent(tag)}"
+           style="font-size:12px;color:#fff;background:#3b82f6;border-radius:6px;padding:3px 10px;text-decoration:none;font-weight:600;white-space:nowrap">ฝึกเลย</a>
+      </div>`;
+    }).join('');
+    card.style.display = 'block';
   }
 
   function renderWeakness(results) {
@@ -493,23 +536,52 @@
   document.getElementById('ann-close').onclick = () => { document.getElementById('ann-overlay').style.display = 'none'; };
 
   // Classroom scores
-  function renderClassroomScores(scores) {
+  function renderClassroomScores(results, aggregates) {
+    const single = results.filter(r => !r.isMulti);
+    if (!single.length) return;
+
+    // ดึง aggregate ของปีล่าสุด (key = "year|term")
+    const latestKey = Object.keys(aggregates || {}).sort((a,b) => b.localeCompare(a))[0];
+    const agg = latestKey ? aggregates[latestKey] : null;
+    const aggLabel = agg ? `ปีการศึกษา ${agg.year} ภาคเรียน ${agg.term}` : '';
+
+    const rankEmoji = agg ? (agg.rank === 1 ? '🥇' : agg.rank === 2 ? '🥈' : agg.rank === 3 ? '🥉' : '') : '';
+    const pct = agg ? Math.round(agg.myTotal / agg.fullTotal * 100) : null;
+    const pctColor = pct >= 80 ? '#16a34a' : pct >= 60 ? '#d97706' : '#dc2626';
+
+    const aggHtml = agg ? `
+      <div style="font-size:13px;color:#444;margin-bottom:10px;padding:8px 10px;background:#f8fafc;border-radius:8px;display:flex;gap:16px;flex-wrap:wrap">
+        <span>คะแนนรวม <strong style="color:${pctColor}">${agg.myTotal}/${agg.fullTotal}</strong></span>
+        <span>อันดับ <strong style="color:#1e3a5f">${rankEmoji}${agg.rank}/${agg.total}</strong></span>
+        <span>เฉลี่ยห้อง <strong>${agg.classMeanTotal}</strong></span>
+        <span>SD <strong>${agg.classSDTotal}</strong></span>
+      </div>` : '';
+
     const grid = document.querySelector('.grid2');
     const card = document.createElement('div');
     card.className = 'card';
     card.style.marginTop = '16px';
     card.innerHTML = `
-      <div class="card-title">คะแนนจากครู</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="card-title" style="margin:0">คะแนนจากครู${aggLabel ? ` (${aggLabel})` : ''}</div>
+        <a href="student-report.html" style="font-size:12px;color:#3b82f6;text-decoration:none;font-weight:600">ดูรายงานเต็ม →</a>
+      </div>
+      ${aggHtml}
       <table class="history-table">
-        <thead><tr><th>วิชา</th><th>คะแนน</th><th>เทียบเพื่อน</th></tr></thead>
-        <tbody>${scores.map(s => `
-          <tr>
-            <td>${s.subject}</td>
-            <td>${s.score}/${s.fullScore}</td>
-            <td><span class="badge ${s.percentile >= 75 ? 'badge-practice' : s.percentile >= 50 ? 'badge-adaptive' : 'badge-competitive'}">
-              ดีกว่า ${s.percentile}%
-            </span></td>
-          </tr>`).join('')}
+        <thead><tr><th>วิชา</th><th>คะแนน</th><th>เกรด</th><th>อันดับ</th></tr></thead>
+        <tbody>${single.slice(0, 8).map(r => {
+          const d = r.myData;
+          const rank = r.ranks?.['_'];
+          const total = r.total;
+          const re = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+          const gradeColor = d.grade >= 3 ? '#16a34a' : d.grade >= 2 ? '#d97706' : '#dc2626';
+          return `<tr>
+            <td>${r.subject}</td>
+            <td>${d.score}/${d.fullScore}</td>
+            <td style="font-weight:700;color:${gradeColor}">${d.grade}</td>
+            <td>${re} ${rank ? rank+'/'+total : '—'}</td>
+          </tr>`;
+        }).join('')}
         </tbody>
       </table>`;
     grid.after(card);

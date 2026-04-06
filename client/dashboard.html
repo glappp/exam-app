@@ -76,12 +76,10 @@
     }
     .form-group input:focus, .form-group select:focus { outline: none; border-color: #3b82f6; }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .btn-save {
-      padding: 9px 20px; background: #1e3a5f; color: #fff;
-      border: none; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 500;
+    .profile-value {
+      padding: 8px 10px; background: #f1f5f9; border-radius: 6px;
+      font-size: 14px; color: #1e293b; min-height: 36px;
     }
-    .btn-save:hover { background: #16304f; }
-    .save-msg { font-size: 12px; margin-top: 8px; }
 
     /* Stats row */
     .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
@@ -218,6 +216,12 @@
           <button class="mode-btn" style="background:#fef9c3;color:#854d0e;grid-column:1/-1" onclick="location.href='mock-setup.html'">
             <span class="icon">🏆</span>Mock สอบแข่งขัน
           </button>
+          <button class="mode-btn" style="background:#fef3c7;color:#92400e;grid-column:1/-1" onclick="location.href='grand-prix.html'">
+            <span class="icon">🏎️</span>สูตรคูณ Grand Prix
+          </button>
+          <button class="mode-btn" style="background:#ede9fe;color:#4c1d95;grid-column:1/-1" onclick="location.href='time-trial.html'">
+            <span class="icon">⏱️</span>Time Trial — สูตรคูณ 90 วิ
+          </button>
         </div>
       </div>
 
@@ -244,43 +248,37 @@
         <div class="form-row">
           <div class="form-group">
             <label>ปีการศึกษา (พ.ศ.)</label>
-            <input type="text" id="p-year" placeholder="เช่น 2568" maxlength="4">
+            <div class="profile-value" id="p-year">—</div>
           </div>
           <div class="form-group">
             <label>ระดับชั้น</label>
-            <select id="p-grade">
-              <option value="">-- เลือก --</option>
-              <option>ป.4</option><option>ป.5</option><option>ป.6</option>
-              <option>ม.1</option><option>ม.2</option><option>ม.3</option>
-            </select>
+            <div class="profile-value" id="p-grade">—</div>
           </div>
         </div>
         <div class="form-group">
           <label>โรงเรียน</label>
-          <input type="text" id="p-school" placeholder="ชื่อโรงเรียน">
+          <div class="profile-value" id="p-school">—</div>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label>อำเภอ / เขต</label>
-            <input type="text" id="p-district">
+            <div class="profile-value" id="p-district">—</div>
           </div>
           <div class="form-group">
             <label>จังหวัด</label>
-            <input type="text" id="p-province">
+            <div class="profile-value" id="p-province">—</div>
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label>ห้อง</label>
-            <input type="text" id="p-classroom" placeholder="เช่น 1/1">
+            <div class="profile-value" id="p-classroom">—</div>
           </div>
           <div class="form-group">
             <label>เลขประจำตัว</label>
-            <input type="text" id="p-code">
+            <div class="profile-value" id="p-code">—</div>
           </div>
         </div>
-        <button class="btn-save" onclick="saveProfile()">บันทึก</button>
-        <div class="save-msg" id="save-msg"></div>
       </div>
 
       <div class="card">
@@ -352,13 +350,13 @@
 
   function applyProfile(p) {
     if (!p) return;
-    document.getElementById('p-year').value     = p.academicYear || '';
-    document.getElementById('p-grade').value    = p.grade || '';
-    document.getElementById('p-school').value   = p.school || '';
-    document.getElementById('p-district').value = p.district || '';
-    document.getElementById('p-province').value = p.province || '';
-    document.getElementById('p-classroom').value = p.classroom || '';
-    document.getElementById('p-code').value     = p.studentCode || '';
+    document.getElementById('p-year').textContent     = p.academicYear || '—';
+    document.getElementById('p-grade').textContent    = p.grade || '—';
+    document.getElementById('p-school').textContent   = p.school || '—';
+    document.getElementById('p-district').textContent = p.district || '—';
+    document.getElementById('p-province').textContent = p.province || '—';
+    document.getElementById('p-classroom').textContent = p.classroom || '—';
+    document.getElementById('p-code').textContent     = p.studentCode || '—';
   }
 
   function renderStats(results) {
@@ -473,40 +471,6 @@
     return { practice: 'ฝึกหัด', competitive: 'แข่งขัน', adaptive: 'ปรับจุดอ่อน', official: 'ข้อสอบจริง' }[m] || m;
   }
 
-  async function saveProfile() {
-    const body = {
-      academicYear: document.getElementById('p-year').value.trim(),
-      grade:        document.getElementById('p-grade').value,
-      school:       document.getElementById('p-school').value.trim(),
-      district:     document.getElementById('p-district').value.trim(),
-      province:     document.getElementById('p-province').value.trim(),
-      classroom:    document.getElementById('p-classroom').value.trim(),
-      studentCode:  document.getElementById('p-code').value.trim(),
-    };
-    const msg = document.getElementById('save-msg');
-    try {
-      const res = await fetch('/api/student/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(body)
-      });
-      const data = await res.json();
-      if (data.success) {
-        msg.style.color = '#166534';
-        msg.textContent = '✅ บันทึกสำเร็จ';
-        document.getElementById('welcome-sub').textContent =
-          `${body.grade} • ${body.school} • ปีการศึกษา ${body.academicYear}`;
-        setTimeout(() => msg.textContent = '', 3000);
-      } else {
-        msg.style.color = '#b91c1c';
-        msg.textContent = `❌ ${data.error || 'บันทึกไม่สำเร็จ'}`;
-      }
-    } catch {
-      msg.style.color = '#b91c1c';
-      msg.textContent = '❌ ไม่สามารถเชื่อมต่อได้';
-    }
-  }
 
   function renderCharacter(c) {
     document.getElementById('char-card').style.display = '';

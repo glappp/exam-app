@@ -70,20 +70,69 @@ router.get('/stats', requireAdmin, async (req, res) => {
   }
 });
 
-// PATCH /api/admin/users/:id/role — change user role
+// PATCH /api/admin/users/:id/role — change user role (+schoolId optional)
 router.patch('/users/:id/role', requireAdmin, async (req, res) => {
   try {
-    const { role } = req.body;
-    if (!['admin', 'teacher', 'student'].includes(role)) {
+    const { role, schoolId } = req.body;
+    if (!['admin', 'school_admin', 'teacher', 'student'].includes(role)) {
       return res.status(400).json({ error: 'role ไม่ถูกต้อง' });
     }
-    const user = await prisma.user.update({
-      where: { id: parseInt(req.params.id) },
-      data: { role }
-    });
+    const data = { role };
+    if (schoolId !== undefined) data.schoolId = schoolId ? parseInt(schoolId) : null;
+    const user = await prisma.user.update({ where: { id: parseInt(req.params.id) }, data });
     res.json({ success: true, user });
   } catch (err) {
     res.status(500).json({ error: 'เปลี่ยน role ล้มเหลว' });
+  }
+});
+
+// ── Schools ──────────────────────────────────────────────
+
+// GET /api/admin/schools
+router.get('/schools', requireAdmin, async (req, res) => {
+  try {
+    const schools = await prisma.school.findMany({ orderBy: { province: 'asc' } });
+    res.json({ schools });
+  } catch (err) {
+    res.status(500).json({ error: 'โหลดโรงเรียนล้มเหลว' });
+  }
+});
+
+// POST /api/admin/schools
+router.post('/schools', requireAdmin, async (req, res) => {
+  try {
+    const { name, district, province } = req.body;
+    if (!name || !district || !province) return res.status(400).json({ error: 'กรอกข้อมูลไม่ครบ' });
+    const school = await prisma.school.create({ data: { name, district, province } });
+    res.json({ success: true, school });
+  } catch (err) {
+    res.status(500).json({ error: 'สร้างโรงเรียนล้มเหลว' });
+  }
+});
+
+// PATCH /api/admin/schools/:id
+router.patch('/schools/:id', requireAdmin, async (req, res) => {
+  try {
+    const { name, district, province, isActive } = req.body;
+    const data = {};
+    if (name !== undefined) data.name = name;
+    if (district !== undefined) data.district = district;
+    if (province !== undefined) data.province = province;
+    if (isActive !== undefined) data.isActive = isActive;
+    const school = await prisma.school.update({ where: { id: parseInt(req.params.id) }, data });
+    res.json({ success: true, school });
+  } catch (err) {
+    res.status(500).json({ error: 'แก้ไขโรงเรียนล้มเหลว' });
+  }
+});
+
+// DELETE /api/admin/schools/:id
+router.delete('/schools/:id', requireAdmin, async (req, res) => {
+  try {
+    await prisma.school.delete({ where: { id: parseInt(req.params.id) } });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'ลบโรงเรียนล้มเหลว' });
   }
 });
 

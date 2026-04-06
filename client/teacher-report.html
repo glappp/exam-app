@@ -3,101 +3,163 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>รายงานครู</title>
+  <title>รายงานครู — คลังข้อสอบ</title>
   <link rel="stylesheet" href="style.css">
   <style>
+    .school-banner { background:var(--navy); color:#fff; border-radius:10px; padding:14px 20px; margin-bottom:20px; font-size:14px; }
+    .school-banner strong { font-size:16px; display:block; margin-bottom:2px; }
+    .tabs { display:flex; gap:4px; margin-bottom:16px; flex-wrap:wrap; }
+    .tab-btn { padding:8px 18px; border:1.5px solid var(--border); border-radius:7px; background:#fff; font-size:13px; font-weight:600; cursor:pointer; color:var(--muted); }
+    .tab-btn.active { background:var(--navy); color:#fff; border-color:var(--navy); }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
     .filter-bar { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:16px; align-items:flex-end; }
-    .filter-bar select, .filter-bar input { padding:8px 10px; border:1px solid #ddd; border-radius:6px; font-size:13px; font-family:inherit; }
+    .filter-bar select, .filter-bar input { padding:8px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px; font-family:inherit; }
     .stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
     .stat-box { background:#fff; border-radius:10px; padding:16px; text-align:center; box-shadow:0 1px 4px rgba(0,0,0,.06); }
-    .stat-num { font-size:28px; font-weight:800; color:#1e3a5f; }
+    .stat-num { font-size:28px; font-weight:800; color:var(--navy); }
     .stat-label { font-size:11px; color:#888; margin-top:2px; }
     .student-table { width:100%; border-collapse:collapse; font-size:13px; }
     .student-table th { text-align:left; padding:9px 10px; background:#f8fafc; color:#666; font-weight:600; border-bottom:2px solid #e8e8e8; }
-    .student-table td { padding:9px 10px; border-bottom:1px solid #f0f0f0; vertical-align:top; }
+    .student-table td { padding:9px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
     .student-table tr:hover td { background:#fafafa; }
     .tag-pill { display:inline-block; background:#fff7ed; border:1px solid #fed7aa; border-radius:99px; padding:2px 8px; font-size:11px; color:#9a3412; margin:2px 2px 0 0; }
     .alert-row td { background:#fff5f5; }
     .section-title { font-size:13px; font-weight:700; color:#444; margin:20px 0 10px; text-transform:uppercase; letter-spacing:.5px; }
+    .score-card { background:#f8fafc; border-radius:8px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; font-size:13px; }
+    .score-card .subject { font-weight:600; color:var(--navy); }
+    .score-card .stats-row { display:flex; gap:16px; font-size:12px; color:#666; }
+    .grade-badge { display:inline-block; padding:3px 8px; border-radius:5px; font-size:11px; font-weight:700; background:#f1f5f9; color:var(--navy); }
   </style>
 </head>
 <body>
 <div class="topbar">
-  <span class="topbar-title">👩‍🏫 รายงานครู</span>
+  <span class="topbar-title">รายงานครู</span>
   <div class="topbar-nav">
-    <span id="greeting"></span>
-    <a href="dashboard.html">แดชบอร์ด</a>
+    <span id="greeting" style="font-size:13px;color:#ccc"></span>
+    <a href="dashboard.html">หน้าหลัก</a>
     <a href="#" onclick="logout()">ออกจากระบบ</a>
   </div>
 </div>
 
 <div class="page">
-  <!-- Filter -->
-  <div class="filter-bar">
-    <div>
-      <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ระดับชั้น</label>
-      <select id="f-grade"><option value="">ทุกชั้น</option></select>
-    </div>
-    <div>
-      <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">โรงเรียน</label>
-      <select id="f-school"><option value="">ทุกโรงเรียน</option></select>
-    </div>
-    <div>
-      <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ปีการศึกษา</label>
-      <input type="text" id="f-year" style="width:90px">
-    </div>
-    <button class="btn btn-primary" style="padding:8px 20px" onclick="load()">ดูรายงาน</button>
+  <div id="school-banner" class="school-banner" style="display:none">
+    <strong id="banner-name">—</strong>
+    <span id="banner-location">—</span>
   </div>
 
-  <div id="content"><p style="color:var(--muted);text-align:center;padding:40px">เลือก filter แล้วกด "ดูรายงาน"</p></div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('exam')">ภาพรวมการสอบ</button>
+    <button class="tab-btn" onclick="switchTab('scores')">คะแนนที่อัปโหลด</button>
+  </div>
+
+  <!-- Tab: ภาพรวมการสอบ -->
+  <div class="tab-panel active" id="tab-exam">
+    <div class="filter-bar">
+      <div>
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ระดับชั้น</label>
+        <select id="f-grade"><option value="">ทุกชั้น</option></select>
+      </div>
+      <div>
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ห้อง</label>
+        <select id="f-classroom"><option value="">ทุกห้อง</option></select>
+      </div>
+      <div id="school-filter-wrap">
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">โรงเรียน</label>
+        <select id="f-school"><option value="">ทุกโรงเรียน</option></select>
+      </div>
+      <div>
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ปีการศึกษา</label>
+        <input type="text" id="f-year" style="width:90px">
+      </div>
+      <button class="btn btn-primary" onclick="loadExam()">ดูรายงาน</button>
+    </div>
+    <div id="exam-content"><p style="color:var(--muted);text-align:center;padding:40px">เลือก filter แล้วกด "ดูรายงาน"</p></div>
+  </div>
+
+  <!-- Tab: คะแนนที่อัปโหลด -->
+  <div class="tab-panel" id="tab-scores">
+    <div class="filter-bar">
+      <div>
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ปีการศึกษา</label>
+        <input type="text" id="sc-year" style="width:90px">
+      </div>
+      <div>
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ภาคเรียน</label>
+        <select id="sc-term" style="width:100px">
+          <option value="">ทั้งหมด</option>
+          <option value="1">ภาคเรียน 1</option>
+          <option value="2">ภาคเรียน 2</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="loadScores()">โหลด</button>
+    </div>
+    <div id="scores-content"><p style="color:var(--muted);text-align:center;padding:40px">ระบุปีการศึกษาแล้วกด โหลด</p></div>
+  </div>
 </div>
 
 <script>
+  let isAdmin = false;
+
+  const TABS = ['exam','scores'];
+  function switchTab(name) {
+    document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', TABS[i] === name));
+    document.querySelectorAll('.tab-panel').forEach((p,i) => p.classList.toggle('active', `tab-${TABS[i]}` === `tab-${name}`));
+  }
+
   async function init() {
     const r = await fetch('/api/me', { credentials: 'include' });
     if (!r.ok) { location.href = 'login.html'; return; }
     const me = await r.json();
-    if (!['admin','teacher'].includes(me.role)) { location.href = 'dashboard.html'; return; }
-    document.getElementById('greeting').textContent = me.firstName || me.username;
+    if (!['admin','school_admin','teacher'].includes(me.role)) { location.href = 'dashboard.html'; return; }
+    isAdmin = me.role === 'admin';
+    document.getElementById('greeting').textContent = me.firstName || '';
 
-    document.getElementById('f-year').value = String(new Date().getFullYear() + 543);
+    const year = String(new Date().getFullYear() + 543);
+    document.getElementById('f-year').value = year;
+    document.getElementById('sc-year').value = year;
 
-    const rf = await fetch('/api/teacher/filters', { credentials: 'include' });
+    const rf = await fetch(`/api/teacher/filters?academicYear=${year}`, { credentials: 'include' });
     if (rf.ok) {
-      const { grades, schools } = await rf.json();
-      const gSel = document.getElementById('f-grade');
-      grades.forEach(g => gSel.innerHTML += `<option>${g}</option>`);
-      const sSel = document.getElementById('f-school');
-      schools.forEach(s => sSel.innerHTML += `<option>${s}</option>`);
+      const { grades, classrooms, schools, schoolName } = await rf.json();
+      grades.forEach(g => document.getElementById('f-grade').innerHTML += `<option>${g}</option>`);
+      classrooms.forEach(c => document.getElementById('f-classroom').innerHTML += `<option>${c}</option>`);
+      if (isAdmin && schools.length) {
+        schools.forEach(s => document.getElementById('f-school').innerHTML += `<option>${s}</option>`);
+      } else {
+        document.getElementById('school-filter-wrap').style.display = 'none';
+      }
+      if (schoolName) {
+        document.getElementById('banner-name').textContent = schoolName;
+        document.getElementById('school-banner').style.display = 'block';
+      }
     }
-    load();
+    loadExam();
   }
 
-  async function load() {
-    const grade = document.getElementById('f-grade').value;
-    const school = document.getElementById('f-school').value;
-    const year = document.getElementById('f-year').value;
-    const params = new URLSearchParams({ academicYear: year, ...(grade && {grade}), ...(school && {school}) });
+  async function loadExam() {
+    const grade     = document.getElementById('f-grade').value;
+    const classroom = document.getElementById('f-classroom').value;
+    const school    = document.getElementById('f-school')?.value || '';
+    const year      = document.getElementById('f-year').value;
+    const params    = new URLSearchParams({ academicYear: year, ...(grade && {grade}), ...(classroom && {classroom}), ...(school && {school}) });
 
-    document.getElementById('content').innerHTML = '<p style="text-align:center;padding:32px;color:var(--muted)">กำลังโหลด...</p>';
+    document.getElementById('exam-content').innerHTML = '<p style="text-align:center;padding:32px;color:var(--muted)">กำลังโหลด...</p>';
     const r = await fetch(`/api/teacher/class-overview?${params}`, { credentials: 'include' });
-    if (!r.ok) { document.getElementById('content').innerHTML = '<p class="msg msg-error">โหลดข้อมูลล้มเหลว</p>'; return; }
-    const data = await r.json();
-    render(data);
+    if (!r.ok) { document.getElementById('exam-content').innerHTML = '<p class="msg msg-error">โหลดข้อมูลล้มเหลว</p>'; return; }
+    renderExam(await r.json());
   }
 
-  function render({ students, classWeakTopics, needAttention, total }) {
-    const hasSoExam = students.filter(s => s.examCount > 0);
-    const avgAll = hasSoExam.length
-      ? Math.round(hasSoExam.filter(s => s.avgPct !== null).reduce((a, s) => a + s.avgPct, 0) / hasSoExam.filter(s => s.avgPct !== null).length)
-      : null;
+  function renderExam({ students, classWeakTopics, needAttention, total }) {
+    const withExam = students.filter(s => s.avgPct !== null);
+    const avgAll   = withExam.length ? Math.round(withExam.reduce((a, s) => a + s.avgPct, 0) / withExam.length) : null;
 
     const weakHtml = classWeakTopics.length
       ? classWeakTopics.map(w => `
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
             <div style="flex:1;font-size:13px">${w.label}</div>
             <div style="background:#fee2e2;border-radius:99px;height:8px;width:120px;overflow:hidden">
-              <div style="background:#ef4444;height:8px;border-radius:99px;width:${Math.min(w.count/total*100*3,100)}%"></div>
+              <div style="background:#ef4444;height:8px;border-radius:99px;width:${Math.min(w.count/(total||1)*300,100)}%"></div>
             </div>
             <div style="font-size:12px;color:#888;width:50px">${w.count} คน</div>
           </div>`).join('')
@@ -108,36 +170,65 @@
       const pctColor = s.avgPct === null ? '#aaa' : s.avgPct >= 75 ? '#16a34a' : s.avgPct >= 50 ? '#d97706' : '#dc2626';
       return `<tr class="${isAlert ? 'alert-row' : ''}">
         <td>${s.name}<br><span style="font-size:11px;color:#aaa">${s.username}</span></td>
-        <td style="text-align:center">${s.grade}</td>
+        <td><span class="grade-badge">${s.grade}${s.classroom ? ' ห้อง '+s.classroom : ''}</span></td>
         <td style="text-align:center;font-weight:700;color:${pctColor}">${s.avgPct !== null ? s.avgPct+'%' : '—'}</td>
         <td style="text-align:center">${s.examCount}</td>
         <td>${s.weakTags.map(t => `<span class="tag-pill">${t.replace(/^[^:]+:/,'')}</span>`).join('')}</td>
-        ${isAlert ? '<td style="color:#dc2626;font-size:12px">⚠️ ต้องดูแล</td>' : '<td></td>'}
+        <td>${isAlert ? '<span style="color:#dc2626;font-size:12px">⚠️ ต้องดูแล</span>' : ''}</td>
       </tr>`;
     }).join('');
 
-    document.getElementById('content').innerHTML = `
+    document.getElementById('exam-content').innerHTML = `
       <div class="stat-grid">
         <div class="stat-box"><div class="stat-num">${total}</div><div class="stat-label">นักเรียนทั้งหมด</div></div>
-        <div class="stat-box"><div class="stat-num" style="color:${avgAll >= 75 ? '#16a34a' : avgAll >= 50 ? '#d97706' : '#dc2626'}">${avgAll !== null && !isNaN(avgAll) ? avgAll+'%' : '—'}</div><div class="stat-label">คะแนนเฉลี่ย</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:${avgAll>=75?'#16a34a':avgAll>=50?'#d97706':'#dc2626'}">${avgAll!==null?avgAll+'%':'—'}</div><div class="stat-label">คะแนนเฉลี่ย</div></div>
         <div class="stat-box"><div class="stat-num" style="color:#dc2626">${needAttention.length}</div><div class="stat-label">ต้องดูแลพิเศษ</div></div>
       </div>
-
       <div class="card" style="margin-bottom:16px">
-        <div class="section-title">หัวข้อที่ทั้งห้องทำได้แย่</div>
-        ${weakHtml}
+        <div class="section-title">หัวข้อที่ทั้งห้องทำได้แย่</div>${weakHtml}
       </div>
-
       <div class="card">
         <div class="section-title">รายชื่อนักเรียน</div>
         <div style="overflow-x:auto">
           <table class="student-table">
-            <thead><tr><th>ชื่อ</th><th>ชั้น</th><th>คะแนนเฉลี่ย</th><th>ครั้งที่สอบ</th><th>จุดอ่อน</th><th></th></tr></thead>
+            <thead><tr><th>ชื่อ</th><th>ชั้น/ห้อง</th><th>คะแนนเฉลี่ย</th><th>ครั้งที่สอบ</th><th>จุดอ่อน</th><th></th></tr></thead>
             <tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:#aaa;padding:20px">ไม่พบข้อมูล</td></tr>'}</tbody>
           </table>
         </div>
-      </div>
-    `;
+      </div>`;
+  }
+
+  async function loadScores() {
+    const year = document.getElementById('sc-year').value.trim();
+    const term = document.getElementById('sc-term').value;
+    const el   = document.getElementById('scores-content');
+    el.innerHTML = '<p style="text-align:center;padding:32px;color:var(--muted)">กำลังโหลด...</p>';
+    const params = new URLSearchParams({ ...(year && {academicYear:year}), ...(term && {term}) });
+    const r = await fetch(`/api/teacher/classroom-scores?${params}`, { credentials: 'include' });
+    if (!r.ok) { el.innerHTML = '<p class="msg msg-error">โหลดข้อมูลล้มเหลว</p>'; return; }
+    const { uploads } = await r.json();
+    if (!uploads.length) { el.innerHTML = '<div class="empty-msg">ยังไม่มีข้อมูลคะแนนที่อัปโหลด</div>'; return; }
+
+    const cards = uploads.map(u => {
+      const stats = u.stats ? JSON.parse(u.stats) : null;
+      return `<div class="score-card">
+        <div>
+          <div class="subject">${u.subject === 'multi' ? '📊 หลายวิชา' : u.subject}</div>
+          <div style="font-size:12px;color:#666;margin-top:2px">
+            <span class="grade-badge">${u.grade}</span>
+            ปี ${u.academicYear} ภาคเรียน ${u.term} •
+            ${new Date(u.createdAt).toLocaleDateString('th-TH')}
+          </div>
+        </div>
+        ${stats ? `<div class="stats-row">
+          <span>เฉลี่ย ${stats.mean ?? '—'}</span>
+          <span>SD ${stats.sd ?? '—'}</span>
+          <span>${stats.count ?? '—'} คน</span>
+        </div>` : ''}
+      </div>`;
+    }).join('');
+
+    el.innerHTML = `<div>${cards}</div>`;
   }
 
   function logout() { fetch('/api/logout', { method:'POST', credentials:'include' }); location.href='login.html'; }

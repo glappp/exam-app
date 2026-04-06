@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin โรงเรียน — คลังข้อสอบ</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .tabs { display:flex; gap:4px; margin-bottom:16px; flex-wrap:wrap; }
+    .tab-btn { padding:8px 18px; border:1.5px solid var(--border); border-radius:7px; background:#fff; font-size:13px; font-weight:600; cursor:pointer; color:var(--muted); }
+    .tab-btn.active { background:var(--navy); color:#fff; border-color:var(--navy); }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+    .school-banner { background:var(--navy); color:#fff; border-radius:10px; padding:14px 20px; margin-bottom:20px; font-size:14px; }
+    .school-banner strong { font-size:16px; display:block; margin-bottom:2px; }
+    .filter-row { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+    .filter-row select, .filter-row input { padding:7px 10px; border:1px solid var(--border); border-radius:6px; font-size:13px; font-family:inherit; }
+    .upload-area { border:2px dashed var(--border); border-radius:10px; padding:28px; text-align:center; cursor:pointer; color:var(--muted); font-size:13px; margin-bottom:14px; }
+    .upload-area:hover { border-color:var(--blue); color:var(--blue); }
+    .preview-table { max-height:280px; overflow-y:auto; margin-bottom:14px; }
+    .grade-map-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid #f0f0f0; font-size:13px; }
+    .grade-map-row:last-child { border-bottom:none; }
+    .tag { display:inline-block; background:#f1f5f9; border-radius:4px; padding:2px 8px; font-size:12px; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <span class="topbar-title">Admin โรงเรียน</span>
+    <div class="topbar-nav">
+      <a href="dashboard.html">หน้าหลัก</a>
+      <a href="#" onclick="logout()">ออกจากระบบ</a>
+    </div>
+  </div>
+
+  <div class="page">
+    <div id="school-banner" class="school-banner" style="display:none">
+      <strong id="banner-name">—</strong>
+      <span id="banner-location">—</span>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('students')">รายชื่อนักเรียน</button>
+      <button class="tab-btn" onclick="switchTab('roster')">อัปโหลด Roster</button>
+      <button class="tab-btn" onclick="switchTab('promote')">ขยับชั้น</button>
+    </div>
+
+    <!-- รายชื่อนักเรียน -->
+    <div class="tab-panel active card" id="tab-students">
+      <div class="filter-row">
+        <input type="text" id="f-year" placeholder="ปีการศึกษา เช่น 2568" style="width:160px">
+        <button class="btn btn-primary" onclick="loadStudents()">โหลด</button>
+      </div>
+      <div id="students-content"><div class="empty-msg">ระบุปีการศึกษาแล้วกด โหลด</div></div>
+    </div>
+
+    <!-- อัปโหลด Roster -->
+    <div class="tab-panel card" id="tab-roster">
+      <div class="card-title">อัปโหลด Roster CSV</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">
+        ไฟล์ CSV ต้องมีคอลัมน์: <code>studentCode, firstName, lastName, grade, classroom</code>
+        <br>ระบบจะสร้าง account โดยใช้ studentCode เป็น username และรหัสผ่านเริ่มต้น <strong>1111</strong>
+        <br>หากมี username ซ้ำจะข้ามไป (ไม่ overwrite)
+      </p>
+
+      <div class="form-group" style="margin-bottom:12px;max-width:200px">
+        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ปีการศึกษา <span style="color:#b91c1c">*</span></label>
+        <input type="text" id="roster-year" placeholder="เช่น 2568" maxlength="4">
+      </div>
+
+      <div class="upload-area" id="upload-area" onclick="document.getElementById('csv-file').click()">
+        <div>📂 คลิกเพื่อเลือกไฟล์ CSV</div>
+        <div id="file-name" style="margin-top:6px;font-size:12px"></div>
+      </div>
+      <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleCSV(this)">
+
+      <div id="preview-area" style="display:none">
+        <div class="card-title" style="margin-bottom:8px">ตัวอย่างข้อมูล (<span id="row-count">0</span> แถว)</div>
+        <div class="preview-table">
+          <table class="table" id="preview-table"></table>
+        </div>
+        <button class="btn btn-primary" onclick="uploadRoster()" id="upload-btn">สร้าง Accounts</button>
+        <div id="roster-msg" style="margin-top:8px;font-size:13px"></div>
+      </div>
+    </div>
+
+    <!-- ขยับชั้น -->
+    <div class="tab-panel card" id="tab-promote">
+      <div class="card-title">ขยับชั้นนักเรียน</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
+        ระบบจะสร้าง StudentProfile ปีใหม่ให้นักเรียนที่เลือก (profile เดิมยังคงอยู่)
+      </p>
+
+      <div class="filter-row" style="margin-bottom:16px">
+        <div>
+          <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">จากปีการศึกษา</label>
+          <input type="text" id="from-year" placeholder="เช่น 2567" style="width:140px">
+        </div>
+        <div>
+          <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ไปปีการศึกษา</label>
+          <input type="text" id="to-year" placeholder="เช่น 2568" style="width:140px">
+        </div>
+        <div style="display:flex;align-items:flex-end">
+          <button class="btn btn-primary" onclick="loadPromoteList()">โหลดรายชื่อ</button>
+        </div>
+      </div>
+
+      <div id="promote-content"><div class="empty-msg">ระบุปีการศึกษาแล้วกด โหลดรายชื่อ</div></div>
+      <div id="promote-actions" style="display:none;margin-top:16px">
+        <button class="btn btn-primary" onclick="doPromote()">ขยับชั้นที่เลือก</button>
+        <div id="promote-msg" style="margin-top:8px;font-size:13px"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const GRADE_ORDER = ['ป.4','ป.5','ป.6','ม.1','ม.2','ม.3'];
+    let parsedRows = [];
+    let promoteStudents = [];
+
+    const TABS = ['students','roster','promote'];
+    function switchTab(name) {
+      document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', TABS[i] === name));
+      document.querySelectorAll('.tab-panel').forEach((p,i) => p.classList.toggle('active', `tab-${TABS[i]}` === `tab-${name}`));
+    }
+
+    // ── รายชื่อนักเรียน ──────────────────────────────────
+    async function loadStudents() {
+      const year = document.getElementById('f-year').value.trim();
+      const el = document.getElementById('students-content');
+      el.innerHTML = '<div class="empty-msg">กำลังโหลด...</div>';
+      const url = year ? `/api/school-admin/students?academicYear=${year}` : '/api/school-admin/students';
+      const r = await fetch(url, { credentials: 'include' });
+      const d = await r.json();
+      if (!d.students?.length) { el.innerHTML = '<div class="empty-msg">ไม่พบรายชื่อนักเรียน</div>'; return; }
+
+      const rows = d.students.map(s => `<tr>
+        <td>${s.studentCode || '—'}</td>
+        <td>${s.user.firstName} ${s.user.lastName}</td>
+        <td><span class="tag">${s.grade}</span></td>
+        <td>${s.classroom || '—'}</td>
+        <td>${s.academicYear}</td>
+        <td>
+          <button onclick="resetPw(${s.user.id}, '${s.user.firstName} ${s.user.lastName}', this)"
+            style="padding:3px 10px;background:#fee2e2;color:#dc2626;border:none;border-radius:5px;font-size:12px;cursor:pointer">
+            Reset รหัส
+          </button>
+        </td>
+      </tr>`).join('');
+
+      el.innerHTML = `<div style="overflow-x:auto"><table class="table">
+        <thead><tr><th>รหัสนักเรียน</th><th>ชื่อ-นามสกุล</th><th>ชั้น</th><th>ห้อง</th><th>ปีการศึกษา</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>`;
+    }
+
+    async function resetPw(userId, name, btn) {
+      if (!confirm(`Reset รหัสผ่านของ ${name} เป็น 1111 ใช่ไหม?`)) return;
+      btn.disabled = true;
+      const r = await fetch(`/api/school-admin/reset-password/${userId}`, { method:'POST', credentials:'include' });
+      const d = await r.json();
+      btn.disabled = false;
+      if (d.success) { btn.textContent = '✅ Done'; setTimeout(() => btn.textContent = 'Reset รหัส', 2000); }
+      else alert(d.error || 'Reset ไม่สำเร็จ');
+    }
+
+    // ── Roster Upload ─────────────────────────────────────
+    function handleCSV(input) {
+      const file = input.files[0];
+      if (!file) return;
+      document.getElementById('file-name').textContent = file.name;
+      const reader = new FileReader();
+      reader.onload = e => parseCSV(e.target.result);
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    function parseCSV(text) {
+      const lines = text.trim().split('\n').map(l => l.trim()).filter(Boolean);
+      if (!lines.length) return;
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const required = ['studentcode','firstname','lastname','grade'];
+      const missing = required.filter(k => !headers.includes(k));
+      if (missing.length) { alert(`ไม่พบคอลัมน์: ${missing.join(', ')}`); return; }
+
+      parsedRows = lines.slice(1).map(line => {
+        const vals = line.split(',').map(v => v.trim());
+        const obj = {};
+        headers.forEach((h, i) => obj[h] = vals[i] || '');
+        return { studentCode: obj.studentcode, firstName: obj.firstname, lastName: obj.lastname, grade: obj.grade, classroom: obj.classroom || '' };
+      }).filter(r => r.studentCode);
+
+      document.getElementById('row-count').textContent = parsedRows.length;
+      const tableRows = parsedRows.slice(0, 10).map(r => `<tr>
+        <td>${r.studentCode}</td><td>${r.firstName}</td><td>${r.lastName}</td><td>${r.grade}</td><td>${r.classroom}</td>
+      </tr>`).join('');
+      document.getElementById('preview-table').innerHTML = `
+        <thead><tr><th>รหัส</th><th>ชื่อ</th><th>นามสกุล</th><th>ชั้น</th><th>ห้อง</th></tr></thead>
+        <tbody>${tableRows}${parsedRows.length > 10 ? `<tr><td colspan="5" style="color:var(--muted);text-align:center">...และอีก ${parsedRows.length-10} แถว</td></tr>` : ''}</tbody>`;
+      document.getElementById('preview-area').style.display = 'block';
+    }
+
+    async function uploadRoster() {
+      const academicYear = document.getElementById('roster-year').value.trim();
+      if (!academicYear) { alert('กรุณาระบุปีการศึกษา'); return; }
+      if (!parsedRows.length) { alert('ไม่มีข้อมูล'); return; }
+      const btn = document.getElementById('upload-btn');
+      const msg = document.getElementById('roster-msg');
+      btn.disabled = true; btn.textContent = 'กำลังสร้าง...';
+      const r = await fetch('/api/school-admin/upload-roster', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ academicYear, rows: parsedRows })
+      });
+      const d = await r.json();
+      btn.disabled = false; btn.textContent = 'สร้าง Accounts';
+      if (d.success) {
+        msg.style.color = '#16a34a';
+        msg.textContent = `✅ สร้างสำเร็จ ${d.created} คน | ข้ามซ้ำ ${d.skipped} คน${d.errors?.length ? ` | ข้อผิดพลาด ${d.errors.length} แถว` : ''}`;
+      } else {
+        msg.style.color = '#dc2626'; msg.textContent = d.error || 'เกิดข้อผิดพลาด';
+      }
+    }
+
+    // ── ขยับชั้น ──────────────────────────────────────────
+    async function loadPromoteList() {
+      const fromYear = document.getElementById('from-year').value.trim();
+      if (!fromYear) { alert('กรุณาระบุปีการศึกษา'); return; }
+      const el = document.getElementById('promote-content');
+      el.innerHTML = '<div class="empty-msg">กำลังโหลด...</div>';
+      const r = await fetch(`/api/school-admin/students?academicYear=${fromYear}`, { credentials: 'include' });
+      const d = await r.json();
+      promoteStudents = d.students || [];
+      if (!promoteStudents.length) { el.innerHTML = '<div class="empty-msg">ไม่พบนักเรียน</div>'; document.getElementById('promote-actions').style.display='none'; return; }
+
+      const rows = promoteStudents.map((s, i) => {
+        const nextGrade = GRADE_ORDER[GRADE_ORDER.indexOf(s.grade) + 1] || s.grade;
+        return `<div class="grade-map-row">
+          <div><input type="checkbox" id="chk-${i}" checked style="margin-right:6px">
+            ${s.user.firstName} ${s.user.lastName} <span class="tag">${s.grade} ห้อง ${s.classroom||'—'}</span>
+          </div>
+          <div>
+            <select id="ng-${i}" style="padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:inherit">
+              ${GRADE_ORDER.map(g => `<option value="${g}" ${g===nextGrade?'selected':''}>${g}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <input type="text" id="nc-${i}" value="${s.classroom||''}" placeholder="ห้อง" style="width:70px;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:12px;font-family:inherit">
+          </div>
+        </div>`;
+      }).join('');
+
+      el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 0 8px;font-size:12px;font-weight:600;color:var(--muted)">
+        <div>นักเรียน</div><div>ชั้นใหม่</div><div>ห้องใหม่</div>
+      </div>${rows}`;
+      document.getElementById('promote-actions').style.display = 'block';
+    }
+
+    async function doPromote() {
+      const fromYear = document.getElementById('from-year').value.trim();
+      const toYear   = document.getElementById('to-year').value.trim();
+      if (!toYear) { alert('กรุณาระบุปีการศึกษาที่จะขยับไป'); return; }
+
+      const selections = promoteStudents
+        .map((s, i) => ({ userId: s.user.id, checked: document.getElementById(`chk-${i}`).checked, newGrade: document.getElementById(`ng-${i}`).value, newClassroom: document.getElementById(`nc-${i}`).value }))
+        .filter(s => s.checked)
+        .map(({ userId, newGrade, newClassroom }) => ({ userId, newGrade, newClassroom }));
+
+      if (!selections.length) { alert('ไม่ได้เลือกนักเรียน'); return; }
+
+      const r = await fetch('/api/school-admin/promote', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fromAcademicYear: fromYear, toAcademicYear: toYear, selections })
+      });
+      const d = await r.json();
+      const msg = document.getElementById('promote-msg');
+      if (d.success) {
+        msg.style.color = '#16a34a';
+        msg.textContent = `✅ ขยับชั้นสำเร็จ ${d.promoted} คน`;
+      } else {
+        msg.style.color = '#dc2626'; msg.textContent = d.error || 'เกิดข้อผิดพลาด';
+      }
+    }
+
+    function logout() {
+      fetch('/api/logout', { method:'POST', credentials:'include' });
+      location.href = 'login.html';
+    }
+
+    async function init() {
+      const me = await fetch('/api/me', { credentials: 'include' });
+      if (!me.ok) { location.href = 'login.html'; return; }
+      const data = await me.json();
+      if (data.role !== 'school_admin') { alert('คุณไม่มีสิทธิ์เข้าหน้านี้'); location.href = 'dashboard.html'; return; }
+
+      const sr = await fetch('/api/school-admin/school', { credentials: 'include' });
+      if (sr.ok) {
+        const { school } = await sr.json();
+        if (school) {
+          document.getElementById('banner-name').textContent = school.name;
+          document.getElementById('banner-location').textContent = `${school.district} · ${school.province}`;
+          document.getElementById('school-banner').style.display = 'block';
+        }
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

@@ -10,6 +10,16 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+model School {
+  id        Int      @id @default(autoincrement())
+  name      String
+  district  String
+  province  String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  users     User[]
+}
+
 model User {
   id               Int                @id @default(autoincrement())
   username         String             @unique
@@ -17,13 +27,16 @@ model User {
   firstName        String
   lastName         String
   email            String
-  role             String             // 'admin', 'teacher', 'student'
+  role             String             // 'admin', 'school_admin', 'teacher', 'student'
+  schoolId         Int?
+  school           School?            @relation(fields: [schoolId], references: [id])
   studentProfiles  StudentProfile[]
   createdAt        DateTime           @default(now())
 
   results          Result[]
   pointTransactions PointTransaction[]
   dailyMissions    DailyMission[]
+  timeTrialScores  TimeTrialScore[]
 }
 
 
@@ -259,6 +272,21 @@ model DailyMission {
   createdAt      DateTime @default(now())
 
   @@unique([userId, date])
+}
+
+// TimeTrialScore — ผลคะแนน Time Trial mode
+model TimeTrialScore {
+  id            String   @id @default(cuid())
+  userId        Int
+  user          User     @relation(fields: [userId], references: [id])
+  weekKey       String   // "2026-W15" (ISO week, Mon–Sun)
+  score         Int
+  correctCount  Int
+  wrongCount    Int
+  maxCombo      Int
+  createdAt     DateTime @default(now())
+
+  @@index([weekKey])
 }
 
 /// 🗂️ AttributeDictionary (HK Project)

@@ -1,5 +1,7 @@
 const cors = require('cors');
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const path = require('path');
 const fs = require('fs');
 const { PrismaClient } = require('@prisma/client');
@@ -9,20 +11,11 @@ const { upload, getFilename, useR2 } = require('./storage');
 
 const prisma = new PrismaClient();
 const app = express();
+const httpServer = http.createServer(app);
+const io = new Server(httpServer, { cors: { origin: true, credentials: true } });
+require('./grand-prix-socket')(io);
 
-app.use(express.static(path.join(__dirname, '..', 'client'))); // สำหรับไฟล์ static
-
-const attributeDictRoute = require('./routes/api/attributeDictRoute');
-app.use('/api', attributeDictRoute); // ✅ เส้นทางจะเป็น /api/attributeDict.json
-
-const studentRoute = require('./routes/api/student');
-app.use('/api/student', studentRoute);
-
-const adminRoute = require('./routes/api/admin');
-app.use('/api/admin', adminRoute);
-
-
-// ✅ Middleware
+// ✅ Middleware (ต้องอยู่ก่อน routes ทั้งหมด)
 app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 app.use(session({
@@ -31,6 +24,17 @@ app.use(session({
   saveUninitialized: false,
   cookie: { secure: process.env.NODE_ENV === 'production' }
 }));
+
+app.use(express.static(path.join(__dirname, '..', 'client'))); // สำหรับไฟล์ static
+
+const attributeDictRoute = require('./routes/api/attributeDictRoute');
+app.use('/api', attributeDictRoute);
+
+const studentRoute = require('./routes/api/student');
+app.use('/api/student', studentRoute);
+
+const adminRoute = require('./routes/api/admin');
+app.use('/api/admin', adminRoute);
 
 
 
@@ -114,6 +118,22 @@ app.use('/api/ai', require('./routes/api/ai-gen'));
 app.use('/api/announcements', require('./routes/api/announcements'));
 app.use('/api/classroom', require('./routes/api/csv-upload'));
 app.use('/api/teacher', require('./routes/api/teacher'));
+app.use('/api/school-admin', require('./routes/api/school-admin'));
+app.use('/api/time-trial', require('./routes/api/time-trial'));
+
+// GET /api/schools?province=X&district=Y — public, no auth
+app.get('/api/schools', async (req, res) => {
+  try {
+    const { province, district } = req.query;
+    const where = { isActive: true };
+    if (province) where.province = province;
+    if (district) where.district = district;
+    const schools = await prisma.school.findMany({ where, orderBy: { name: 'asc' }, select: { id: true, name: true, district: true, province: true } });
+    res.json({ schools });
+  } catch (err) {
+    res.status(500).json({ error: 'โหลดโรงเรียนล้มเหลว' });
+  }
+});
 
 
 
@@ -155,6 +175,7 @@ app.post('/api/login', async (req, res) => {
   req.session.userId = user.id;
   req.session.role = user.role;
   req.session.firstName = user.firstName || null;
+  req.session.schoolId = user.schoolId || null;
 
   res.json({ user: { id: user.id, username: user.username, role: user.role, firstName: user.firstName } });
 });
@@ -231,6 +252,6 @@ app.post('/add-question', upload.fields([
 
 // ✅ Start server
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`✅ Backend is running on http://localhost:${PORT}`);
 });

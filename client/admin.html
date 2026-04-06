@@ -55,6 +55,7 @@
 
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('users')">ผู้ใช้</button>
+      <button class="tab-btn" onclick="switchTab('schools')">โรงเรียน</button>
       <button class="tab-btn" onclick="switchTab('results')">ผลการสอบ</button>
       <button class="tab-btn" onclick="switchTab('announce')">ประกาศ</button>
       <button class="tab-btn" onclick="switchTab('mock')">Mock Blueprint</button>
@@ -63,6 +64,32 @@
     <!-- Users tab -->
     <div class="tab-panel active card" id="tab-users">
       <div id="users-content"><div style="color:var(--muted);font-size:13px">กำลังโหลด...</div></div>
+    </div>
+
+    <!-- Schools tab -->
+    <div class="tab-panel card" id="tab-schools">
+      <div style="max-width:520px">
+        <div class="card-title">เพิ่มโรงเรียน</div>
+        <div class="form-row" style="margin-bottom:10px">
+          <div class="form-group">
+            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">จังหวัด</label>
+            <input type="text" id="sc-province" placeholder="จังหวัด" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+          </div>
+          <div class="form-group">
+            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">อำเภอ / เขต</label>
+            <input type="text" id="sc-district" placeholder="อำเภอ" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:14px">
+          <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ชื่อโรงเรียน</label>
+          <input type="text" id="sc-name" placeholder="ชื่อโรงเรียน" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+        </div>
+        <button class="btn btn-primary" onclick="createSchool()">เพิ่มโรงเรียน</button>
+        <div id="sc-msg" style="margin-top:8px;font-size:13px"></div>
+      </div>
+      <hr style="margin:20px 0;border:none;border-top:1px solid #f0f0f0">
+      <div class="card-title">รายการโรงเรียน</div>
+      <div id="school-list"><div style="color:var(--muted);font-size:13px">กำลังโหลด...</div></div>
     </div>
 
     <!-- Results tab -->
@@ -158,12 +185,13 @@
   </div>
 
   <script>
-    const TABS = ['users','results','announce','mock'];
+    const TABS = ['users','schools','results','announce','mock'];
     function switchTab(name) {
       document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', TABS[i] === name));
       document.querySelectorAll('.tab-panel').forEach((p,i) => p.classList.toggle('active', `tab-${TABS[i]}` === `tab-${name}`));
       if (name === 'announce') loadAnnList();
       if (name === 'mock') loadBlueprintList();
+      if (name === 'schools') loadSchools();
     }
 
     // ---- Announcements ----
@@ -299,6 +327,56 @@
       loadBlueprintList();
     }
 
+    // ---- Schools ----
+    let allSchools = [];
+
+    async function loadSchools() {
+      const el = document.getElementById('school-list');
+      const r = await fetch('/api/admin/schools', { credentials: 'include' });
+      const d = await r.json();
+      allSchools = d.schools || [];
+      if (!allSchools.length) { el.innerHTML = '<p style="color:var(--muted);font-size:13px">ยังไม่มีโรงเรียน</p>'; return; }
+      el.innerHTML = `<div style="overflow-x:auto"><table class="table">
+        <thead><tr><th>ID</th><th>ชื่อโรงเรียน</th><th>อำเภอ</th><th>จังหวัด</th><th></th></tr></thead>
+        <tbody>${allSchools.map(s => `<tr>
+          <td>${s.id}</td>
+          <td>${s.name}</td>
+          <td>${s.district}</td>
+          <td>${s.province}</td>
+          <td><button onclick="deleteSchool(${s.id},this)" style="padding:4px 12px;background:#fee2e2;color:#dc2626;border:none;border-radius:5px;font-size:12px;cursor:pointer">ลบ</button></td>
+        </tr>`).join('')}</tbody>
+      </table></div>`;
+    }
+
+    async function createSchool() {
+      const name     = document.getElementById('sc-name').value.trim();
+      const district = document.getElementById('sc-district').value.trim();
+      const province = document.getElementById('sc-province').value.trim();
+      const msg = document.getElementById('sc-msg');
+      if (!name || !district || !province) { msg.style.color='#dc2626'; msg.textContent='กรอกข้อมูลไม่ครบ'; return; }
+      const r = await fetch('/api/admin/schools', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, district, province })
+      });
+      const d = await r.json();
+      if (d.success) {
+        msg.style.color = '#16a34a'; msg.textContent = 'เพิ่มโรงเรียนสำเร็จ';
+        ['sc-name','sc-district','sc-province'].forEach(id => document.getElementById(id).value = '');
+        loadSchools();
+        setTimeout(() => msg.textContent = '', 3000);
+      } else {
+        msg.style.color = '#dc2626'; msg.textContent = d.error || 'เกิดข้อผิดพลาด';
+      }
+    }
+
+    async function deleteSchool(id, btn) {
+      if (!confirm('ลบโรงเรียนนี้ใช่ไหม?')) return;
+      btn.disabled = true;
+      await fetch(`/api/admin/schools/${id}`, { method: 'DELETE', credentials: 'include' });
+      loadSchools();
+    }
+
     // ---- Stats / Users / Results ----
     async function loadStats() {
       const r = await fetch('/api/admin/stats', { credentials:'include' });
@@ -318,7 +396,8 @@
       const rows = d.users.map(u => {
         const p = u.studentProfiles?.[0];
         const examCount = p?._count?.examResults ?? '—';
-        const roleColors = { admin:'badge-error', teacher:'badge-info', student:'badge-success' };
+        const roleColors = { admin:'badge-error', school_admin:'badge-warn', teacher:'badge-info', student:'badge-success' };
+        const schoolOpts = allSchools.map(s => `<option value="${s.id}" ${u.schoolId===s.id?'selected':''}>${s.name}</option>`).join('');
         return `<tr>
           <td>${u.id}</td>
           <td><strong>${u.firstName} ${u.lastName}</strong><br><span class="text-small text-muted">@${u.username}</span></td>
@@ -326,10 +405,15 @@
           <td><span class="badge ${roleColors[u.role] || 'badge-warn'}">${u.role}</span></td>
           <td>${p ? `${p.grade} • ${p.school}` : '—'}</td>
           <td>${examCount}</td>
-          <td>
-            <select class="role-sel" onchange="changeRole(${u.id}, this.value)">
-              ${['student','teacher','admin'].map(r => `<option value="${r}" ${r===u.role?'selected':''}>${r}</option>`).join('')}
+          <td style="display:flex;gap:6px;flex-wrap:wrap">
+            <select class="role-sel" id="role-sel-${u.id}">
+              ${['student','teacher','school_admin','admin'].map(r => `<option value="${r}" ${r===u.role?'selected':''}>${r}</option>`).join('')}
             </select>
+            <select class="role-sel" id="school-sel-${u.id}" style="max-width:140px">
+              <option value="">— โรงเรียน —</option>
+              ${schoolOpts}
+            </select>
+            <button onclick="changeRole(${u.id})" style="padding:4px 10px;background:var(--navy);color:#fff;border:none;border-radius:5px;font-size:12px;cursor:pointer">บันทึก</button>
           </td>
         </tr>`;
       }).join('');
@@ -378,14 +462,17 @@
       </div>`;
     }
 
-    async function changeRole(userId, newRole) {
+    async function changeRole(userId) {
+      const role = document.getElementById(`role-sel-${userId}`).value;
+      const schoolId = document.getElementById(`school-sel-${userId}`).value;
       const r = await fetch(`/api/admin/users/${userId}/role`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ role: newRole })
+        body: JSON.stringify({ role, schoolId: schoolId || null })
       });
-      if (!r.ok) alert('เปลี่ยน role ไม่สำเร็จ');
+      if (r.ok) loadUsers();
+      else alert('เปลี่ยน role ไม่สำเร็จ');
     }
 
     function logout() {
@@ -399,6 +486,7 @@
       const data = await me.json();
       if (data.role !== 'admin') { alert('คุณไม่มีสิทธิ์เข้าหน้านี้'); location.href = 'dashboard.html'; return; }
 
+      await loadSchools();
       await Promise.all([loadStats(), loadUsers(), loadResults()]);
       addTopicRow();
     }

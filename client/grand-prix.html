@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🏎️ สูตรคูณ Grand Prix</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#111;color:#fff;min-height:100vh;overflow-x:hidden}
+
+/* ─── Panels ─────────────────────────────────── */
+.panel{display:none;min-height:100vh}
+.panel.active{display:flex;flex-direction:column}
+
+/* ─── SETUP ──────────────────────────────────── */
+#panel-setup{align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);padding:24px}
+.setup-box{max-width:520px;width:100%}
+.setup-title{text-align:center;font-size:32px;font-weight:800;margin-bottom:6px;text-shadow:0 0 20px #e94560}
+.setup-sub{text-align:center;color:#aaa;font-size:14px;margin-bottom:28px}
+.setup-section{margin-bottom:20px}
+.setup-label{font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.mode-row{display:flex;gap:12px}
+.mode-card{flex:1;border:2px solid #333;border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all .2s;background:#1e1e2e}
+.mode-card:hover{border-color:#555}
+.mode-card.selected{border-color:#e94560;background:#2a1a2e}
+.mode-card .icon{font-size:28px;margin-bottom:6px}
+.mode-card .name{font-size:14px;font-weight:700}
+.mode-card .desc{font-size:11px;color:#888;margin-top:3px}
+.player-count-row{display:flex;gap:8px}
+.cnt-btn{flex:1;padding:10px;border:2px solid #333;border-radius:8px;background:#1e1e2e;color:#fff;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s}
+.cnt-btn:hover{border-color:#555}
+.cnt-btn.selected{border-color:#e94560;background:#2a1a2e}
+.table-row{display:flex;gap:8px;flex-wrap:wrap}
+.tbl-btn{padding:8px 14px;border:2px solid #333;border-radius:8px;background:#1e1e2e;color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+.tbl-btn:hover{border-color:#555}
+.tbl-btn.selected{border-color:#4ade80;background:#0a2a1a;color:#4ade80}
+.player-names{display:grid;gap:8px}
+.name-input{background:#1e1e2e;border:2px solid #333;border-radius:8px;padding:10px 12px;color:#fff;font-size:14px;font-family:inherit;width:100%}
+.name-input:focus{outline:none;border-color:#555}
+.btn-start{width:100%;padding:16px;background:linear-gradient(135deg,#e94560,#c23152);border:none;border-radius:12px;color:#fff;font-size:18px;font-weight:800;cursor:pointer;margin-top:8px;transition:opacity .2s;letter-spacing:.5px}
+.btn-start:hover{opacity:.9}
+.btn-back{background:transparent;border:2px solid #333;border-radius:8px;padding:8px 16px;color:#888;font-size:13px;cursor:pointer;margin-top:8px;width:100%;transition:all .2s}
+.btn-back:hover{border-color:#555;color:#fff}
+
+/* ─── LOBBY ──────────────────────────────────── */
+#panel-lobby{align-items:center;justify-content:center;background:#1a1a2e;padding:24px}
+.lobby-box{max-width:400px;width:100%;text-align:center}
+.lobby-code{font-size:52px;font-weight:900;letter-spacing:8px;color:#e94560;margin:16px 0;text-shadow:0 0 30px #e9456060}
+.lobby-code-label{font-size:12px;color:#888;text-transform:uppercase;letter-spacing:1px}
+.lobby-join-input{background:#1e1e2e;border:2px solid #333;border-radius:10px;padding:12px 16px;color:#fff;font-size:24px;font-weight:700;text-align:center;letter-spacing:4px;width:100%;font-family:inherit;text-transform:uppercase;margin:8px 0}
+.lobby-join-input:focus{outline:none;border-color:#e94560}
+.player-list{margin:16px 0;text-align:left}
+.player-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#1e1e2e;border-radius:8px;margin-bottom:8px;font-size:14px;font-weight:600}
+.car-dot{width:16px;height:16px;border-radius:50%}
+
+/* ─── GAME ───────────────────────────────────── */
+#panel-game{background:#0d0d1a;padding:0}
+.track-area{background:#1a1a2e;padding:12px 16px 8px;border-bottom:1px solid #222}
+.track-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.track-title{font-size:12px;color:#888;font-weight:700;text-transform:uppercase;letter-spacing:1px}
+.track-lane{display:flex;align-items:center;gap:3px;margin-bottom:4px}
+.track-label{width:32px;font-size:11px;color:#666;text-align:right;padding-right:4px;flex-shrink:0}
+.track-bar{flex:1;position:relative;height:20px;background:#111;border-radius:10px;overflow:visible}
+.track-token{position:absolute;top:50%;width:20px;height:20px;border-radius:50%;transform:translate(-50%,-50%);transition:left .35s cubic-bezier(.34,1.56,.64,1);font-size:12px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 8px currentColor;z-index:2}
+.track-finish{font-size:16px;padding-left:6px;flex-shrink:0}
+.frozen-overlay{position:absolute;inset:0;background:rgba(96,165,250,.15);border-radius:10px;animation:pulse .5s infinite alternate}
+@keyframes pulse{to{background:rgba(96,165,250,.3)}}
+
+.questions-area{display:grid;flex:1;overflow-y:auto;padding:12px 12px 80px}
+.questions-area.p2{grid-template-columns:1fr 1fr}
+.questions-area.p3,.questions-area.p4{grid-template-columns:1fr 1fr}
+
+.q-card{background:#1e1e2e;border-radius:12px;padding:14px;margin:4px;border:2px solid #333;transition:border-color .15s;position:relative}
+.q-card.frozen{border-color:#60a5fa;background:#111e2e}
+.q-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.player-badge{font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px;display:flex;align-items:center;gap:5px}
+.color-tag{font-size:11px;padding:2px 8px;border-radius:99px;font-weight:700}
+.color-white{background:#2a2a2a;color:#aaa}
+.color-blue{background:#1e3a5f;color:#60a5fa}
+.color-red{background:#3a1e1e;color:#f87171}
+.color-chaos{background:#2a1e3a;color:#c084fc}
+
+.type-banner{border-radius:8px;padding:8px 12px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;font-weight:700}
+.type-banner-icon{font-size:22px}
+.type-banner-name{font-size:16px;flex:1;margin-left:10px}
+.type-banner-desc{font-size:13px;opacity:.8;text-align:right}
+.tb-white{background:#2a2a2a;color:#ccc}
+.tb-blue{background:#1e3a5f;color:#60a5fa;box-shadow:0 0 8px #1e3a5f}
+.tb-red{background:#3a1e1e;color:#f87171;box-shadow:0 0 8px #3a1e1e}
+.tb-chaos{background:#2a1e3a;color:#c084fc;box-shadow:0 0 8px #2a1e3a}
+.tb-frozen{background:#0e2040;color:#60a5fa;box-shadow:0 0 8px #0e2040}
+.q-text{text-align:center;font-size:32px;font-weight:800;margin:8px 0 12px;letter-spacing:1px}
+.choices-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+.choice-btn{padding:12px 8px;border:2px solid #333;border-radius:8px;background:#111;color:#fff;font-size:18px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px;min-height:52px}
+.choice-btn:hover{border-color:#555;background:#1a1a2e}
+.choice-btn.correct{border-color:#4ade80;background:#0a2a1a;color:#4ade80}
+.choice-btn.wrong{border-color:#f87171;background:#2a0a0a;color:#f87171;animation:shake .3s}
+.key-hint{font-size:10px;color:#555;background:#222;padding:1px 5px;border-radius:3px;font-family:monospace;flex-shrink:0}
+.frozen-msg{text-align:center;padding:20px;color:#60a5fa;font-size:14px;font-weight:600}
+.pos-info{font-size:11px;color:#555}
+
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+
+/* ─── SPECIAL EVENT overlay ──────────────────── */
+#special-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;align-items:center;justify-content:center;flex-direction:column}
+#special-overlay.show{display:flex}
+.special-box{background:#1e1e2e;border-radius:16px;padding:24px;max-width:400px;width:90%;text-align:center;border:2px solid #e94560;animation:pop .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes pop{from{transform:scale(.7);opacity:0}to{transform:scale(1);opacity:1}}
+.special-title{font-size:20px;font-weight:800;margin-bottom:4px}
+.special-sub{font-size:13px;color:#888;margin-bottom:16px}
+.special-timer{font-size:32px;font-weight:900;color:#e94560;margin-bottom:12px;min-height:44px}
+.special-q{font-size:32px;font-weight:800;margin:8px 0 16px}
+.special-choices{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
+.special-choice{padding:12px;border:2px solid #333;border-radius:8px;background:#111;color:#fff;font-size:18px;font-weight:700;cursor:pointer;transition:all .15s}
+.special-choice:hover{border-color:#e94560}
+.special-resolved{font-size:16px;padding:16px;font-weight:700}
+
+/* ─── COUNTDOWN overlay ──────────────────────── */
+#countdown-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:200;align-items:center;justify-content:center;flex-direction:column}
+#countdown-overlay.show{display:flex}
+.countdown-num{font-size:120px;font-weight:900;animation:cd .8s ease-out;color:#e94560;text-shadow:0 0 60px #e94560}
+@keyframes cd{from{transform:scale(2);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* ─── RESULTS ────────────────────────────────── */
+#panel-results{align-items:center;justify-content:center;background:linear-gradient(135deg,#1a1a2e,#0f3460);padding:24px}
+.results-box{max-width:560px;width:100%}
+.results-title{text-align:center;font-size:28px;font-weight:800;margin-bottom:4px}
+.results-sub{text-align:center;color:#888;font-size:13px;margin-bottom:24px}
+.podium{display:flex;align-items:flex-end;justify-content:center;gap:8px;margin-bottom:24px}
+.podium-slot{text-align:center;padding:12px 8px;border-radius:10px;background:#1e1e2e;min-width:90px}
+.podium-slot.rank1{background:#2a2200;border:2px solid #fbbf24;padding:20px 8px}
+.podium-slot.rank2{background:#1e2a1e;border:2px solid #9ca3af}
+.podium-slot.rank3{background:#2a1a0a;border:2px solid #cd7c2f}
+.podium-icon{font-size:28px;margin-bottom:4px}
+.podium-name{font-size:13px;font-weight:700;word-break:break-word}
+.podium-pos{font-size:11px;color:#888;margin-top:2px}
+.stats-table{width:100%;border-collapse:collapse;margin-bottom:20px}
+.stats-table th{font-size:11px;color:#888;padding:6px 10px;text-align:left;border-bottom:1px solid #333;font-weight:600;text-transform:uppercase}
+.stats-table td{padding:10px;font-size:13px;border-bottom:1px solid #222}
+.results-actions{display:flex;gap:10px;flex-direction:column}
+.btn-again{padding:14px;background:#e94560;border:none;border-radius:10px;color:#fff;font-size:16px;font-weight:700;cursor:pointer}
+.btn-again:hover{opacity:.9}
+.btn-home{padding:14px;background:#1e1e2e;border:2px solid #333;border-radius:10px;color:#aaa;font-size:16px;cursor:pointer}
+.btn-home:hover{border-color:#555;color:#fff}
+
+/* ─── Help Modal ─────────────────────────────── */
+#help-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:300;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 16px}
+#help-modal.show{display:flex}
+.help-box{background:#1e1e2e;border-radius:16px;padding:24px;max-width:540px;width:100%;margin:auto;border:2px solid #333}
+.help-title{font-size:22px;font-weight:800;margin-bottom:16px;text-align:center}
+.help-section{margin-bottom:16px}
+.help-section h3{font-size:13px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.help-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:14px}
+.help-keys{display:flex;gap:4px}
+.help-key{background:#2a2a3a;border:2px solid #444;border-radius:6px;padding:3px 8px;font-size:13px;font-weight:700;font-family:monospace;min-width:28px;text-align:center}
+.type-badge{padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700}
+.btn-help-close{width:100%;padding:12px;background:#e94560;border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:8px}
+.btn-help-close:hover{opacity:.9}
+
+/* ─── Lobby buttons ──────────────────────────── */
+.btn-primary{background:#e94560;border:none;border-radius:10px;padding:12px 24px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;transition:opacity .2s;width:100%;margin-top:8px}
+.btn-primary:hover{opacity:.9}
+.btn-secondary{background:#1e1e2e;border:2px solid #333;border-radius:10px;padding:11px 24px;color:#aaa;font-size:15px;cursor:pointer;width:100%;margin-top:8px;transition:all .2s}
+.btn-secondary:hover{border-color:#555;color:#fff}
+
+.error-msg{color:#f87171;font-size:13px;margin-top:8px;text-align:center;min-height:20px}
+.success-msg{color:#4ade80;font-size:13px;margin-top:8px;text-align:center}
+
+@media(max-width:520px){
+  .q-text{font-size:20px}
+  .choice-btn{font-size:13px;padding:8px 4px}
+  .questions-area.p3,.questions-area.p4{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ─── SETUP ─────────────────────────────────────────────── -->
+<section class="panel active" id="panel-setup">
+<div class="setup-box">
+  <div class="setup-title">🏎️ Grand Prix</div>
+  <div class="setup-sub">แข่งรถสูตรคูณ — ตอบถูกเยอะสุดอาจไม่ชนะ!</div>
+
+  <div class="setup-section">
+    <div class="setup-label">โหมด</div>
+    <div class="mode-row">
+      <div class="mode-card selected" id="mode-local" onclick="selectMode('local')">
+        <div class="icon">⌨️</div><div class="name">Local</div>
+        <div class="desc">เครื่องเดียว 2-4 คน</div>
+      </div>
+      <div class="mode-card" id="mode-online" onclick="selectMode('online')">
+        <div class="icon">📡</div><div class="name">Online</div>
+        <div class="desc">คนละเครื่อง Room Code</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="setup-section" id="section-playercount">
+    <div class="setup-label">จำนวนผู้เล่น</div>
+    <div class="player-count-row">
+      <button class="cnt-btn selected" onclick="selectCount(2)">2 คน</button>
+      <button class="cnt-btn" onclick="selectCount(3)">3 คน</button>
+      <button class="cnt-btn" onclick="selectCount(4)">4 คน</button>
+    </div>
+  </div>
+
+  <div class="setup-section">
+    <div class="setup-label">ตารางสูตรคูณ</div>
+    <div class="table-row">
+      <button class="tbl-btn" onclick="toggleTable('easy')">แม่ 2-5 (ง่าย)</button>
+      <button class="tbl-btn" onclick="toggleTable('medium')">แม่ 6-9 (กลาง)</button>
+      <button class="tbl-btn" onclick="toggleTable('hard')">แม่ 10-12 (ยาก)</button>
+      <button class="tbl-btn selected" onclick="toggleTable('all')">สุ่มทั้งหมด</button>
+    </div>
+  </div>
+
+  <div class="setup-section" id="section-names">
+    <div class="setup-label">ชื่อผู้เล่น</div>
+    <div class="player-names" id="name-inputs"></div>
+  </div>
+
+  <div class="error-msg" id="setup-error"></div>
+  <button class="btn-start" onclick="handleStart()">🏁 เริ่มเกม</button>
+  <button class="btn-back" onclick="showHelp()">❓ วิธีเล่นและกติกา</button>
+  <button class="btn-back" onclick="location.href='/dashboard.html'">← กลับหน้าหลัก</button>
+</div>
+</section>
+
+<!-- ─── LOBBY (Online) ──────────────────────────────────────── -->
+<section class="panel" id="panel-lobby">
+<div class="lobby-box">
+  <div id="lobby-host-area" style="display:none">
+    <div class="setup-label" style="margin-bottom:4px">รหัสห้อง</div>
+    <div class="lobby-code-label">แชร์โค้ดนี้ให้เพื่อน</div>
+    <div class="lobby-code" id="lobby-code-display">———</div>
+    <div class="player-list" id="lobby-player-list"></div>
+    <div class="error-msg" id="lobby-error"></div>
+    <button class="btn-primary" id="btn-lobby-start" onclick="hostStartGame()" disabled>🏁 เริ่มเกม</button>
+    <button class="btn-secondary" onclick="leaveLobby()">← ออก</button>
+  </div>
+
+  <div id="lobby-join-area" style="display:none">
+    <div style="font-size:22px;font-weight:800;margin-bottom:16px;text-align:center">เข้าห้อง</div>
+    <div class="setup-label">รหัสห้อง 6 ตัว</div>
+    <input class="lobby-join-input" id="join-code-input" placeholder="ABC123" maxlength="6">
+    <div class="setup-label" style="margin-top:12px">ชื่อของคุณ</div>
+    <input class="name-input" id="join-name-input" placeholder="ชื่อเล่น" style="margin-top:4px">
+    <div class="error-msg" id="join-error"></div>
+    <button class="btn-primary" onclick="submitJoin()">เข้าร่วม</button>
+    <button class="btn-secondary" onclick="showSetup()">← กลับ</button>
+  </div>
+
+  <div id="lobby-waiting-area" style="display:none;text-align:center">
+    <div style="font-size:16px;color:#888;margin-bottom:12px">รอ host เริ่มเกม...</div>
+    <div class="player-list" id="lobby-waiting-list"></div>
+    <button class="btn-secondary" onclick="leaveLobby()">← ออก</button>
+  </div>
+</div>
+</section>
+
+<!-- ─── GAME ─────────────────────────────────────────────────── -->
+<section class="panel" id="panel-game">
+  <div class="track-area">
+    <div class="track-header">
+      <div class="track-title">🏁 Grand Prix</div>
+      <div id="track-status" style="font-size:12px;color:#888"></div>
+    </div>
+    <div id="track-lanes"></div>
+  </div>
+  <div class="questions-area p2" id="questions-area"></div>
+</section>
+
+<!-- ─── RESULTS ──────────────────────────────────────────────── -->
+<section class="panel" id="panel-results">
+<div class="results-box">
+  <div class="results-title">🏁 จบการแข่งขัน!</div>
+  <div class="results-sub" id="results-winner-text"></div>
+  <div class="podium" id="results-podium"></div>
+  <table class="stats-table">
+    <thead><tr><th>ผู้เล่น</th><th>ตำแหน่ง</th><th>ตอบถูก</th><th>ทั้งหมด</th><th>%</th></tr></thead>
+    <tbody id="results-stats"></tbody>
+  </table>
+  <div class="results-actions">
+    <button class="btn-again" onclick="playAgain()">🔄 เล่นอีกครั้ง</button>
+    <button class="btn-home" onclick="location.href='/dashboard.html'">← กลับหน้าหลัก</button>
+  </div>
+  <div style="margin-top:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:12px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:1px">📋 Game Log</div>
+      <button onclick="copyLog()" style="background:#1e1e2e;border:1px solid #333;border-radius:6px;padding:4px 10px;color:#aaa;font-size:12px;cursor:pointer">Copy JSON</button>
+    </div>
+    <div id="game-log-table" style="max-height:240px;overflow-y:auto;font-size:11px;font-family:monospace;background:#0d0d1a;border-radius:8px;padding:8px"></div>
+  </div>
+</div>
+</section>
+
+<!-- ─── HELP MODAL ────────────────────────────────────────── -->
+<div id="help-modal">
+  <div class="help-box">
+    <div class="help-title">❓ วิธีเล่นและกติกา</div>
+
+    <div class="help-section">
+      <h3>🎯 เป้าหมาย</h3>
+      <div style="font-size:14px;color:#ccc;line-height:1.6">
+        ตอบโจทย์สูตรคูณให้ถูกต้องเพื่อเลื่อนรถไปข้างหน้า<br>
+        คนแรกที่ถึงช่องที่ <strong>20</strong> ชนะ!
+      </div>
+    </div>
+
+    <div class="help-section">
+      <h3>⌨️ ปุ่มกด (Local Mode)</h3>
+      <div class="help-row"><div class="help-keys"><span class="help-key">Q</span><span class="help-key">W</span><span class="help-key">E</span><span class="help-key">R</span></div><span style="color:#f87171">ผู้เล่น 1 (แดง)</span></div>
+      <div class="help-row"><div class="help-keys"><span class="help-key">T</span><span class="help-key">Y</span><span class="help-key">U</span><span class="help-key">I</span></div><span style="color:#60a5fa">ผู้เล่น 2 (น้ำเงิน)</span></div>
+      <div class="help-row"><div class="help-keys"><span class="help-key">O</span><span class="help-key">P</span><span class="help-key">[</span><span class="help-key">]</span></div><span style="color:#4ade80">ผู้เล่น 3 (เขียว)</span></div>
+      <div class="help-row"><div class="help-keys"><span class="help-key">1</span><span class="help-key">2</span><span class="help-key">3</span><span class="help-key">4</span></div><span style="color:#fbbf24">ผู้เล่น 4 (เหลือง)</span></div>
+      <div style="font-size:12px;color:#888;margin-top:6px">⚠️ กรุณาตั้งค่าภาษาคีย์บอร์ดเป็น <strong>EN</strong> ก่อนเล่น</div>
+    </div>
+
+    <div class="help-section">
+      <h3>✨ ประเภทโจทย์</h3>
+      <div class="help-row"><span class="type-badge" style="background:#2a2a2a;color:#aaa">⬜ ปกติ</span><span style="font-size:13px;color:#ccc">เลื่อนรถ +1 ช่อง</span></div>
+      <div class="help-row"><span class="type-badge" style="background:#1e3a5f;color:#60a5fa">🟦 Speed</span><span style="font-size:13px;color:#ccc">เลื่อนรถ +2 ช่อง (โบนัส!)</span></div>
+      <div class="help-row"><span class="type-badge" style="background:#3a1e1e;color:#f87171">🟥 Sabotage</span><span style="font-size:13px;color:#ccc">หยุดรถคนที่นำอยู่ 2 ตา (ตอบผิดไม่มีผล)</span></div>
+      <div class="help-row"><span class="type-badge" style="background:#2a1e3a;color:#c084fc">🌀 Chaos</span><span style="font-size:13px;color:#ccc">สลับตำแหน่งกับคนนำ — ถ้านำอยู่แล้ว เลื่อน +2</span></div>
+    </div>
+
+    <div class="help-section">
+      <h3>⚡ เหตุการณ์พิเศษ</h3>
+      <div style="font-size:13px;color:#ccc;line-height:1.6">
+        ระหว่างเกมจะมีโจทย์พิเศษโผล่ขึ้นมา — <strong>แย่งกันตอบให้เร็วที่สุด!</strong><br>
+        ถ้าตอบถูกจะได้รับ Sabotage หรือ Chaos effect ทันที
+      </div>
+    </div>
+
+    <div class="help-section">
+      <h3>📡 Online Mode</h3>
+      <div style="font-size:13px;color:#ccc;line-height:1.6">
+        1. ผู้เล่นคนแรก <strong>สร้างห้อง</strong> → รับ Room Code<br>
+        2. แชร์โค้ดให้เพื่อน → เพื่อนกด <strong>เข้าร่วม</strong><br>
+        3. Host กด <strong>เริ่มเกม</strong> เมื่อครบผู้เล่น<br>
+        ⚠️ ทุกคนต้องเข้าจาก <strong>URL เดียวกัน</strong> (ไม่ใช่ localhost ต่างเครื่อง)
+      </div>
+    </div>
+
+    <button class="btn-help-close" onclick="hideHelp()">เข้าใจแล้ว ปิด</button>
+  </div>
+</div>
+
+<!-- ─── SPECIAL EVENT OVERLAY ──────────────────────────────── -->
+<div id="special-overlay">
+  <div class="special-box">
+    <div class="special-title" id="sp-title">⚡ เหตุการณ์พิเศษ!</div>
+    <div class="special-sub" id="sp-sub">แย่งกันกดให้เร็ว!</div>
+    <div class="special-timer" id="sp-timer">5</div>
+    <div class="special-q" id="sp-q"></div>
+    <div class="special-choices" id="sp-choices"></div>
+    <div class="special-resolved" id="sp-resolved" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ─── COUNTDOWN OVERLAY ─────────────────────────────────── -->
+<div id="countdown-overlay">
+  <div class="countdown-num" id="countdown-num">3</div>
+</div>
+
+<script src="/socket.io/socket.io.js" onerror="window._noSocket=true"></script>
+<script>
+// ═══════════════════════════════════════════════════════════
+// SETUP STATE
+// ═══════════════════════════════════════════════════════════
+let mode = 'local';
+let playerCount = 2;
+let selectedTable = 'all';
+
+const PLAYER_COLORS = ['red','blue','green','yellow'];
+const COLOR_CSS = { red:'#f87171', blue:'#60a5fa', green:'#4ade80', yellow:'#fbbf24' };
+const COLOR_EMOJIS = { red:'🔴', blue:'🔵', green:'🟢', yellow:'🟡' };
+const TYPE_LABELS = { white:'⬜ ปกติ +1', blue:'🟦 Speed +2', red:'🟥 Sabotage', chaos:'🌀 Chaos' };
+const KEY_ROWS = [
+  ['KeyQ','KeyW','KeyE','KeyR'],
+  ['KeyT','KeyY','KeyU','KeyI'],
+  ['KeyO','KeyP','BracketLeft','BracketRight'],
+  ['Digit1','Digit2','Digit3','Digit4']
+];
+const KEY_LABELS = [
+  ['Q','W','E','R'],
+  ['T','Y','U','I'],
+  ['O','P','[',']'],
+  ['1','2','3','4']
+];
+
+function selectMode(m) {
+  mode = m;
+  document.getElementById('mode-local').classList.toggle('selected', m==='local');
+  document.getElementById('mode-online').classList.toggle('selected', m==='online');
+  document.getElementById('section-playercount').style.display = m==='local' ? '' : 'none';
+  document.getElementById('section-names').style.display = '';
+  renderNameInputs();
+}
+
+function selectCount(n) {
+  playerCount = n;
+  document.querySelectorAll('.cnt-btn').forEach((b,i) => b.classList.toggle('selected', i+2===n));
+  renderNameInputs();
+}
+
+function toggleTable(t) {
+  selectedTable = t;
+  document.querySelectorAll('.tbl-btn').forEach((b,i) => {
+    const vals = ['easy','medium','hard','all'];
+    b.classList.toggle('selected', vals[i] === t);
+  });
+}
+
+function renderNameInputs() {
+  const n = mode==='local' ? playerCount : 1;
+  const labels = ['ผู้เล่น 1 (QWER)','ผู้เล่น 2 (TYUI)','ผู้เล่น 3 (OP[])','ผู้เล่น 4 (1234)'];
+  let html = '';
+  for (let i=0; i<n; i++) {
+    html += `<input class="name-input" id="pname-${i}" placeholder="${mode==='online'?'ชื่อเล่น':labels[i]}" maxlength="16">`;
+  }
+  document.getElementById('name-inputs').innerHTML = html;
+}
+renderNameInputs();
+
+function getNames() {
+  const n = mode==='local' ? playerCount : 1;
+  const defaults = ['ผู้เล่น 1','ผู้เล่น 2','ผู้เล่น 3','ผู้เล่น 4'];
+  return Array.from({length:n}, (_,i) => document.getElementById('pname-'+i)?.value.trim() || defaults[i]);
+}
+
+function handleStart() {
+  document.getElementById('setup-error').textContent = '';
+  if (mode === 'local') {
+    startLocalGame(getNames(), playerCount, selectedTable);
+  } else {
+    const name = getNames()[0];
+    showLobbyOnline(name);
+  }
+}
+
+function showSetup() { showPanel('panel-setup'); }
+
+// ═══════════════════════════════════════════════════════════
+// PANEL CONTROL
+// ═══════════════════════════════════════════════════════════
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════
+// AUDIO (Web Audio API)
+// ═══════════════════════════════════════════════════════════
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  return audioCtx;
+}
+function playTone(freq, dur, vol=0.3, type='sine') {
+  try {
+    const ctx = getAudio();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.setValueAtTime(vol, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+dur);
+    osc.start(); osc.stop(ctx.currentTime+dur);
+  } catch(e){}
+}
+function playCorrect() { playTone(523,.1); setTimeout(()=>playTone(659,.1),80); setTimeout(()=>playTone(784,.15),160); }
+function playWrong() { playTone(233,.3,'square'); }
+function playMove(type) {
+  if(type==='blue'){playTone(523,.08);setTimeout(()=>playTone(659,.08),60);setTimeout(()=>playTone(784,.08),120);setTimeout(()=>playTone(1046,.15),180);}
+  else if(type==='red'){playTone(330,.05);setTimeout(()=>playTone(277,.2),50);}
+  else if(type==='chaos'){[523,659,784,659,523].forEach((f,i)=>setTimeout(()=>playTone(f,.1),i*60));}
+  else playTone(392,.12);
+}
+function playSpecial() {
+  [784,988,1175,1568].forEach((f,i)=>setTimeout(()=>playTone(f,.12,.4),i*100));
+}
+function playWin() {
+  [523,659,784,1046,1319,1568].forEach((f,i)=>setTimeout(()=>playTone(f,.15,.4),i*80));
+}
+function playCountdown(n) {
+  playTone(n>0 ? 440 : 880, .2, .5);
+}
+
+// ═══════════════════════════════════════════════════════════
+// QUESTION LOGIC (shared local + online)
+// ═══════════════════════════════════════════════════════════
+const TABLE_RANGES = { easy:{min:2,max:5}, medium:{min:6,max:9}, hard:{min:10,max:12}, all:{min:2,max:12} };
+
+function rand(min,max) { return Math.floor(Math.random()*(max-min+1))+min; }
+function shuffle(arr) {
+  for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
+  return arr;
+}
+
+function generateChoices(a,b,correct) {
+  const cands = new Set();
+  if(a>2) cands.add((a-1)*b);
+  cands.add((a+1)*b);
+  if(b>2) cands.add(a*(b-1));
+  cands.add(a*(b+1));
+  cands.add((a+1)*(b-1));
+  cands.add((a-1)*(b+1));
+  const s=String(correct);
+  if(s.length===2) cands.add(parseInt(s[1]+s[0],10));
+  cands.delete(correct); cands.delete(0); cands.delete(NaN);
+  let wrong = shuffle([...cands].filter(n=>n>0&&n<200)).slice(0,3);
+  let pad=1;
+  while(wrong.length<3){wrong.push(correct+pad*7+3);pad++;}
+  return shuffle([correct,...wrong.slice(0,3)]);
+}
+
+function pickType(gap) {
+  let blue,red,chaos;
+  if(gap>=11){blue=42;red=7;chaos=6;}
+  else if(gap>=7){blue=35;red=8;chaos=7;}
+  else if(gap>=4){blue=28;red=9;chaos=8;}
+  else if(gap>=1){blue=22;red=9;chaos=9;}
+  else{blue=20;red=10;chaos=10;}
+  const white=100-blue-red-chaos;
+  const r=rand(1,100);
+  if(r<=white) return 'white';
+  if(r<=white+blue) return 'blue';
+  if(r<=white+blue+red) return 'red';
+  return 'chaos';
+}
+
+function makeQuestion(tables,gap) {
+  const range=TABLE_RANGES[tables]||TABLE_RANGES.all;
+  const span=range.max-range.min;
+  let minA=range.min, maxA=range.max;
+  // Dynamic difficulty: leader (gap=0) gets harder questions; far behind (gap>=7) gets easier
+  if (span>=3) {
+    if (gap===0)      { minA=range.min+Math.floor(span*0.4); }  // top 60% of range
+    else if (gap>=7)  { maxA=range.min+Math.ceil(span*0.6); }   // bottom 60% of range
+  }
+  const a=rand(minA,maxA);
+  const b=rand(2,12);
+  const correct=a*b;
+  const choices=generateChoices(a,b,correct);
+  const type=pickType(gap);
+  return {a,b,correct,choices,type,id:Math.random().toString(36).slice(2)};
+}
+
+// ═══════════════════════════════════════════════════════════
+// LOCAL GAME
+// ═══════════════════════════════════════════════════════════
+const TRACK_LEN = 20;
+let localGame = null;
+let specialTimer = null;
+let specialActive = false;
+let specialQ = null;
+let specialCooldown = 0;
+
+// ─── Game Log ──────────────────────────────────────────────
+let gameLog = [];
+let gameStartTime = 0;
+
+function logEvent(event, data) {
+  const ts = ((Date.now() - gameStartTime) / 1000).toFixed(2);
+  const snap = localGame ? localGame.players.map(p => ({ name: p.name, pos: p.pos, score: p.score })) : [];
+  const entry = { t: +ts, event, ...data, positions: snap };
+  gameLog.push(entry);
+  const posStr = snap.map(p => `${p.name}:${p.pos}`).join(' | ');
+  console.log(`[${ts}s] [${event}]`, data, '→', posStr);
+}
+
+function startLocalGame(names, count, tables) {
+  localGame = {
+    players: names.slice(0,count).map((name,i) => ({
+      name, color: PLAYER_COLORS[i], pos: 0,
+      frozen: false, frozenTurns: 0,
+      score: 0, correct: 0, total: 0,
+      q: null
+    })),
+    tables,
+    finished: false,
+    winner: null
+  };
+  specialActive = false; specialCooldown = 0;
+  gameLog = []; gameStartTime = Date.now();
+
+  buildGameUI(localGame.players.length);
+  showPanel('panel-game');
+  runCountdown(() => {
+    localGame.players.forEach((p,i) => assignQuestion(i));
+    renderTrack();
+    document.addEventListener('keydown', onKeyDown);
+  });
+}
+
+function getLeaderPos() {
+  return Math.max(...localGame.players.map(p=>p.pos));
+}
+
+function assignQuestion(pi) {
+  const p = localGame.players[pi];
+  const leader = getLeaderPos();
+  const gap = leader - p.pos;
+  p.q = makeQuestion(localGame.tables, gap);
+  renderQuestion(pi);
+}
+
+function onKeyDown(e) {
+  if (localGame?.finished || !localGame) return;
+  const key = e.code;
+  e.preventDefault();
+
+  // Special event
+  if (specialActive && specialQ) {
+    for (let pi=0; pi<localGame.players.length; pi++) {
+      if (KEY_ROWS[pi].includes(key)) {
+        handleSpecialBuzz(pi, key);
+        return;
+      }
+    }
+    return;
+  }
+
+  // Normal answer
+  for (let pi=0; pi<localGame.players.length; pi++) {
+    const rowKeys = KEY_ROWS[pi];
+    const ci = rowKeys.indexOf(key);
+    if (ci !== -1) {
+      handleLocalAnswer(pi, ci);
+      return;
+    }
+  }
+}
+
+let specialBuzzPlayer = -1;
+
+function handleSpecialBuzz(pi, key) {
+  if (specialBuzzPlayer >= 0) return; // already buzzed
+  specialBuzzPlayer = pi;
+  // show player-specific choices
+  const ci = KEY_ROWS[pi].indexOf(key);
+  if (ci >= 0) handleSpecialAnswer(pi, ci);
+}
+
+function handleLocalAnswer(pi, choiceIndex) {
+  const p = localGame.players[pi];
+  if (localGame.finished) return;
+
+  if (p.frozen) {
+    p.frozenTurns--;
+    if (p.frozenTurns <= 0) { p.frozen=false; }
+    flashCard(pi, 'frozen');
+    p.q = null;
+    renderQuestion(pi);
+    setTimeout(()=>assignQuestion(pi), 500);
+    return;
+  }
+
+  if (!p.q) return;
+  const q = p.q; p.q = null; p.total++;
+  const chosen = q.choices[choiceIndex];
+  const correct = chosen === q.correct;
+
+  logEvent(correct ? 'CORRECT' : 'WRONG', {
+    player: p.name, pi,
+    question: `${q.a}×${q.b}=${q.correct}`,
+    qType: q.type,
+    chosen,
+    posBefore: p.pos
+  });
+
+  if (correct) {
+    p.correct++;
+    flashChoiceBtn(pi, choiceIndex, true);
+    playCorrect();
+    applyLocalEffect(pi, q.type);
+    specialCooldown++;
+    renderTrack();
+    if (checkWin()) return;
+    if (specialCooldown >= 3 && Math.random()<0.2 && !specialActive) {
+      triggerSpecialLocal();
+    } else {
+      setTimeout(()=>assignQuestion(pi), 450);
+    }
+  } else {
+    flashChoiceBtn(pi, choiceIndex, false);
+    playWrong();
+    setTimeout(()=>assignQuestion(pi), 450);
+  }
+}
+
+function applyLocalEffect(pi, type) {
+  const p = localGame.players[pi];
+  const posBefore = p.pos;
+  if (type==='white') { p.pos=Math.min(p.pos+1,TRACK_LEN); p.score+=1; }
+  else if (type==='blue') { p.pos=Math.min(p.pos+2,TRACK_LEN); p.score+=2; }
+  else if (type==='red') {
+    const leaderPos = getLeaderPos();
+    const leader = localGame.players.find((pp,ii)=>ii!==pi && pp.pos===leaderPos);
+    if (leader && !leader.frozen) {
+      leader.frozen=true; leader.frozenTurns=2;
+      logEvent('EFFECT_RED', { by: p.name, froze: leader.name, leaderPos });
+    }
+    p.pos=Math.min(p.pos+1,TRACK_LEN); p.score+=1;
+  } else if (type==='chaos') {
+    const others = localGame.players.filter((_,ii)=>ii!==pi);
+    if (others.length>0) {
+      const ahead = others.filter(op=>op.pos > p.pos);
+      if (ahead.length>0) {
+        const t = ahead[Math.floor(Math.random()*ahead.length)];
+        const tmp=p.pos; p.pos=t.pos; t.pos=tmp;
+        p.score += 2;
+        logEvent('EFFECT_CHAOS_SWAP', { by: p.name, with: t.name, myPos: posBefore+'→'+p.pos, theirPos: p.pos+'→'+t.pos });
+      } else {
+        p.pos=Math.min(p.pos+2,TRACK_LEN);
+        p.score += 2;
+        logEvent('EFFECT_CHAOS_PLUS2', { by: p.name, from: posBefore, to: p.pos });
+      }
+    }
+  }
+  if (type === 'white' || type === 'blue' || type === 'red') {
+    logEvent('EFFECT_MOVE', { by: p.name, qType: type, from: posBefore, to: p.pos });
+  }
+  playMove(type);
+}
+
+function checkWin() {
+  const winner = localGame.players.find(p=>p.pos>=TRACK_LEN);
+  if (!winner) return false;
+  localGame.finished = true;
+  localGame.winner = winner;
+  document.removeEventListener('keydown', onKeyDown);
+  playWin();
+  setTimeout(()=>showResults(localGame.players), 1200);
+  return true;
+}
+
+// ─── Special Event (local) ─────────────────────────────────
+function triggerSpecialLocal() {
+  specialActive = true;
+  specialBuzzPlayer = -1;
+  specialBuzzed = false;
+  specialCooldown = 0;
+  const a=rand(6,12), b=rand(6,12), correct=a*b;
+  const choices=generateChoices(a,b,correct);
+  const type=Math.random()<0.5?'red':'chaos';
+  specialQ = {a,b,correct,choices,type,id:Math.random().toString(36).slice(2)};
+
+  logEvent('SPECIAL_START', { question: `${a}×${b}=${correct}`, qType: type });
+  playSpecial();
+  showSpecialOverlay(specialQ, 5, (pi,ci)=>{
+    const p = localGame.players[pi];
+    const chosen = specialQ.choices[ci];
+    const correct2 = chosen===specialQ.correct;
+    logEvent(correct2 ? 'SPECIAL_CORRECT' : 'SPECIAL_WRONG', {
+      player: p.name, pi,
+      question: `${a}×${b}=${correct}`,
+      qType: type, chosen
+    });
+    if (correct2) {
+      applyLocalEffect(pi, specialQ.type);
+      renderTrack();
+      if(checkWin()) return;
+    }
+    endSpecialLocal(pi, correct2);
+  });
+}
+
+function endSpecialLocal(winnerId, correct) {
+  specialActive = false; specialQ = null; specialBuzzPlayer = -1;
+  setTimeout(()=>{
+    localGame.players.forEach((_,i)=>assignQuestion(i));
+  }, 1500);
+}
+
+// ─── Special Overlay ──────────────────────────────────────
+let specialTimerInterval = null;
+let specialCallback = null;
+
+function showSpecialOverlay(q, seconds, callback) {
+  specialCallback = callback;
+  const ov = document.getElementById('special-overlay');
+  ov.classList.add('show');
+
+  const typeMap = { red:'🟥 Sabotage — หยุดคนนำ!', chaos:'🌀 Chaos — สลับตำแหน่ง!' };
+  document.getElementById('sp-title').textContent = '⚡ เหตุการณ์พิเศษ!';
+  document.getElementById('sp-sub').textContent = typeMap[q.type] || 'แย่งกันตอบให้เร็ว!';
+  document.getElementById('sp-q').textContent = `${q.a} × ${q.b} = ?`;
+  document.getElementById('sp-timer').textContent = seconds;
+  document.getElementById('sp-resolved').style.display = 'none';
+
+  const choicesEl = document.getElementById('sp-choices');
+  choicesEl.innerHTML = q.choices.map((c,i)=>`
+    <button class="special-choice" onclick="submitSpecialChoice(${i})">${c}</button>
+  `).join('');
+
+  let t = seconds;
+  clearInterval(specialTimerInterval);
+  specialTimerInterval = setInterval(()=>{
+    t--;
+    document.getElementById('sp-timer').textContent = t>0?t:'⏰';
+    if(t<=0){
+      clearInterval(specialTimerInterval);
+      closeSpecialOverlay(null, false, '⏰ หมดเวลา!');
+    }
+  }, 1000);
+}
+
+function submitSpecialChoice(ci) {
+  if (!specialQ || !specialActive) return;
+  clearInterval(specialTimerInterval);
+  // ในโหมด local ให้นับ buzz player
+  const pi = specialBuzzPlayer >= 0 ? specialBuzzPlayer : 0;
+  closeSpecialOverlay(pi, specialQ.choices[ci]===specialQ.correct);
+  if (specialCallback) specialCallback(pi, ci);
+}
+
+function closeSpecialOverlay(pi, correct, msg) {
+  const resolved = document.getElementById('sp-resolved');
+  const label = pi!==null && localGame ? localGame.players[pi]?.name : '';
+  resolved.style.display = 'block';
+  resolved.style.color = correct ? '#4ade80' : '#f87171';
+  resolved.textContent = msg || (correct ? `✅ ${label} ตอบถูก!` : `❌ ${label||'ไม่มีใคร'} ตอบผิด`);
+  setTimeout(()=>{
+    document.getElementById('special-overlay').classList.remove('show');
+  }, 1500);
+}
+
+// ─── Special Answer key handler ────────────────────────────
+let specialBuzzed = false;
+function handleSpecialAnswer(pi, ci) {
+  if (!specialActive || specialBuzzed) return;
+  specialBuzzed = true;
+  clearInterval(specialTimerInterval);
+  submitSpecialChoice(ci);
+}
+
+// ═══════════════════════════════════════════════════════════
+// TRACK & UI RENDERING
+// ═══════════════════════════════════════════════════════════
+function buildGameUI(count) {
+  // Track lanes
+  const lanesEl = document.getElementById('track-lanes');
+  lanesEl.innerHTML = '';
+  if (localGame) {
+    localGame.players.forEach((p,i) => {
+      const lane = document.createElement('div');
+      lane.className = 'track-lane';
+      lane.innerHTML = `
+        <div class="track-label" style="color:${COLOR_CSS[p.color]}">${COLOR_EMOJIS[p.color]}</div>
+        <div class="track-bar" id="bar-${i}">
+          <div class="track-token" id="token-${i}" style="left:0%;color:${COLOR_CSS[p.color]};background:${COLOR_CSS[p.color]}22;border:2px solid ${COLOR_CSS[p.color]}">
+            ${COLOR_EMOJIS[p.color]}
+          </div>
+        </div>
+        <div class="track-finish">🏁</div>
+      `;
+      lanesEl.appendChild(lane);
+    });
+  }
+
+  // Question cards
+  const qa = document.getElementById('questions-area');
+  qa.className = 'questions-area ' + (['','','p2','p3','p4'][count]||'p2');
+  qa.innerHTML = '';
+  for (let i=0; i<count; i++) {
+    const p = localGame ? localGame.players[i] : {name:`P${i+1}`,color:PLAYER_COLORS[i]};
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    card.id = `qcard-${i}`;
+    card.innerHTML = `
+      <div class="q-card-header">
+        <div class="player-badge" style="background:${COLOR_CSS[p.color]}22;color:${COLOR_CSS[p.color]}">
+          ${COLOR_EMOJIS[p.color]} ${esc(p.name)}
+        </div>
+        <div class="pos-info" id="qpos-${i}" style="font-size:11px;color:#555"></div>
+      </div>
+      <div class="type-banner tb-white" id="qtype-${i}">
+        <span class="type-banner-icon">⬜</span>
+        <span class="type-banner-name">ปกติ</span>
+        <span class="type-banner-desc">เลื่อน +1</span>
+      </div>
+      <div class="q-text" id="qtext-${i}">...</div>
+      <div class="choices-grid" id="choices-${i}"></div>
+    `;
+    qa.appendChild(card);
+  }
+  document.getElementById('track-status').textContent = `ถึงช่องที่ ${TRACK_LEN} ก่อน = ชนะ!`;
+}
+
+function renderTrack() {
+  if (!localGame) return;
+  localGame.players.forEach((p,i) => {
+    const bar = document.getElementById('bar-'+i);
+    const token = document.getElementById('token-'+i);
+    if (!bar || !token) return;
+    const pct = (p.pos / TRACK_LEN) * 100;
+    token.style.left = `${pct}%`;
+    // frozen indicator
+    let frost = bar.querySelector('.frozen-overlay');
+    if (p.frozen) {
+      if (!frost) { frost=document.createElement('div'); frost.className='frozen-overlay'; bar.appendChild(frost); }
+    } else {
+      frost?.remove();
+    }
+  });
+}
+
+function renderQuestion(pi) {
+  const p = localGame.players[pi];
+  const card = document.getElementById('qcard-'+pi);
+  if (!card) return;
+  card.classList.toggle('frozen', p.frozen);
+
+  const BANNER = {
+    white: { cls:'tb-white', icon:'⬜', name:'ปกติ',    desc:'ตอบถูก เลื่อน +1 ช่อง' },
+    blue:  { cls:'tb-blue',  icon:'🟦', name:'Speed',   desc:'ตอบถูก เลื่อน +2 ช่อง!' },
+    red:   { cls:'tb-red',   icon:'🟥', name:'Sabotage',desc:'ตอบถูก หยุดรถคนนำ 2 ตา' },
+    chaos: { cls:'tb-chaos', icon:'🌀', name:'Chaos',   desc:'ตอบถูก สลับตำแหน่งกับคนนำ' },
+  };
+
+  function setBanner(pi, key) {
+    const b = BANNER[key] || BANNER.white;
+    const el = document.getElementById('qtype-'+pi);
+    if (!el) return;
+    el.className = 'type-banner ' + b.cls;
+    el.innerHTML = `<span class="type-banner-icon">${b.icon}</span><span class="type-banner-name">${b.name}</span><span class="type-banner-desc">${b.desc}</span>`;
+  }
+
+  if (p.frozen && p.frozenTurns > 0) {
+    document.getElementById('qtext-'+pi).innerHTML = `🧊 หยุด ${p.frozenTurns} ตา`;
+    document.getElementById('choices-'+pi).innerHTML = `<div class="frozen-msg">กดปุ่มใดก็ได้เพื่อข้ามตา</div>`;
+    const el = document.getElementById('qtype-'+pi);
+    el.className = 'type-banner tb-frozen';
+    el.innerHTML = `<span class="type-banner-icon">🧊</span><span class="type-banner-name">หยุด ${p.frozenTurns} ตา</span><span class="type-banner-desc">กดปุ่มใดก็ได้เพื่อข้าม</span>`;
+    document.getElementById('qpos-'+pi).textContent = '';
+    return;
+  }
+
+  if (!p.q) {
+    document.getElementById('qtext-'+pi).textContent = '...';
+    document.getElementById('choices-'+pi).innerHTML = '';
+    return;
+  }
+
+  const q = p.q;
+  setBanner(pi, q.type);
+  document.getElementById('qtext-'+pi).textContent = `${q.a} × ${q.b} = ?`;
+  document.getElementById('qpos-'+pi).textContent = `ช่อง ${p.pos} / ${TRACK_LEN}`;
+
+  const keys = KEY_LABELS[pi];
+  const chEl = document.getElementById('choices-'+pi);
+  chEl.innerHTML = q.choices.map((c,i)=>`
+    <button class="choice-btn" id="choice-${pi}-${i}" onclick="clickChoice(${pi},${i})">
+      <span class="key-hint">${keys[i]}</span>${c}
+    </button>
+  `).join('');
+}
+
+function clickChoice(pi, ci) {
+  if (mode==='online') {
+    submitOnlineAnswer(ci);
+  } else {
+    handleLocalAnswer(pi, ci);
+  }
+}
+
+function flashChoiceBtn(pi, ci, correct) {
+  const btn = document.getElementById(`choice-${pi}-${ci}`);
+  if (!btn) return;
+  btn.classList.add(correct?'correct':'wrong');
+  setTimeout(()=>btn.classList.remove('correct','wrong'), 350);
+}
+
+function flashCard(pi, type) {
+  const card = document.getElementById('qcard-'+pi);
+  if (!card) return;
+  card.style.borderColor = type==='frozen'?'#60a5fa':'#f87171';
+  setTimeout(()=>card.style.borderColor='', 400);
+}
+
+// ─── Countdown ─────────────────────────────────────────────
+function runCountdown(cb) {
+  const ov = document.getElementById('countdown-overlay');
+  const num = document.getElementById('countdown-num');
+  ov.classList.add('show');
+  let n=3;
+  num.textContent=n;
+  playCountdown(n);
+  const iv = setInterval(()=>{
+    n--;
+    if(n>0){num.textContent=n;playCountdown(n);}
+    else{
+      clearInterval(iv);
+      num.textContent='GO!';
+      num.style.color='#4ade80';
+      playCountdown(0);
+      setTimeout(()=>{ov.classList.remove('show');num.style.color='';cb();},700);
+    }
+  },800);
+}
+
+// ═══════════════════════════════════════════════════════════
+// RESULTS
+// ═══════════════════════════════════════════════════════════
+function showResults(players) {
+  const sorted = [...players].sort((a,b)=>b.pos-a.pos||(b.correct-a.correct));
+  document.getElementById('results-winner-text').textContent = `🏆 ${sorted[0].name} ชนะ!`;
+
+  const podIcons = ['🥇','🥈','🥉'];
+  const podClasses = ['rank1','rank2','rank3'];
+  document.getElementById('results-podium').innerHTML = sorted.slice(0,3).map((p,i)=>`
+    <div class="podium-slot ${podClasses[i]||''}">
+      <div class="podium-icon">${podIcons[i]}</div>
+      <div class="podium-name" style="color:${COLOR_CSS[p.color]||'#fff'}">${esc(p.name)}</div>
+      <div class="podium-pos">ช่อง ${p.pos} / ${TRACK_LEN}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('results-stats').innerHTML = sorted.map((p,i)=>`
+    <tr>
+      <td>${COLOR_EMOJIS[p.color]||''} ${esc(p.name)}</td>
+      <td>${p.pos}</td>
+      <td>${p.correct||0}</td>
+      <td>${p.total||0}</td>
+      <td>${p.total ? Math.round(p.correct/p.total*100) : 0}%</td>
+    </tr>
+  `).join('');
+
+  showPanel('panel-results');
+  renderGameLog();
+  submitStats(sorted);
+}
+
+async function submitStats(players) {
+  if (!players?.length) return;
+  try {
+    await fetch('/api/submit-exam', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        mode:'grand-prix',
+        questions:[],
+        answers:[],
+        durationSec: Math.round(Date.now()/1000),
+        score: players[0].correct||0,
+        total: players.reduce((s,p)=>s+(p.total||0),0)
+      })
+    });
+  } catch(e){}
+}
+
+function playAgain() {
+  document.removeEventListener('keydown', onKeyDown);
+  localGame=null; onlineGame=null; socket=null;
+  showPanel('panel-setup');
+}
+
+// ═══════════════════════════════════════════════════════════
+// ONLINE MODE
+// ═══════════════════════════════════════════════════════════
+let socket = null;
+let onlineGame = null;
+let mySocketId = null;
+
+function showLobbyOnline(playerName) {
+  showPanel('panel-lobby');
+  document.getElementById('lobby-host-area').style.display = 'none';
+  document.getElementById('lobby-join-area').style.display = 'none';
+  document.getElementById('lobby-waiting-area').style.display = 'none';
+
+  if (window._noSocket) {
+    document.getElementById('setup-error').textContent = 'ไม่สามารถเชื่อมต่อ server ได้ กรุณา refresh';
+    showPanel('panel-setup'); return;
+  }
+
+  // Ask: create or join?
+  const choice = confirm('กด OK = สร้างห้องใหม่\nกด Cancel = เข้าห้องที่มีอยู่');
+  if (choice) {
+    initSocket(()=>createOnlineRoom(playerName));
+  } else {
+    document.getElementById('lobby-join-area').style.display = '';
+    document.getElementById('join-name-input').value = playerName;
+    initSocket(()=>{});
+  }
+}
+
+function initSocket(cb) {
+  if (socket) { cb(); return; }
+  socket = io({ timeout: 5000 });
+  socket.on('connect', cb);
+  socket.on('connect_error', ()=>{
+    socket = null;
+    showPanel('panel-setup');
+    document.getElementById('setup-error').textContent =
+      '❌ ไม่สามารถเชื่อมต่อ server ได้ — ตรวจสอบว่า server รันอยู่ และเข้าหน้านี้ผ่าน URL ของ server (ไม่ใช่ file://)';
+  });
+  socket.on('disconnect', ()=>{
+    if (document.getElementById('panel-game').classList.contains('active') ||
+        document.getElementById('panel-lobby').classList.contains('active')) {
+      alert('การเชื่อมต่อขาด กรุณาเริ่มใหม่');
+      showSetup();
+    }
+  });
+  bindOnlineEvents();
+}
+
+function createOnlineRoom(name) {
+  socket.emit('room:create', { playerName:name, tables:selectedTable });
+}
+
+function submitJoin() {
+  const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+  const name = document.getElementById('join-name-input').value.trim() || 'ผู้เล่น';
+  if (!code || code.length < 4) {
+    document.getElementById('join-error').textContent = 'กรุณาใส่รหัสห้อง';
+    return;
+  }
+  socket.emit('room:join', { code, playerName:name });
+}
+
+function hostStartGame() {
+  const code = document.getElementById('lobby-code-display').textContent;
+  socket.emit('game:start', { code });
+}
+
+function leaveLobby() {
+  socket?.disconnect(); socket=null;
+  showSetup();
+}
+
+function bindOnlineEvents() {
+  socket.on('room:created', ({code, room}) => {
+    showPanel('panel-lobby');
+    document.getElementById('lobby-host-area').style.display = '';
+    document.getElementById('lobby-code-display').textContent = code;
+    renderLobbyPlayers('lobby-player-list', room.players);
+    document.getElementById('btn-lobby-start').disabled = room.players.length < 2;
+  });
+
+  socket.on('room:joined', ({code, mySocketId: mid}) => {
+    mySocketId = mid;
+    showPanel('panel-lobby');
+    document.getElementById('lobby-join-area').style.display = 'none';
+    document.getElementById('lobby-waiting-area').style.display = '';
+  });
+
+  socket.on('room:update', ({players, state}) => {
+    onlineGame = onlineGame || {};
+    onlineGame.players = players;
+    onlineGame.mySocketId = socket.id;
+    renderLobbyPlayers('lobby-player-list', players);
+    renderLobbyPlayers('lobby-waiting-list', players);
+    const startBtn = document.getElementById('btn-lobby-start');
+    if (startBtn) startBtn.disabled = players.length < 2;
+    if (state==='playing') { /* handled by question:new */ }
+  });
+
+  socket.on('room:error', ({error})=>{
+    document.getElementById('join-error').textContent = error;
+    document.getElementById('lobby-error').textContent = error;
+  });
+
+  socket.on('game:countdown', ({seconds})=>{
+    buildOnlineGameUI();
+    showPanel('panel-game');
+    runCountdown(()=>{});
+  });
+
+  socket.on('question:new', ({q, position})=>{
+    if (!onlineGame) return;
+    onlineGame.currentQ = q;
+    onlineGame.myPos = position;
+    const myIdx = onlineGame.players.findIndex(p=>p.socketId===socket.id);
+    if (myIdx>=0) renderOnlineQuestion(myIdx, q);
+    renderOnlineTrack();
+  });
+
+  socket.on('position:update', ()=>{}); // handled by room:update
+  socket.on('player:freeze', ({turnsLeft})=>{
+    if (!onlineGame) return;
+    onlineGame.frozen = true; onlineGame.frozenTurns = turnsLeft;
+    const myIdx = onlineGame.players.findIndex(p=>p.socketId===socket.id);
+    if (myIdx>=0) flashCard(myIdx, 'frozen');
+  });
+  socket.on('player:unfreeze', ()=>{ if(onlineGame) onlineGame.frozen=false; });
+  socket.on('player:frozen', ({turnsLeft})=>{
+    if (!onlineGame) return;
+    onlineGame.frozenTurns = turnsLeft;
+  });
+  socket.on('effect:swap', ({p1,p2,pos1,pos2})=>{ renderOnlineTrack(); });
+  socket.on('special:event', ({q,timeout})=>{
+    specialBuzzed = false;
+    specialQ = q;
+    showSpecialOverlay(q, Math.floor(timeout/1000), (pi,ci)=>{
+      socket.emit('special:answer', {
+        code: document.getElementById('lobby-code-display').textContent,
+        questionId: q.id, choiceIndex: ci
+      });
+    });
+  });
+  socket.on('special:timeout', ()=>{
+    closeSpecialOverlay(null,false,'⏰ หมดเวลา!');
+  });
+  socket.on('special:resolved', ({winnerId,winnerName,correct,type})=>{
+    closeSpecialOverlay(null, correct, correct?`✅ ${esc(winnerName)} ตอบถูก!`:`❌ ตอบผิด`);
+  });
+  socket.on('game:over', ({winner, rankings})=>{
+    document.removeEventListener('keydown', onKeyDown);
+    const players = rankings.map(r=>({
+      name:r.name, color:r.color, pos:r.position,
+      correct:r.correctCount, total:r.totalAnswered, score:r.score
+    }));
+    playWin();
+    setTimeout(()=>showResults(players), 800);
+  });
+}
+
+function buildOnlineGameUI() {
+  if (!onlineGame?.players) return;
+  const ps = onlineGame.players;
+  buildGameUI(ps.length);
+  // replace name/color in cards
+  ps.forEach((p,i)=>{
+    const badge = document.querySelector(`#qcard-${i} .player-badge`);
+    if(badge){ badge.style.background=COLOR_CSS[p.color]+'22'; badge.style.color=COLOR_CSS[p.color]; badge.textContent=`${COLOR_EMOJIS[p.color]} ${esc(p.name)}`; }
+  });
+  // Replace localGame for track rendering
+  localGame = { players: ps.map(p=>({...p, pos:0, frozen:false})), finished:false };
+}
+
+function renderOnlineQuestion(myIdx, q) {
+  // Show question for my card, others show waiting
+  localGame?.players?.forEach((p,i)=>{
+    if(i===myIdx){
+      p.q = q; p.frozen = onlineGame?.frozen||false;
+    } else {
+      p.q = null;
+    }
+    renderQuestion(i);
+  });
+  const chEl = document.getElementById('choices-'+myIdx);
+  if(chEl) {
+    chEl.querySelectorAll('.choice-btn').forEach((btn,ci)=>{
+      btn.onclick = ()=>submitOnlineAnswer(ci);
+    });
+  }
+}
+
+function renderOnlineTrack() {
+  if (!onlineGame?.players || !localGame) return;
+  onlineGame.players.forEach((p,i)=>{
+    if(localGame.players[i]) localGame.players[i].pos = p.position||0;
+  });
+  renderTrack();
+}
+
+function submitOnlineAnswer(ci) {
+  if (!socket || !onlineGame?.currentQ) return;
+  const code = document.getElementById('lobby-code-display').textContent ||
+               document.getElementById('join-code-input').value.trim().toUpperCase();
+  socket.emit('answer:submit', {
+    code,
+    questionId: onlineGame.currentQ.id,
+    choiceIndex: ci
+  });
+  onlineGame.currentQ = null;
+}
+
+function renderLobbyPlayers(elId, players) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.innerHTML = (players||[]).map(p=>`
+    <div class="player-item">
+      <div class="car-dot" style="background:${COLOR_CSS[p.color]||'#888'}"></div>
+      ${esc(p.name)}
+      ${p.socketId===socket?.id?'<span style="font-size:11px;color:#888;margin-left:4px;">(คุณ)</span>':''}
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// GAME LOG DISPLAY
+// ═══════════════════════════════════════════════════════════
+function renderGameLog() {
+  const el = document.getElementById('game-log-table');
+  if (!el) return;
+  const TYPE_COLOR = {
+    CORRECT:'#4ade80', WRONG:'#f87171',
+    EFFECT_MOVE:'#60a5fa', EFFECT_RED:'#f87171',
+    EFFECT_CHAOS_SWAP:'#c084fc', EFFECT_CHAOS_PLUS2:'#c084fc',
+    SPECIAL_START:'#fbbf24', SPECIAL_CORRECT:'#4ade80', SPECIAL_WRONG:'#f87171'
+  };
+  el.innerHTML = gameLog.map(e => {
+    const col = TYPE_COLOR[e.event] || '#888';
+    const posStr = e.positions.map(p=>`<span style="color:${COLOR_CSS[localGame?.players?.find(pp=>pp.name===p.name)?.color]||'#aaa'}">${p.name}:${p.pos}</span>`).join(' ');
+    const detail = Object.entries(e)
+      .filter(([k])=>!['t','event','positions'].includes(k))
+      .map(([k,v])=>`${k}=${v}`).join(' ');
+    return `<div style="padding:2px 0;border-bottom:1px solid #1a1a2e">
+      <span style="color:#555">${e.t}s</span>
+      <span style="color:${col};margin:0 6px">[${e.event}]</span>
+      <span style="color:#ccc">${detail}</span>
+      <span style="margin-left:8px">${posStr}</span>
+    </div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function copyLog() {
+  navigator.clipboard.writeText(JSON.stringify(gameLog, null, 2))
+    .then(()=>alert('Copied!'))
+    .catch(()=>prompt('Copy this:', JSON.stringify(gameLog)));
+}
+
+// ═══════════════════════════════════════════════════════════
+// HELP MODAL
+// ═══════════════════════════════════════════════════════════
+function showHelp() { document.getElementById('help-modal').classList.add('show'); }
+function hideHelp() { document.getElementById('help-modal').classList.remove('show'); }
+document.getElementById('help-modal').addEventListener('click', function(e) {
+  if (e.target === this) hideHelp();
+});
+
+// ═══════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>

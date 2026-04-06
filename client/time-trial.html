@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>⏱️ Time Trial — สูตรคูณ</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0f0f1a;
+      color: #e0e0f0;
+      font-family: 'Sarabun', 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+    }
+    .hidden { display: none !important; }
+
+    /* ── Setup ─────────────────────────────────── */
+    #setup-screen {
+      max-width: 460px;
+      width: 100%;
+      margin: auto;
+      text-align: center;
+      padding: 32px 0;
+    }
+    .title { font-size: 40px; font-weight: 900; margin-bottom: 6px; }
+    .subtitle { font-size: 15px; color: #94a3b8; margin-bottom: 24px; }
+
+    .phase-info { display: flex; gap: 8px; margin-bottom: 20px; }
+    .phase-box {
+      flex: 1; padding: 12px 6px; border-radius: 12px; text-align: center; font-size: 12px;
+    }
+    .phase-easy   { background: #052e16; border: 1px solid #16a34a; }
+    .phase-medium { background: #451a03; border: 1px solid #ca8a04; }
+    .phase-hard   { background: #450a0a; border: 1px solid #dc2626; }
+    .phase-box .pt { font-size: 10px; color: #888; margin-bottom: 3px; }
+    .phase-box .pn { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+    .phase-box .pr { font-size: 11px; opacity: .65; }
+
+    .scoring-box {
+      background: #1e1e2e; border: 1px solid #2a2a3a;
+      border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; text-align: left;
+    }
+    .scoring-box h3 { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .sc-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 13px; }
+    .sc-row .lbl { color: #aaa; }
+    .pts-pos { color: #4ade80; font-weight: 800; }
+    .pts-neg { color: #f87171; font-weight: 800; }
+    .pts-gold { color: #fbbf24; font-weight: 800; }
+
+    .btn-start {
+      width: 100%; padding: 16px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: #fff; font-size: 20px; font-weight: 800;
+      border: none; border-radius: 14px; cursor: pointer; margin-bottom: 10px;
+      transition: opacity .15s;
+    }
+    .btn-start:hover { opacity: .9; }
+    .btn-secondary {
+      width: 100%; padding: 12px;
+      background: #1e1e2e; border: 1px solid #333;
+      color: #ccc; font-size: 15px; font-weight: 600;
+      border-radius: 12px; cursor: pointer; margin-bottom: 8px;
+    }
+    .btn-ghost {
+      width: 100%; padding: 10px;
+      background: transparent; border: 1px solid #333;
+      color: #666; font-size: 13px;
+      border-radius: 12px; cursor: pointer;
+    }
+
+    /* ── Countdown ─────────────────────────────── */
+    #countdown-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.88);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 200; font-size: 110px; font-weight: 900; color: #fff;
+    }
+    #countdown-overlay.go { color: #4ade80; font-size: 80px; }
+
+    /* ── Game ──────────────────────────────────── */
+    #game-screen { max-width: 500px; width: 100%; margin: auto; padding-top: 8px; }
+
+    .game-topbar {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+    }
+    #phase-badge {
+      padding: 4px 12px; border-radius: 99px; font-size: 13px; font-weight: 700;
+      transition: background .4s, color .4s;
+    }
+    #phase-badge.easy   { background: #052e16; border: 1px solid #16a34a; color: #4ade80; }
+    #phase-badge.medium { background: #451a03; border: 1px solid #ca8a04; color: #fbbf24; }
+    #phase-badge.hard   { background: #450a0a; border: 1px solid #dc2626; color: #f87171; }
+    #phase-time-left { font-size: 12px; color: #666; flex: 1; }
+    #score-live { font-size: 22px; font-weight: 900; color: #60a5fa; }
+
+    #timer-bar-wrap {
+      background: #1a1a2a; border-radius: 99px; height: 8px; margin-bottom: 8px; overflow: hidden;
+    }
+    #timer-fill { height: 100%; border-radius: 99px; transition: width .1s linear, background .6s; }
+
+    #timer-text {
+      text-align: center; font-size: 32px; font-weight: 900;
+      font-variant-numeric: tabular-nums; margin-bottom: 6px;
+    }
+
+    #combo-display {
+      text-align: center; font-size: 18px; font-weight: 800;
+      min-height: 28px; margin-bottom: 4px; color: #fbbf24;
+    }
+    #speed-flash {
+      text-align: center; font-size: 26px; font-weight: 900;
+      min-height: 36px; margin-bottom: 4px;
+    }
+
+    .q-card {
+      background: #1e1e2e; border: 1px solid #2a2a3a;
+      border-radius: 16px; padding: 24px 16px;
+    }
+    .q-eq {
+      text-align: center; font-size: 52px; font-weight: 900;
+      letter-spacing: 2px; margin-bottom: 20px;
+    }
+    .choices-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; }
+    .choice-btn {
+      padding: 14px 6px;
+      background: #252535; border: 2px solid #3a3a4a;
+      border-radius: 10px; color: #e0e0f0;
+      font-size: 22px; font-weight: 700;
+      cursor: pointer;
+      transition: background .1s, border-color .1s;
+      text-align: center;
+    }
+    .choice-btn:hover  { background: #303045; border-color: #555; }
+    .choice-btn.flash-correct { background: #052e16; border-color: #4ade80; color: #4ade80; }
+    .choice-btn.flash-wrong   { background: #450a0a; border-color: #f87171; color: #f87171; }
+    .key-label { display: block; font-size: 10px; color: #555; margin-bottom: 2px; }
+
+    .hint-keys { text-align: center; font-size: 12px; color: #444; margin-top: 8px; }
+
+    /* Phase transition overlay */
+
+    /* ── Result ────────────────────────────────── */
+    #result-screen { max-width: 500px; width: 100%; margin: auto; padding: 24px 0 40px; }
+    .result-title { text-align: center; font-size: 30px; font-weight: 900; margin-bottom: 4px; }
+    .result-score-big {
+      text-align: center; font-size: 80px; font-weight: 900; color: #60a5fa;
+      line-height: 1; margin-bottom: 2px;
+    }
+    .result-rank { text-align: center; font-size: 18px; color: #fbbf24; font-weight: 700; margin-bottom: 20px; }
+
+    .stats-row { display: flex; gap: 8px; margin-bottom: 20px; }
+    .stat-box {
+      flex: 1; background: #1e1e2e; border: 1px solid #2a2a3a;
+      border-radius: 12px; padding: 12px 6px; text-align: center;
+    }
+    .stat-box .sv { font-size: 24px; font-weight: 800; }
+    .stat-box .sl { font-size: 11px; color: #666; margin-top: 2px; }
+
+    .lb-header { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .week-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .week-label { font-size: 13px; color: #aaa; flex: 1; min-width: 0; }
+    .week-label strong { color: #e0e0f0; }
+    .week-select {
+      background: #1e1e2e; border: 1px solid #333; color: #ccc;
+      border-radius: 8px; padding: 5px 10px; font-size: 12px; cursor: pointer;
+    }
+    .week-badge-current { display: inline-block; background: #052e16; border: 1px solid #16a34a; color: #4ade80; border-radius: 99px; padding: 2px 8px; font-size: 11px; font-weight: 700; margin-left: 4px; }
+    .lb-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px; }
+    .lb-table th { font-size: 11px; color: #555; text-align: left; padding: 6px 8px; border-bottom: 1px solid #2a2a3a; }
+    .lb-table td { padding: 7px 8px; border-bottom: 1px solid #1a1a2a; }
+    .lb-table tr.my-row td { background: #0f2d4a; color: #93c5fd; font-weight: 700; }
+    .lb-rank { font-weight: 800; text-align: center; width: 36px; }
+    .lb-score { font-weight: 800; color: #60a5fa; }
+    .rank-1 { color: #fbbf24; }
+    .rank-2 { color: #94a3b8; }
+    .rank-3 { color: #cd7c2f; }
+
+    .btn-play-again {
+      width: 100%; padding: 15px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: #fff; font-size: 17px; font-weight: 800;
+      border: none; border-radius: 12px; cursor: pointer; margin-bottom: 8px;
+    }
+    .btn-back-result {
+      width: 100%; padding: 11px;
+      background: transparent; border: 1px solid #333;
+      color: #666; font-size: 13px; border-radius: 12px; cursor: pointer;
+    }
+
+    /* ── Leaderboard standalone ─────────────────── */
+    #lb-section { max-width: 500px; width: 100%; margin: auto; padding: 32px 0 40px; }
+
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+    .fade-in { animation: fadeIn .25s ease-out; }
+  </style>
+</head>
+<body>
+
+<!-- ── SETUP ─────────────────────────────────────────── -->
+<div id="setup-screen">
+  <div class="title">⏱️ Time Trial</div>
+  <div class="subtitle">90 วินาที — สูตรคูณท้าทายทุกระดับ</div>
+
+  <div class="phase-info">
+    <div class="phase-box phase-easy">
+      <div class="pt">0–30 วิ</div>
+      <div class="pn">🟢 ง่าย</div>
+      <div class="pr">สูตร 2–5</div>
+    </div>
+    <div class="phase-box phase-medium">
+      <div class="pt">30–60 วิ</div>
+      <div class="pn">🟡 กลาง</div>
+      <div class="pr">สูตร 6–9</div>
+    </div>
+    <div class="phase-box phase-hard">
+      <div class="pt">60–90 วิ</div>
+      <div class="pn">🔴 ยาก</div>
+      <div class="pr">สูตร 10–12</div>
+    </div>
+  </div>
+
+  <div class="scoring-box">
+    <h3>⚡ การให้คะแนน</h3>
+    <div class="sc-row"><span class="lbl">ตอบถูก ≤ 2 วิ</span><span class="pts-pos">+3</span></div>
+    <div class="sc-row"><span class="lbl">ตอบถูก ≤ 4 วิ</span><span class="pts-pos">+2</span></div>
+    <div class="sc-row"><span class="lbl">ตอบถูก > 4 วิ</span><span class="pts-pos">+1</span></div>
+    <div class="sc-row"><span class="lbl">ตอบผิด</span><span class="pts-neg">−2</span></div>
+    <div style="border-top:1px solid #2a2a3a;margin:8px 0"></div>
+    <div class="sc-row"><span class="lbl">🔥 Combo ×3</span><span class="pts-gold">+2 โบนัส</span></div>
+    <div class="sc-row"><span class="lbl">🔥🔥 Combo ×5</span><span class="pts-gold">+5 โบนัส</span></div>
+    <div class="sc-row"><span class="lbl">🔥🔥🔥 Combo ×10</span><span class="pts-gold">+10 โบนัส</span></div>
+    <div class="sc-row"><span class="lbl">Combo ×15, ×20, …</span><span class="pts-gold">+5 ทุก 5 ข้อ</span></div>
+  </div>
+
+  <button class="btn-start" onclick="startGame()">🚀 เริ่มเลย!</button>
+  <button class="btn-secondary" onclick="showLeaderboard()">🏆 ดู Leaderboard</button>
+  <button class="btn-ghost" onclick="location.href='/dashboard.html'">← กลับหน้าหลัก</button>
+</div>
+
+<!-- ── COUNTDOWN ─────────────────────────────────────── -->
+<div id="countdown-overlay" class="hidden">3</div>
+
+<!-- ── GAME ──────────────────────────────────────────── -->
+<div id="game-screen" class="hidden">
+  <div class="game-topbar">
+    <div id="phase-badge" class="easy">🟢 ง่าย</div>
+    <div id="phase-time-left">เหลืออีก 30 วิ</div>
+    <div>คะแนน: <span id="score-live">0</span></div>
+  </div>
+  <div id="timer-bar-wrap"><div id="timer-fill" style="width:100%;background:#4ade80"></div></div>
+  <div id="timer-text">1:30</div>
+  <div id="combo-display"></div>
+  <div id="speed-flash"></div>
+  <div class="q-card">
+    <div class="q-eq" id="q-text">?</div>
+    <div class="choices-grid" id="choices-grid"></div>
+  </div>
+  <div class="hint-keys">กด 1 / 2 / 3 / 4 หรือคลิก</div>
+</div>
+
+
+<!-- ── RESULT ─────────────────────────────────────────── -->
+<div id="result-screen" class="hidden">
+  <div class="result-title">🏁 หมดเวลา!</div>
+  <div class="result-score-big" id="result-score-big">0</div>
+  <div class="result-rank" id="result-rank">กำลังคำนวณ...</div>
+  <div class="stats-row">
+    <div class="stat-box">
+      <div class="sv" id="res-correct" style="color:#4ade80">0</div>
+      <div class="sl">ตอบถูก</div>
+    </div>
+    <div class="stat-box">
+      <div class="sv" id="res-wrong" style="color:#f87171">0</div>
+      <div class="sl">ตอบผิด</div>
+    </div>
+    <div class="stat-box">
+      <div class="sv" id="res-acc" style="color:#fbbf24">0%</div>
+      <div class="sl">ความแม่น</div>
+    </div>
+    <div class="stat-box">
+      <div class="sv" id="res-combo" style="color:#c084fc">0</div>
+      <div class="sl">Max Combo</div>
+    </div>
+  </div>
+  <div class="lb-header">🏆 Leaderboard</div>
+  <div id="lb-result-week-bar"></div>
+  <div id="lb-result-container"><div style="color:#555;font-size:13px;padding:16px 0">กำลังโหลด...</div></div>
+  <button class="btn-play-again" onclick="startGame()">🔄 เล่นอีกครั้ง</button>
+  <button class="btn-back-result" onclick="location.href='/dashboard.html'">← กลับหน้าหลัก</button>
+</div>
+
+<!-- ── LEADERBOARD STANDALONE ─────────────────────────── -->
+<div id="lb-section" class="hidden">
+  <div class="result-title" style="margin-bottom:16px">🏆 Leaderboard</div>
+  <div id="lb-standalone-week-bar"></div>
+  <div id="lb-standalone-container"><div style="color:#555;font-size:13px">กำลังโหลด...</div></div>
+  <button class="btn-play-again" onclick="startGame()">🚀 เล่นเลย!</button>
+  <button class="btn-back-result" onclick="showSetup()" style="margin-top:8px">← กลับ</button>
+</div>
+
+<script>
+// ─── Config ──────────────────────────────────────────────────────
+const TOTAL_MS = 90000;
+const PHASES = [
+  { name: '🟢 ง่าย',  cls: 'easy',   range: { min: 2,  max: 5  }, until: 30000, icon: '🟢', label: 'ง่าย',   sub: 'สูตร 2–5'   },
+  { name: '🟡 กลาง', cls: 'medium', range: { min: 6,  max: 9  }, until: 60000, icon: '⚡', label: 'กลาง',   sub: 'สูตร 6–9'   },
+  { name: '🔴 ยาก',  cls: 'hard',   range: { min: 10, max: 12 }, until: 90000, icon: '🔥', label: 'ยาก!',   sub: 'สูตร 10–12' },
+];
+
+// ─── State ───────────────────────────────────────────────────────
+let gs = null;      // game state
+let gTimer = null;
+let qStart = 0;
+let flashTimer = null;
+
+// ─── Math helpers ────────────────────────────────────────────────
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function generateChoices(a, b, correct) {
+  const c = new Set();
+  if (a > 2) c.add((a-1)*b);
+  c.add((a+1)*b);
+  if (b > 2) c.add(a*(b-1));
+  c.add(a*(b+1));
+  c.add((a+1)*(b-1));
+  c.add((a-1)*(b+1));
+  const s = String(correct);
+  if (s.length === 2) c.add(parseInt(s[1]+s[0], 10));
+  c.delete(correct); c.delete(0); c.delete(NaN);
+  let wrong = shuffle([...c].filter(n => n > 0 && n < 200)).slice(0, 3);
+  let pad = 1;
+  while (wrong.length < 3) { wrong.push(correct + pad * 7); pad++; }
+  return shuffle([correct, ...wrong.slice(0, 3)]);
+}
+
+function makeQuestion(phase) {
+  const a = rand(phase.range.min, phase.range.max);
+  const b = rand(2, 12);
+  const correct = a * b;
+  return { a, b, correct, choices: generateChoices(a, b, correct) };
+}
+
+function getComboBonus(combo) {
+  if (combo === 3)  return 2;
+  if (combo === 5)  return 5;
+  if (combo === 10) return 10;
+  if (combo > 10 && (combo - 10) % 5 === 0) return 5;
+  return 0;
+}
+
+function getPhase(elapsed) { return PHASES.find(p => elapsed < p.until) || PHASES[2]; }
+
+function formatTime(ms) {
+  const s = Math.ceil(ms / 1000);
+  return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+}
+
+// ─── Screen management ───────────────────────────────────────────
+function hideAll() {
+  ['setup-screen','game-screen','result-screen','lb-section'].forEach(
+    id => document.getElementById(id).classList.add('hidden')
+  );
+}
+function showSetup() { hideAll(); document.getElementById('setup-screen').classList.remove('hidden'); }
+function showLeaderboard() {
+  hideAll();
+  document.getElementById('lb-section').classList.remove('hidden');
+  loadLeaderboardSection('lb-standalone-container', 'lb-standalone-week-bar', null);
+}
+
+// ─── Countdown → Game ────────────────────────────────────────────
+function startGame() {
+  if (gTimer) { clearInterval(gTimer); gTimer = null; }
+  hideAll();
+  const ov = document.getElementById('countdown-overlay');
+  ov.classList.remove('hidden');
+  ov.classList.remove('go');
+  let cnt = 3;
+  ov.textContent = cnt;
+
+  const iv = setInterval(() => {
+    cnt--;
+    if (cnt <= 0) {
+      clearInterval(iv);
+      ov.classList.add('go');
+      ov.textContent = 'GO!';
+      setTimeout(() => { ov.classList.add('hidden'); runGame(); }, 700);
+    } else {
+      ov.textContent = cnt;
+    }
+  }, 1000);
+}
+
+// ─── Game loop ───────────────────────────────────────────────────
+function runGame() {
+  document.getElementById('game-screen').classList.remove('hidden');
+  gs = {
+    startTime: Date.now(),
+    score: 0, combo: 0, maxCombo: 0,
+    correctCount: 0, wrongCount: 0,
+    currentQ: null, lastPhase: PHASES[0],
+  };
+  document.getElementById('score-live').textContent = '0';
+  document.getElementById('combo-display').textContent = '';
+  document.getElementById('speed-flash').textContent = '';
+
+  updateTimerUI();
+  nextQuestion();
+
+  gTimer = setInterval(() => {
+    const elapsed = Date.now() - gs.startTime;
+    const phase = getPhase(elapsed);
+
+    if (phase !== gs.lastPhase) {
+      gs.lastPhase = phase;
+    }
+    updateTimerUI();
+    if (elapsed >= TOTAL_MS) endGame();
+  }, 100);
+}
+
+function updateTimerUI() {
+  if (!gs) return;
+  const elapsed = Date.now() - gs.startTime;
+  const remain  = Math.max(0, TOTAL_MS - elapsed);
+  const pct     = (remain / TOTAL_MS) * 100;
+  const phase   = getPhase(elapsed);
+
+  const fill = document.getElementById('timer-fill');
+  fill.style.width = pct + '%';
+  fill.style.background = phase === PHASES[0] ? '#4ade80' : phase === PHASES[1] ? '#fbbf24' : '#f87171';
+
+  document.getElementById('timer-text').textContent = formatTime(remain);
+
+  const badge = document.getElementById('phase-badge');
+  badge.textContent = phase.name;
+  badge.className = phase.cls;
+
+  const phaseLeft = Math.max(0, phase.until - elapsed);
+  document.getElementById('phase-time-left').textContent = `เหลืออีก ${Math.ceil(phaseLeft/1000)} วิ`;
+}
+
+
+// ─── Question ────────────────────────────────────────────────────
+function nextQuestion() {
+  if (!gs) return;
+  const elapsed = Date.now() - gs.startTime;
+  if (elapsed >= TOTAL_MS) return;
+  const q = makeQuestion(getPhase(elapsed));
+  gs.currentQ = q;
+  qStart = Date.now();
+  renderQuestion(q);
+}
+
+function renderQuestion(q) {
+  document.getElementById('q-text').textContent = `${q.a} × ${q.b} = ?`;
+  const grid = document.getElementById('choices-grid');
+  grid.innerHTML = '';
+  ['1','2','3','4'].forEach((lbl, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn';
+    btn.innerHTML = `<span class="key-label">${lbl}</span>${q.choices[i]}`;
+    btn.dataset.idx = i;
+    btn.onclick = () => handleAnswer(i);
+    grid.appendChild(btn);
+  });
+}
+
+// ─── Answer ──────────────────────────────────────────────────────
+function handleAnswer(idx) {
+  if (!gs || !gs.currentQ) return;
+  const q = gs.currentQ;
+  gs.currentQ = null;
+
+  const ms      = Date.now() - qStart;
+  const correct = q.choices[idx] === q.correct;
+
+  // Flash choice button
+  const btns = document.querySelectorAll('.choice-btn');
+  if (btns[idx]) btns[idx].classList.add(correct ? 'flash-correct' : 'flash-wrong');
+
+  if (correct) {
+    gs.correctCount++;
+    gs.combo++;
+    if (gs.combo > gs.maxCombo) gs.maxCombo = gs.combo;
+
+    const pts = ms <= 2000 ? 3 : ms <= 4000 ? 2 : 1;
+    gs.score += pts;
+
+    const bonus = getComboBonus(gs.combo);
+    gs.score += bonus;
+
+    if (bonus > 0) {
+      const fires = gs.combo >= 10 ? '🔥🔥🔥' : gs.combo >= 5 ? '🔥🔥' : '🔥';
+      showFlash(`+${pts}  ${fires}Combo +${bonus}!`, '#fbbf24');
+    } else {
+      const col = pts === 3 ? '#4ade80' : pts === 2 ? '#60a5fa' : '#94a3b8';
+      showFlash(`+${pts}`, col);
+    }
+  } else {
+    gs.wrongCount++;
+    gs.combo = 0;
+    gs.score -= 2;
+    showFlash('−2', '#f87171');
+  }
+
+  document.getElementById('score-live').textContent = gs.score;
+  updateComboUI();
+
+  setTimeout(() => nextQuestion(), 350);
+}
+
+function updateComboUI() {
+  const el = document.getElementById('combo-display');
+  if (!gs || gs.combo < 2) { el.textContent = ''; return; }
+  const fires = gs.combo >= 10 ? '🔥🔥🔥' : gs.combo >= 5 ? '🔥🔥' : '🔥';
+  el.textContent = `${fires} Combo ×${gs.combo}`;
+}
+
+function showFlash(txt, color) {
+  const el = document.getElementById('speed-flash');
+  if (flashTimer) clearTimeout(flashTimer);
+  el.textContent = txt;
+  el.style.color  = color;
+  flashTimer = setTimeout(() => { el.textContent = ''; }, 800);
+}
+
+// ─── End Game ────────────────────────────────────────────────────
+function endGame() {
+  clearInterval(gTimer); gTimer = null;
+  const final = { ...gs };
+  gs = null;
+
+  // Show result
+  hideAll();
+  document.getElementById('result-screen').classList.remove('hidden');
+  document.getElementById('result-score-big').textContent = final.score;
+
+  const total = final.correctCount + final.wrongCount;
+  document.getElementById('res-correct').textContent = final.correctCount;
+  document.getElementById('res-wrong').textContent   = final.wrongCount;
+  document.getElementById('res-acc').textContent     = total ? Math.round(final.correctCount/total*100)+'%' : '—';
+  document.getElementById('res-combo').textContent   = final.maxCombo;
+
+  // Save score + load leaderboard
+  saveScore(final).then(rank => {
+    const rankEl = document.getElementById('result-rank');
+    if (rank) {
+      const emoji = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+      rankEl.textContent = `อันดับ ${emoji} ในระบบ`;
+    } else {
+      rankEl.textContent = '';
+    }
+    loadLeaderboardSection('lb-result-container', 'lb-result-week-bar', final.score);
+  });
+}
+
+async function saveScore(final) {
+  try {
+    const r = await fetch('/api/time-trial/score', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        score:        final.score,
+        correctCount: final.correctCount,
+        wrongCount:   final.wrongCount,
+        maxCombo:     final.maxCombo,
+      }),
+    });
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d.rank;
+  } catch { return null; }
+}
+
+// ─── Leaderboard ─────────────────────────────────────────────────
+
+function fmtWeekRange(start, end) {
+  const opts = { day: 'numeric', month: 'short' };
+  const s = new Date(start).toLocaleDateString('th-TH', opts);
+  const e = new Date(end).toLocaleDateString('th-TH', { ...opts, year: '2-digit' });
+  return `${s} – ${e}`;
+}
+
+async function loadLeaderboardSection(containerId, weekBarId, myScore, week = 'current') {
+  const container = document.getElementById(containerId);
+  const weekBar   = document.getElementById(weekBarId);
+  container.innerHTML = '<div style="color:#555;font-size:13px;padding:8px 0">กำลังโหลด...</div>';
+  try {
+    // load weeks list + leaderboard in parallel
+    const [weeksRes, lbRes] = await Promise.all([
+      fetch('/api/time-trial/weeks', { credentials: 'include' }),
+      fetch(`/api/time-trial/leaderboard?week=${week}`, { credentials: 'include' }),
+    ]);
+    const { weeks }  = await weeksRes.json();
+    const lb         = await lbRes.json();
+
+    // render week selector
+    if (weekBar) weekBar.innerHTML = renderWeekBar(weeks, lb.week, containerId, weekBarId, myScore);
+
+    container.innerHTML = renderLeaderboard(lb.top20, lb.myBest, myScore);
+  } catch {
+    container.innerHTML = '<div style="color:#555;font-size:13px;padding:8px 0">โหลดไม่ได้</div>';
+  }
+}
+
+function renderWeekBar(weeks, activeWeek, containerId, weekBarId, myScore) {
+  const opts = '<option value="current"' + (activeWeek === weeks[0]?.weekKey || weeks.find(w=>w.isCurrent)?.weekKey === activeWeek ? ' selected' : '') + '>สัปดาห์นี้ (ปัจจุบัน)</option>' +
+    weeks.filter(w => !w.isCurrent).map(w =>
+      `<option value="${w.weekKey}"${w.weekKey === activeWeek ? ' selected' : ''}>${fmtWeekRange(w.start, w.end)}</option>`
+    ).join('');
+
+  const active = weeks.find(w => w.weekKey === activeWeek) || weeks.find(w => w.isCurrent);
+  const label  = active ? fmtWeekRange(active.start, active.end) : '';
+  const badge  = active?.isCurrent ? '<span class="week-badge-current">ปัจจุบัน</span>' : '';
+
+  return `<div class="week-bar">
+    <div class="week-label"><strong>${label}</strong>${badge}</div>
+    <select class="week-select" onchange="loadLeaderboardSection('${containerId}','${weekBarId}',${myScore===null?'null':myScore},this.value)">${opts}</select>
+  </div>`;
+}
+
+function renderLeaderboard(top20, myBest, currentScore) {
+  if (!top20 || top20.length === 0) {
+    return '<div style="color:#555;font-size:13px;padding:16px 0;text-align:center">ยังไม่มีคะแนน — เป็นคนแรกได้เลย!</div>';
+  }
+
+  const rankIcon = r => r === 1 ? '<span class="rank-1">🥇</span>' : r === 2 ? '<span class="rank-2">🥈</span>' : r === 3 ? '<span class="rank-3">🥉</span>' : `<span style="color:#555">${r}</span>`;
+
+  const rows = top20.map(p => {
+    const isMe = myBest && p.userId === myBest.userId;
+    const date = new Date(p.createdAt).toLocaleDateString('th-TH', { day: '2-digit', month: 'short' });
+    return `<tr${isMe ? ' class="my-row"' : ''}>
+      <td class="lb-rank">${rankIcon(p.rank)}</td>
+      <td>${p.displayName}${isMe ? ' ◀' : ''}</td>
+      <td class="lb-score">${p.score}</td>
+      <td style="color:#666">${p.correctCount}/${p.correctCount+p.wrongCount}</td>
+      <td style="color:#c084fc">${p.maxCombo > 0 ? '🔥×'+p.maxCombo : '—'}</td>
+      <td style="color:#555;font-size:11px">${date}</td>
+    </tr>`;
+  }).join('');
+
+  return `<table class="lb-table">
+    <thead><tr>
+      <th>#</th><th>ชื่อ</th><th>คะแนน</th><th>ถูก/ตอบ</th><th>Combo</th><th>วันที่</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+// ─── Keyboard input ──────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (!gs || !gs.currentQ) return;
+  const map = { Digit1: 0, Digit2: 1, Digit3: 2, Digit4: 3 };
+  const idx = map[e.code];
+  if (idx !== undefined) { e.preventDefault(); handleAnswer(idx); }
+});
+</script>
+</body>
+</html>

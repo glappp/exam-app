@@ -289,6 +289,33 @@ model TimeTrialScore {
   @@index([weekKey])
 }
 
+// TicketWallet — กระเป๋าตั๋วแข่งขัน (1 ใบ = 1 ครั้งที่บันทึกคะแนน)
+model TicketWallet {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  balance   Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+// TicketLog — ledger ทุก transaction ของตั๋ว
+model TicketLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String   // 'earn_mission' | 'earn_box' | 'earn_admin' | 'use_competitive'
+  amount    Int      // บวก = ได้ตั๋ว, ลบ = ใช้ตั๋ว
+  note      String?
+  createdAt DateTime @default(now())
+}
+
+// TicketDailyUsage — นับการใช้ตั๋วต่อวัน (max 5/วัน, reset 3 AM ICT)
+model TicketDailyUsage {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  date      String   // "YYYY-MM-DD" เวลาไทย reset ตี 3
+  usedCount Int      @default(0)
+  @@unique([userId, date])
+}
+
 /// 🗂️ AttributeDictionary (HK Project)
 ///
 /// ใช้เก็บชุดคำศัพท์กลางของ attribute สำหรับระบบคลังข้อสอบ (HK Project)

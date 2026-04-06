@@ -21,6 +21,26 @@
     .answer-section label:has(input:checked) { border-color: var(--blue); background: #dbeafe; font-weight: 600; }
     .answer-section input[type=radio] { margin-top: 2px; flex-shrink: 0; }
     .progress-text { font-size: 13px; color: var(--muted); font-weight: 600; }
+
+    /* Pre-exam ticket screen */
+    #ticket-screen { max-width: 440px; margin: 40px auto; }
+    .ticket-option {
+      border: 2px solid #e0e0e0; border-radius: 12px; padding: 16px 20px;
+      cursor: pointer; margin-bottom: 12px; transition: border-color .15s, background .15s;
+      display: flex; align-items: flex-start; gap: 14px;
+    }
+    .ticket-option:hover { border-color: #3b82f6; background: #eff6ff; }
+    .ticket-option.selected { border-color: #3b82f6; background: #dbeafe; }
+    .ticket-option input[type=radio] { margin-top: 3px; flex-shrink: 0; }
+    .ticket-option .opt-title { font-weight: 700; font-size: 14px; margin-bottom: 3px; }
+    .ticket-option .opt-desc { font-size: 12px; color: #666; line-height: 1.5; }
+    .ticket-badge {
+      display: inline-block; background: #fef3c7; color: #92400e;
+      border: 1px solid #fcd34d; border-radius: 99px;
+      padding: 2px 10px; font-size: 12px; font-weight: 700;
+    }
+    .ticket-warn { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px;
+      padding: 10px 14px; font-size: 13px; color: #b91c1c; margin-bottom: 16px; }
   </style>
 </head>
 <body>
@@ -34,7 +54,60 @@
   </div>
 </div>
 
-<div class="page">
+<!-- หน้าเลือกตั๋ว (แสดงก่อนเริ่มสอบ) -->
+<div class="page" id="ticket-screen">
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">ตั๋วแข่งขันของคุณ</div>
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+      <div style="text-align:center">
+        <div style="font-size:32px;font-weight:800;color:#1e3a5f" id="ts-balance">—</div>
+        <div style="font-size:12px;color:#888">ใบที่มี</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:32px;font-weight:800;color:#d97706" id="ts-used">—</div>
+        <div style="font-size:12px;color:#888">ใช้ไปวันนี้</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:32px;font-weight:800;color:#16a34a" id="ts-remain">—</div>
+        <div style="font-size:12px;color:#888">คงเหลือวันนี้ (max 5)</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="ts-cap-warn" class="ticket-warn" style="display:none">
+    ⚠️ ใช้ตั๋วครบ 5 ใบแล้วในวันนี้ — ยังเล่นได้แบบไม่บันทึกคะแนน
+  </div>
+  <div id="ts-no-ticket-warn" class="ticket-warn" style="display:none">
+    ⚠️ ตั๋วหมด — เล่นได้แบบไม่บันทึกคะแนน หรือทำภารกิจเพื่อรับตั๋วเพิ่ม
+  </div>
+
+  <div class="card-title" style="margin-bottom:10px">เลือกโหมดการเล่น</div>
+
+  <label class="ticket-option" id="opt-ticket">
+    <input type="radio" name="ticket-choice" value="use">
+    <div>
+      <div class="opt-title">🎟️ ใช้ตั๋ว 1 ใบ — บันทึกคะแนน</div>
+      <div class="opt-desc">คะแนนจะบันทึกลงประวัติและ leaderboard<br>
+        ใช้ตั๋ว 1 ใบ จาก <span id="opt-balance-text">—</span> ใบ
+      </div>
+    </div>
+  </label>
+
+  <label class="ticket-option selected" id="opt-free">
+    <input type="radio" name="ticket-choice" value="free" checked>
+    <div>
+      <div class="opt-title">🎮 เล่นฟรี — ไม่บันทึกคะแนน</div>
+      <div class="opt-desc">เล่นได้เต็มที่ แต่ไม่บันทึกลง leaderboard</div>
+    </div>
+  </label>
+
+  <button class="btn btn-primary btn-full" id="ts-start-btn" onclick="startExam()" style="margin-top:8px">
+    เริ่มสอบ →
+  </button>
+</div>
+
+<!-- หน้าสอบจริง (ซ่อนอยู่ก่อน) -->
+<div class="page" id="exam-screen" style="display:none">
   <div class="exam-layout">
     <div class="question-area">
       <div id="question-container"></div>
@@ -46,6 +119,7 @@
   </div>
 
   <div id="submit-section" style="display:none;margin-top:16px">
+    <div id="ticket-reminder" style="font-size:12px;color:#888;margin-bottom:8px;text-align:center"></div>
     <button class="btn btn-primary btn-full" id="submit-btn">ส่งคำตอบทั้งหมด</button>
   </div>
 
@@ -64,12 +138,68 @@
   let answers = [];
   let examStartTime = null;
   let timerInterval = null;
+  let useTicket = false;
+  let ticketInfo = { balance: 0, usedToday: 0, remainingToday: 0 };
 
-  // Auth check via session
+  // Auth check + โหลด ticket balance
   (async () => {
     const res = await fetch('/api/me', { credentials: 'include' });
-    if (!res.ok) { location.href = '/login.html'; }
+    if (!res.ok) { location.href = '/login.html'; return; }
+    await loadTicketInfo();
   })();
+
+  async function loadTicketInfo() {
+    try {
+      const res = await fetch('/api/tickets/balance', { credentials: 'include' });
+      if (!res.ok) return;
+      ticketInfo = await res.json();
+    } catch {}
+
+    document.getElementById('ts-balance').textContent = ticketInfo.balance;
+    document.getElementById('ts-used').textContent = ticketInfo.usedToday;
+    document.getElementById('ts-remain').textContent = ticketInfo.remainingToday;
+    document.getElementById('opt-balance-text').textContent = ticketInfo.balance;
+
+    const optTicket = document.getElementById('opt-ticket');
+    const capWarn = document.getElementById('ts-cap-warn');
+    const noTicketWarn = document.getElementById('ts-no-ticket-warn');
+
+    if (ticketInfo.remainingToday <= 0) {
+      capWarn.style.display = '';
+      optTicket.style.opacity = '0.4';
+      optTicket.style.pointerEvents = 'none';
+      optTicket.querySelector('input').disabled = true;
+    } else if (ticketInfo.balance <= 0) {
+      noTicketWarn.style.display = '';
+      optTicket.style.opacity = '0.4';
+      optTicket.style.pointerEvents = 'none';
+      optTicket.querySelector('input').disabled = true;
+    }
+
+    // highlight ที่เลือก
+    document.querySelectorAll('.ticket-option').forEach(el => {
+      el.addEventListener('click', () => {
+        document.querySelectorAll('.ticket-option').forEach(e => e.classList.remove('selected'));
+        el.classList.add('selected');
+      });
+    });
+  }
+
+  async function startExam() {
+    const choice = document.querySelector('input[name="ticket-choice"]:checked')?.value;
+    useTicket = choice === 'use';
+
+    document.getElementById('ticket-screen').style.display = 'none';
+    document.getElementById('exam-screen').style.display = '';
+
+    if (useTicket) {
+      document.getElementById('ticket-reminder').textContent = '🎟️ ใช้ตั๋ว — คะแนนจะถูกบันทึก';
+    } else {
+      document.getElementById('ticket-reminder').textContent = '🎮 โหมดฟรี — ไม่บันทึกคะแนน';
+    }
+
+    await fetchQuestions();
+  }
 
   async function fetchQuestions() {
     const params = new URLSearchParams({ mode });
@@ -161,14 +291,21 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ mode, grade, examType, questions: questions.map(q => q.id), answers, durationSec })
+      body: JSON.stringify({ mode, grade, examType, questions: questions.map(q => q.id), answers, durationSec, useTicket })
     });
     const result = await res.json();
+
+    if (!res.ok) {
+      // เกิดขึ้นถ้าตั๋วหมดระหว่างรอ (edge case)
+      alert(result.error || 'ส่งคำตอบไม่สำเร็จ');
+      document.getElementById('submit-btn').disabled = false;
+      document.getElementById('submit-btn').textContent = 'ส่งคำตอบทั้งหมด';
+      return;
+    }
+
     localStorage.setItem('examResult', JSON.stringify(result));
     location.href = '/result-competitive.html';
   });
-
-  fetchQuestions();
 </script>
 </body>
 </html>

@@ -120,6 +120,7 @@ app.use('/api/classroom', require('./routes/api/csv-upload'));
 app.use('/api/teacher', require('./routes/api/teacher'));
 app.use('/api/school-admin', require('./routes/api/school-admin'));
 app.use('/api/time-trial', require('./routes/api/time-trial'));
+app.use('/api/tickets', require('./routes/api/tickets'));
 
 // GET /api/schools?province=X&district=Y — public, no auth
 app.get('/api/schools', async (req, res) => {

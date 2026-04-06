@@ -1,10 +1,41 @@
 const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
+const { getTodayICT } = require('../../utils/dateICT');
 const prisma = new PrismaClient();
 
+const TICKET_DAILY_CAP = 5;
+
+// หักตั๋ว 1 ใบสำหรับ competitive mode
+// คืน { ok: true } หรือ throw error
+async function deductTicket(userId) {
+  const today = getTodayICT();
+  const [wallet, daily] = await Promise.all([
+    prisma.ticketWallet.findUnique({ where: { userId } }),
+    prisma.ticketDailyUsage.findUnique({ where: { userId_date: { userId, date: today } } })
+  ]);
+  const balance = wallet?.balance ?? 0;
+  const usedToday = daily?.usedCount ?? 0;
+
+  if (balance < 1) throw new Error('ตั๋วไม่พอ');
+  if (usedToday >= TICKET_DAILY_CAP) throw new Error(`ใช้ตั๋วครบ ${TICKET_DAILY_CAP} ใบแล้วในวันนี้`);
+
+  await Promise.all([
+    prisma.ticketWallet.update({ where: { userId }, data: { balance: { decrement: 1 } } }),
+    prisma.ticketDailyUsage.upsert({
+      where: { userId_date: { userId, date: today } },
+      update: { usedCount: { increment: 1 } },
+      create: { userId, date: today, usedCount: 1 }
+    }),
+    prisma.ticketLog.create({
+      data: { userId, type: 'use_competitive', amount: -1, note: `แข่งขัน ${today}` }
+    })
+  ]);
+  return { ok: true };
+}
+
 router.post('/', async (req, res) => {
-  const { mode, questions, answers, durationSec, examSetCode } = req.body;
+  const { mode, questions, answers, durationSec, examSetCode, useTicket } = req.body;
 
   try {
     if (!Array.isArray(answers) || answers.length !== questions.length) {
@@ -64,7 +95,20 @@ router.post('/', async (req, res) => {
       }
     }
 
-    if (studentProfileId) {
+    // competitive mode: ต้องใช้ตั๋วจึงจะบันทึกผล
+    const isCompetitive = mode === 'competitive';
+    let ticketUsed = false;
+    if (isCompetitive && useTicket && req.session?.userId) {
+      try {
+        await deductTicket(req.session.userId);
+        ticketUsed = true;
+      } catch (err) {
+        return res.status(400).json({ error: err.message });
+      }
+    }
+
+    const shouldSaveResult = !isCompetitive || ticketUsed;
+    if (studentProfileId && shouldSaveResult) {
       await prisma.examResult.create({
         data: {
           studentProfileId,
@@ -178,7 +222,9 @@ router.post('/', async (req, res) => {
       questions: records,
       userAnswers: answers,
       weakAttributes,
-      characterLevel
+      characterLevel,
+      ticketUsed,
+      saved: shouldSaveResult
     });
 
   } catch (err) {

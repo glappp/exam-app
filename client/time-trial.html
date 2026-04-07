@@ -401,6 +401,7 @@ let qStart = 0;
 let flashTimer = null;
 let useTicket = false;
 let ticketInfo = { balance: 0, usedToday: 0, remainingToday: 0 };
+let ticketReady = false;
 
 // ─── Init ─────────────────────────────────────────────────────────
 (async () => {
@@ -410,6 +411,7 @@ let ticketInfo = { balance: 0, usedToday: 0, remainingToday: 0 };
     const r = await fetch('/api/tickets/balance', { credentials: 'include' });
     if (r.ok) ticketInfo = await r.json();
   } catch {}
+  ticketReady = true;
 })();
 
 // ─── Math helpers ────────────────────────────────────────────────
@@ -522,7 +524,9 @@ function confirmTicketChoice() {
 }
 
 // ─── Countdown → Game ────────────────────────────────────────────
-function startGame() {
+async function startGame() {
+  // รอ ticketInfo โหลดเสร็จก่อน (กรณีกดเร็วมาก)
+  while (!ticketReady) await new Promise(r => setTimeout(r, 100));
   showTicketOverlay();
 }
 

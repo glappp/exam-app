@@ -25,6 +25,7 @@ app.use(session({
   cookie: { secure: process.env.NODE_ENV === 'production' }
 }));
 
+app.get('/', (req, res) => res.redirect('/login.html'));
 app.use(express.static(path.join(__dirname, '..', 'client'))); // สำหรับไฟล์ static
 
 const attributeDictRoute = require('./routes/api/attributeDictRoute');

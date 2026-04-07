@@ -1,7 +1,7 @@
 # context.md — exam-app
 
 > อ่านไฟล์นี้ก่อนเริ่มงานทุกครั้ง
-> อัปเดตล่าสุด: 2026-04-03
+> อัปเดตล่าสุด: 2026-04-07
 
 ---
 
@@ -98,6 +98,54 @@
 - รูปภาพเก็บใน `server/uploads/` เสิร์ฟที่ `/uploads/`
 - `weakAttributes` ใน ExamResult: flat object `{ "topic:xxx": -2 }` (ติดลบ = ผิด)
 - Prisma: ต้อง `npx prisma db push` ทุกครั้งที่แก้ schema (ปิด server ก่อน บน Windows)
+
+---
+
+## ⚠️ ข้อควรระวัง — อ่านก่อนแตะ code ทุกครั้ง
+
+- **อย่าแก้ไข code ที่รันได้ปกติอยู่แล้ว** โดยไม่มีเหตุผล — ถ้า user บอกว่า "เมื่อวานรันได้" ให้เชื่อ และหา root cause จริงๆ ก่อน
+- **อย่าเดาว่า code ผิด** แค่เพราะ server start ไม่ติดครั้งแรก — ให้อ่าน error message ให้ครบก่อนแก้
+
+---
+
+## Server Startup (สำคัญมาก)
+
+โครงสร้างโปรเจกต์มี **2 package.json** — อย่าสับสน:
+
+| ไฟล์ | ใช้สำหรับ | Prisma |
+|------|-----------|--------|
+| `/package.json` (root) | เก่า / ไม่ได้ใช้รัน server | 4.x (เก่า) |
+| `/server/package.json` | **server จริง** | 6.x ✅ |
+
+**วิธีรัน server ที่ถูกต้อง:**
+```bash
+cd server
+npm start        # รัน node Index.js จาก server/
+```
+
+หรือจาก root:
+```bash
+npm --prefix server start
+```
+
+**launch.json ที่ถูกต้อง** (`.claude/launch.json`):
+```json
+{
+  "configurations": [{
+    "name": "Express Server",
+    "runtimeExecutable": "npm",
+    "runtimeArgs": ["--prefix", "server", "start"],
+    "port": 3001
+  }]
+}
+```
+
+**ถ้ารัน server ใน worktree ใหม่ครั้งแรก** ต้อง:
+```bash
+cd server
+npm install                   # ติดตั้ง dependencies
+npx prisma generate           # สร้าง Prisma client
+```
 
 ---
 

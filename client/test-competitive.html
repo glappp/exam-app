@@ -21,6 +21,7 @@
     .answer-section label:has(input:checked) { border-color: var(--blue); background: #dbeafe; font-weight: 600; }
     .answer-section input[type=radio] { margin-top: 2px; flex-shrink: 0; }
     .progress-text { font-size: 13px; color: var(--muted); font-weight: 600; }
+
   </style>
 </head>
 <body>
@@ -34,7 +35,8 @@
   </div>
 </div>
 
-<div class="page">
+<!-- หน้าสอบ -->
+<div class="page" id="exam-screen">
   <div class="exam-layout">
     <div class="question-area">
       <div id="question-container"></div>
@@ -46,6 +48,7 @@
   </div>
 
   <div id="submit-section" style="display:none;margin-top:16px">
+    <div id="ticket-reminder" style="font-size:12px;color:#888;margin-bottom:8px;text-align:center"></div>
     <button class="btn btn-primary btn-full" id="submit-btn">ส่งคำตอบทั้งหมด</button>
   </div>
 
@@ -64,11 +67,11 @@
   let answers = [];
   let examStartTime = null;
   let timerInterval = null;
-
-  // Auth check via session
+  // Auth check แล้วโหลดข้อสอบเลย
   (async () => {
     const res = await fetch('/api/me', { credentials: 'include' });
-    if (!res.ok) { location.href = '/login.html'; }
+    if (!res.ok) { location.href = '/login.html'; return; }
+    await fetchQuestions();
   })();
 
   async function fetchQuestions() {
@@ -164,11 +167,18 @@
       body: JSON.stringify({ mode, grade, examType, questions: questions.map(q => q.id), answers, durationSec })
     });
     const result = await res.json();
+
+    if (!res.ok) {
+      // เกิดขึ้นถ้าตั๋วหมดระหว่างรอ (edge case)
+      alert(result.error || 'ส่งคำตอบไม่สำเร็จ');
+      document.getElementById('submit-btn').disabled = false;
+      document.getElementById('submit-btn').textContent = 'ส่งคำตอบทั้งหมด';
+      return;
+    }
+
     localStorage.setItem('examResult', JSON.stringify(result));
     location.href = '/result-competitive.html';
   });
-
-  fetchQuestions();
 </script>
 </body>
 </html>

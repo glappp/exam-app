@@ -195,6 +195,44 @@
 
     @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
     .fade-in { animation: fadeIn .25s ease-out; }
+
+    /* ── Ticket Overlay ─────────────────────────────────── */
+    #ticket-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.88);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; padding: 16px;
+    }
+    .ticket-modal {
+      background: #1e1e2e; border: 1px solid #2a2a3a;
+      border-radius: 16px; padding: 24px; max-width: 380px; width: 100%;
+    }
+    .ticket-modal h2 { font-size: 18px; font-weight: 800; margin-bottom: 4px; }
+    .ticket-stat-row { display: flex; gap: 12px; margin: 14px 0; }
+    .ticket-stat { flex: 1; background: #252535; border-radius: 10px; padding: 10px; text-align: center; }
+    .ticket-stat .tv { font-size: 26px; font-weight: 900; }
+    .ticket-stat .tl { font-size: 11px; color: #666; margin-top: 2px; }
+    .ticket-choice {
+      border: 2px solid #2a2a3a; border-radius: 12px; padding: 14px 16px;
+      cursor: pointer; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 12px;
+      transition: border-color .15s, background .15s;
+    }
+    .ticket-choice:hover { border-color: #3b82f6; background: #0f1e3a; }
+    .ticket-choice.selected { border-color: #3b82f6; background: #0f1e3a; }
+    .ticket-choice input[type=radio] { margin-top: 3px; flex-shrink: 0; accent-color: #3b82f6; }
+    .ticket-choice .tc-title { font-weight: 700; font-size: 14px; margin-bottom: 2px; }
+    .ticket-choice .tc-desc { font-size: 12px; color: #666; line-height: 1.5; }
+    .ticket-warn-box { background: #2d1515; border: 1px solid #dc2626; border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #f87171; margin-bottom: 12px; }
+    .btn-ticket-confirm {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      color: #fff; font-size: 16px; font-weight: 800;
+      border: none; border-radius: 12px; cursor: pointer; margin-top: 4px;
+    }
+    .btn-ticket-cancel {
+      width: 100%; padding: 10px;
+      background: transparent; border: 1px solid #333;
+      color: #555; font-size: 13px; border-radius: 12px; cursor: pointer; margin-top: 8px;
+    }
   </style>
 </head>
 <body>
@@ -238,6 +276,52 @@
   <button class="btn-start" onclick="startGame()">🚀 เริ่มเลย!</button>
   <button class="btn-secondary" onclick="showLeaderboard()">🏆 ดู Leaderboard</button>
   <button class="btn-ghost" onclick="location.href='/dashboard.html'">← กลับหน้าหลัก</button>
+</div>
+
+<!-- ── TICKET OVERLAY ─────────────────────────────────────── -->
+<div id="ticket-overlay" class="hidden">
+  <div class="ticket-modal">
+    <div style="font-size:28px;margin-bottom:8px">🎟️</div>
+    <h2>เลือกโหมดก่อนเล่น</h2>
+    <div style="font-size:13px;color:#94a3b8;margin-bottom:2px">Time Trial</div>
+
+    <div class="ticket-stat-row">
+      <div class="ticket-stat">
+        <div class="tv" id="to-balance" style="color:#60a5fa">—</div>
+        <div class="tl">ตั๋วที่มี</div>
+      </div>
+      <div class="ticket-stat">
+        <div class="tv" id="to-used" style="color:#f87171">—</div>
+        <div class="tl">ใช้ไปวันนี้</div>
+      </div>
+      <div class="ticket-stat">
+        <div class="tv" id="to-remain" style="color:#4ade80">—</div>
+        <div class="tl">คงเหลือวันนี้</div>
+      </div>
+    </div>
+
+    <div id="to-cap-warn" class="ticket-warn-box hidden">⚠️ ใช้ตั๋วครบ 5 ใบแล้ววันนี้ — เล่นได้แบบไม่บันทึก</div>
+    <div id="to-no-warn" class="ticket-warn-box hidden">⚠️ ตั๋วหมด — ทำภารกิจรายวันเพื่อรับตั๋วเพิ่ม</div>
+
+    <label class="ticket-choice" id="to-opt-ticket">
+      <input type="radio" name="to-choice" value="use" id="to-radio-use">
+      <div>
+        <div class="tc-title">🎟️ ใช้ตั๋ว 1 ใบ — บันทึก leaderboard</div>
+        <div class="tc-desc">คะแนนจะบันทึกลง leaderboard รายสัปดาห์<br>มีตั๋ว <span id="to-balance-text">—</span> ใบ</div>
+      </div>
+    </label>
+
+    <label class="ticket-choice selected" id="to-opt-free">
+      <input type="radio" name="to-choice" value="free" id="to-radio-free" checked>
+      <div>
+        <div class="tc-title">🎮 เล่นฟรี — ไม่บันทึก</div>
+        <div class="tc-desc">เล่นได้ไม่จำกัด แต่ไม่บันทึกคะแนนลง leaderboard</div>
+      </div>
+    </label>
+
+    <button class="btn-ticket-confirm" onclick="confirmTicketChoice()">เริ่มเลย! 🚀</button>
+    <button class="btn-ticket-cancel" onclick="document.getElementById('ticket-overlay').classList.add('hidden')">← ยกเลิก</button>
+  </div>
 </div>
 
 <!-- ── COUNTDOWN ─────────────────────────────────────── -->
@@ -315,6 +399,20 @@ let gs = null;      // game state
 let gTimer = null;
 let qStart = 0;
 let flashTimer = null;
+let useTicket = false;
+let ticketInfo = { balance: 0, usedToday: 0, remainingToday: 0 };
+let ticketReady = false;
+
+// ─── Init ─────────────────────────────────────────────────────────
+(async () => {
+  const res = await fetch('/api/me', { credentials: 'include' });
+  if (!res.ok) { location.href = '/login.html'; return; }
+  try {
+    const r = await fetch('/api/tickets/balance', { credentials: 'include' });
+    if (r.ok) ticketInfo = await r.json();
+  } catch {}
+  ticketReady = true;
+})();
 
 // ─── Math helpers ────────────────────────────────────────────────
 function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
@@ -379,8 +477,60 @@ function showLeaderboard() {
   loadLeaderboardSection('lb-standalone-container', 'lb-standalone-week-bar', null);
 }
 
+// ─── Ticket overlay ───────────────────────────────────────────────
+function showTicketOverlay() {
+  document.getElementById('to-balance').textContent = ticketInfo.balance;
+  document.getElementById('to-used').textContent = ticketInfo.usedToday;
+  document.getElementById('to-remain').textContent = ticketInfo.remainingToday;
+  document.getElementById('to-balance-text').textContent = ticketInfo.balance;
+
+  const optTicket = document.getElementById('to-opt-ticket');
+  document.getElementById('to-cap-warn').classList.add('hidden');
+  document.getElementById('to-no-warn').classList.add('hidden');
+
+  if (ticketInfo.remainingToday <= 0) {
+    document.getElementById('to-cap-warn').classList.remove('hidden');
+    optTicket.style.opacity = '0.4'; optTicket.style.pointerEvents = 'none';
+    optTicket.querySelector('input').disabled = true;
+    document.getElementById('to-radio-free').checked = true;
+    document.getElementById('to-opt-free').classList.add('selected');
+    optTicket.classList.remove('selected');
+  } else if (ticketInfo.balance <= 0) {
+    document.getElementById('to-no-warn').classList.remove('hidden');
+    optTicket.style.opacity = '0.4'; optTicket.style.pointerEvents = 'none';
+    optTicket.querySelector('input').disabled = true;
+    document.getElementById('to-radio-free').checked = true;
+    document.getElementById('to-opt-free').classList.add('selected');
+    optTicket.classList.remove('selected');
+  } else {
+    optTicket.style.opacity = ''; optTicket.style.pointerEvents = '';
+    optTicket.querySelector('input').disabled = false;
+  }
+
+  document.querySelectorAll('.ticket-choice').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.ticket-choice').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+    });
+  });
+
+  document.getElementById('ticket-overlay').classList.remove('hidden');
+}
+
+function confirmTicketChoice() {
+  useTicket = document.querySelector('input[name="to-choice"]:checked')?.value === 'use';
+  document.getElementById('ticket-overlay').classList.add('hidden');
+  doStartGame();
+}
+
 // ─── Countdown → Game ────────────────────────────────────────────
-function startGame() {
+async function startGame() {
+  // รอ ticketInfo โหลดเสร็จก่อน (กรณีกดเร็วมาก)
+  while (!ticketReady) await new Promise(r => setTimeout(r, 100));
+  showTicketOverlay();
+}
+
+function doStartGame() {
   if (gTimer) { clearInterval(gTimer); gTimer = null; }
   hideAll();
   const ov = document.getElementById('countdown-overlay');
@@ -396,6 +546,7 @@ function startGame() {
       ov.classList.add('go');
       ov.textContent = 'GO!';
       setTimeout(() => { ov.classList.add('hidden'); runGame(); }, 700);
+
     } else {
       ov.textContent = cnt;
     }
@@ -554,15 +705,15 @@ function endGame() {
   document.getElementById('res-combo').textContent   = final.maxCombo;
 
   // Save score + load leaderboard
-  saveScore(final).then(rank => {
+  saveScore(final).then(({ saved, rank }) => {
     const rankEl = document.getElementById('result-rank');
-    if (rank) {
+    if (saved && rank) {
       const emoji = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
       rankEl.textContent = `อันดับ ${emoji} ในระบบ`;
     } else {
-      rankEl.textContent = '';
+      rankEl.textContent = '🎮 โหมดฟรี — ไม่บันทึกคะแนน';
     }
-    loadLeaderboardSection('lb-result-container', 'lb-result-week-bar', final.score);
+    loadLeaderboardSection('lb-result-container', 'lb-result-week-bar', saved ? final.score : null);
   });
 }
 
@@ -577,12 +728,19 @@ async function saveScore(final) {
         correctCount: final.correctCount,
         wrongCount:   final.wrongCount,
         maxCombo:     final.maxCombo,
+        useTicket,
       }),
     });
-    if (!r.ok) return null;
+    if (!r.ok) return { saved: false, rank: null };
     const d = await r.json();
-    return d.rank;
-  } catch { return null; }
+    if (d.saved) {
+      // อัปเดต ticketInfo หลังใช้ตั๋ว
+      ticketInfo.balance = Math.max(0, ticketInfo.balance - 1);
+      ticketInfo.usedToday++;
+      ticketInfo.remainingToday = Math.max(0, ticketInfo.remainingToday - 1);
+    }
+    return { saved: d.saved, rank: d.rank };
+  } catch { return { saved: false, rank: null }; }
 }
 
 // ─── Leaderboard ─────────────────────────────────────────────────

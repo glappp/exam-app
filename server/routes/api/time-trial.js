@@ -2,7 +2,33 @@
 const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
+const { getTodayICT } = require('../../utils/dateICT');
 const prisma = new PrismaClient();
+
+const TICKET_DAILY_CAP = 5;
+
+async function deductTicket(userId) {
+  const today = getTodayICT();
+  const [wallet, daily] = await Promise.all([
+    prisma.ticketWallet.findUnique({ where: { userId } }),
+    prisma.ticketDailyUsage.findUnique({ where: { userId_date: { userId, date: today } } })
+  ]);
+  const balance = wallet?.balance ?? 0;
+  const usedToday = daily?.usedCount ?? 0;
+  if (balance < 1) throw new Error('ตั๋วไม่พอ');
+  if (usedToday >= TICKET_DAILY_CAP) throw new Error(`ใช้ตั๋วครบ ${TICKET_DAILY_CAP} ใบแล้วในวันนี้`);
+  await Promise.all([
+    prisma.ticketWallet.update({ where: { userId }, data: { balance: { decrement: 1 } } }),
+    prisma.ticketDailyUsage.upsert({
+      where: { userId_date: { userId, date: today } },
+      update: { usedCount: { increment: 1 } },
+      create: { userId, date: today, usedCount: 1 }
+    }),
+    prisma.ticketLog.create({
+      data: { userId, type: 'use_competitive', amount: -1, note: `time-trial ${today}` }
+    })
+  ]);
+}
 
 // ─── Week helpers ─────────────────────────────────────────────────
 
@@ -33,9 +59,20 @@ function getWeekRange(weekKey) {
 router.post('/score', async (req, res) => {
   if (!req.session?.userId) return res.status(401).json({ error: 'กรุณาเข้าสู่ระบบ' });
 
-  const { score, correctCount, wrongCount, maxCombo } = req.body;
+  const { score, correctCount, wrongCount, maxCombo, useTicket } = req.body;
   if (typeof score !== 'number' || typeof correctCount !== 'number') {
     return res.status(400).json({ error: 'ข้อมูลไม่ครบ' });
+  }
+
+  // ต้องใช้ตั๋วจึงจะบันทึกลง leaderboard
+  if (!useTicket) {
+    return res.json({ saved: false, rank: null });
+  }
+
+  try {
+    await deductTicket(req.session.userId);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
   }
 
   const weekKey = getWeekKey();
@@ -59,7 +96,7 @@ router.post('/score', async (req, res) => {
   });
   const betterCount = weekScores.filter(r => r._max.score > score).length;
 
-  res.json({ rank: betterCount + 1, weekKey });
+  res.json({ saved: true, rank: betterCount + 1, weekKey });
 });
 
 // ─── GET /api/time-trial/leaderboard?week=current ─────────────────

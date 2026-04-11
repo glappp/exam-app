@@ -1,7 +1,22 @@
 # prd.md — exam-app Product Requirements
 
 > แผนงานและ requirements ของ feature ที่กำลังพัฒนาหรือรอพัฒนา
-> อัปเดตล่าสุด: 2026-04-09
+> อัปเดตล่าสุด: 2026-04-11
+
+---
+
+## Question Bank Status ✅
+
+| Grade | ข้อ | Subtopics | สถานะ |
+|-------|-----|-----------|-------|
+| P4 | 677 | 34 subtopics | ✅ พร้อมใช้ |
+| P5 | 280 | 14 subtopics | ✅ พร้อมใช้ |
+| P6 | 300 | 15 subtopics | ✅ พร้อมใช้ |
+| **รวม** | **1,257** | **63 subtopics** | |
+
+- subtopic ละ 20 ข้อ ทุก grade ทุก topic
+- `examGrade` เป็น string `'p4'`/`'p5'`/`'p6'` สม่ำเสมอทุกข้อ
+- ยังไม่มีข้อสอบระดับ P1/P2/P3/P7+ (ม.1–ม.3)
 
 ---
 

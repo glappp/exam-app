@@ -193,57 +193,61 @@ router.get('/daily-mission', requireLogin, async (req, res) => {
   }
 });
 
-// GET /api/student/topic-stats — accuracy ต่อ topic สำหรับ practice overview
-const PASS_ACCURACY     = 0.70;
-const PASS_MIN_ATTEMPTS = 10;
-
+// GET /api/student/topic-stats — accuracy + pass records สำหรับ practice overview
 router.get('/topic-stats', requireLogin, async (req, res) => {
   try {
     const profile = await prisma.studentProfile.findFirst({
       where: { userId: req.session.userId },
       orderBy: { createdAt: 'desc' }
     });
-    if (!profile) return res.json({ stats: {} });
+    if (!profile) return res.json({ stats: {}, passes: { subtopic: {}, topic: {} } });
 
-    // ดึง ExamAnswer พร้อม Question attributes
-    const answers = await prisma.examAnswer.findMany({
-      where: { studentProfileId: profile.id },
-      select: {
-        isCorrect: true,
-        question: { select: { attributes: true } }
-      }
-    });
-    if (answers.length === 0) return res.json({ stats: {} });
+    // ดึงข้อมูลพร้อมกัน
+    const [answers, subtopicPasses, topicPasses] = await Promise.all([
+      prisma.examAnswer.findMany({
+        where: { studentProfileId: profile.id },
+        select: { isCorrect: true, question: { select: { attributes: true } } }
+      }),
+      prisma.subtopicPass.findMany({ where: { studentProfileId: profile.id } }),
+      prisma.topicPass.findMany({ where: { studentProfileId: profile.id } })
+    ]);
 
     // สะสม attempted/correct ต่อ grade → topic → subtopic
     const stats = {};
     for (const a of answers) {
       const g = a.question?.attributes?.examGrade || '';
-      const grade   = /^\d/.test(g) ? 'p' + g : g;
-      const topic   = (a.question?.attributes?.topic    || [])[0];
+      const grade    = /^\d/.test(g) ? 'p' + g : g;
+      const topic    = (a.question?.attributes?.topic    || [])[0];
       const subtopic = (a.question?.attributes?.subtopic || [])[0];
-      if (!grade || !topic) continue;
+      if (!grade || !topic || !subtopic) continue;
       if (!stats[grade]) stats[grade] = {};
       if (!stats[grade][topic]) stats[grade][topic] = {};
-      if (subtopic) {
-        if (!stats[grade][topic][subtopic]) stats[grade][topic][subtopic] = { attempted: 0, correct: 0 };
-        stats[grade][topic][subtopic].attempted++;
-        if (a.isCorrect) stats[grade][topic][subtopic].correct++;
-      }
+      if (!stats[grade][topic][subtopic]) stats[grade][topic][subtopic] = { attempted: 0, correct: 0 };
+      stats[grade][topic][subtopic].attempted++;
+      if (a.isCorrect) stats[grade][topic][subtopic].correct++;
     }
 
-    // คำนวณ accuracy + passed ต่อ subtopic
+    // คำนวณ accuracy
     for (const grade of Object.keys(stats)) {
       for (const topic of Object.keys(stats[grade])) {
         for (const sub of Object.keys(stats[grade][topic])) {
           const s = stats[grade][topic][sub];
           s.accuracy = s.attempted > 0 ? s.correct / s.attempted : 0;
-          s.passed   = s.attempted >= PASS_MIN_ATTEMPTS && s.accuracy >= PASS_ACCURACY;
         }
       }
     }
 
-    res.json({ stats });
+    // Build pass lookup (key = "grade|topicKey|subtopicKey")
+    const passes = {
+      subtopic: Object.fromEntries(
+        subtopicPasses.map(p => [`${p.grade}|${p.topicKey}|${p.subtopicKey}`, true])
+      ),
+      topic: Object.fromEntries(
+        topicPasses.map(p => [`${p.grade}|${p.topicKey}`, true])
+      )
+    };
+
+    res.json({ stats, passes });
   } catch (err) {
     console.error('❌ topic-stats:', err);
     res.status(500).json({ error: 'โหลด topic stats ล้มเหลว' });

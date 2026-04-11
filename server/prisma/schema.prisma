@@ -57,6 +57,8 @@ model StudentProfile {
   examAnswers     ExamAnswer[]
   weakTopics      WeakTopicState[]
   sectionProgress SectionProgress[]
+  subtopicPasses  SubtopicPass[]
+  topicPasses     TopicPass[]
 }
 
 // ─── Exam Core ────────────────────────────────────────────────────────────────
@@ -309,6 +311,31 @@ model TicketDailyUsage {
   usedCount Int    @default(0)
 
   @@unique([userId, date])
+}
+
+// ─── Practice Pass Records ────────────────────────────────────────────────────
+
+model SubtopicPass {
+  id               Int            @id @default(autoincrement())
+  studentProfileId Int
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id])
+  grade            String
+  topicKey         String
+  subtopicKey      String
+  passedAt         DateTime       @default(now())
+
+  @@unique([studentProfileId, grade, topicKey, subtopicKey])
+}
+
+model TopicPass {
+  id               Int            @id @default(autoincrement())
+  studentProfileId Int
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id])
+  grade            String
+  topicKey         String
+  passedAt         DateTime       @default(now())
+
+  @@unique([studentProfileId, grade, topicKey])
 }
 
 // ─── AttributeDictionary ──────────────────────────────────────────────────────

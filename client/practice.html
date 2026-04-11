@@ -111,13 +111,16 @@
         </div>
         <div class="form-group">
           <label>หัวข้อย่อย</label>
-          <select id="subtopic" disabled>
+          <select id="subtopic" disabled onchange="updateTestBtn()">
             <option value="">ทั้งหมด</option>
           </select>
         </div>
       </div>
 
-      <button class="btn btn-primary" id="start-btn" onclick="startExam()">เริ่มทำข้อสอบ</button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:4px">
+        <button class="btn btn-primary" id="practice-btn" onclick="startExam('practice')">ฝึก</button>
+        <button class="btn btn-outline" id="test-btn" onclick="startExam('test')" disabled title="กรุณาเลือกหัวข้อก่อน">สอบ (10 ข้อ)</button>
+      </div>
     </div>
 
     <!-- โจทย์ -->
@@ -131,13 +134,15 @@
   <script src="topicMap.js"></script>
   <script src="script.js"></script>
   <script>
+    let currentPasses = { subtopic: {}, topic: {} };
+    let currentStats  = {};
+
     (async () => {
       const res = await fetch('/api/me', { credentials: 'include' });
       if (!res.ok) { location.href = 'login.html'; return; }
       const me = await res.json();
       document.getElementById('greeting').textContent = `สวัสดี, ${me.firstName || me.username}`;
 
-      // แสดง overview เฉพาะ mode ปกติ (ไม่ใช่ adaptive/targeted)
       const params = new URLSearchParams(location.search);
       if (!params.get('mode') && !params.get('topic')) {
         loadOverview();
@@ -149,15 +154,17 @@
       panel.style.display = '';
       try {
         const res = await fetch('/api/student/topic-stats', { credentials: 'include' });
-        const { stats } = await res.json();
-        renderOverview(stats || {});
+        const data = await res.json();
+        currentStats  = data.stats  || {};
+        currentPasses = data.passes || { subtopic: {}, topic: {} };
+        renderOverview(currentStats, currentPasses);
       } catch {
         document.getElementById('overview-body').innerHTML =
           '<p style="color:var(--muted);font-size:13px">โหลดข้อมูลไม่สำเร็จ</p>';
       }
     }
 
-    function renderOverview(stats) {
+    function renderOverview(stats, passes) {
       const grades = ['p4', 'p5', 'p6'];
       const gradeNames = { p4: 'ป.4', p5: 'ป.5', p6: 'ป.6' };
       let html = '';
@@ -167,12 +174,12 @@
         if (!topics.length) continue;
         const gradeStats = stats[grade] || {};
 
-        // นับ subtopic ผ่านทั้งหมดของ grade
+        // นับ subtopic ผ่าน (จาก SubtopicPass table)
         let totalSubs = 0, passedSubs = 0;
         for (const t of topics) {
           const subs = (gradeTopicSubtopics[grade] || {})[t.key] || [];
           totalSubs += subs.length;
-          passedSubs += subs.filter(s => gradeStats[t.key]?.[s.key]?.passed).length;
+          passedSubs += subs.filter(s => passes.subtopic[`${grade}|${t.key}|${s.key}`]).length;
         }
 
         html += `<div class="grade-row">
@@ -181,18 +188,19 @@
           </span>`;
 
         for (const t of topics) {
-          const topicSubs = (gradeTopicSubtopics[grade] || {})[t.key] || [];
+          const topicSubs     = (gradeTopicSubtopics[grade] || {})[t.key] || [];
           const topicSubStats = gradeStats[t.key] || {};
-          const subPassed = topicSubs.filter(s => topicSubStats[s.key]?.passed).length;
           const subTotal  = topicSubs.length;
-          const allPassed = subTotal > 0 && subPassed === subTotal;
-          const anyStarted = topicSubs.some(s => topicSubStats[s.key]?.attempted > 0);
+          const subPassed = topicSubs.filter(s => passes.subtopic[`${grade}|${t.key}|${s.key}`]).length;
+          const topicPassed   = passes.topic[`${grade}|${t.key}`] || false;
+          const anyStarted    = topicSubs.some(s => topicSubStats[s.key]?.attempted > 0);
           const avgAcc = topicSubs.reduce((sum, s) => sum + (topicSubStats[s.key]?.accuracy || 0), 0) / (subTotal || 1);
           const accPct = Math.round(avgAcc * 100);
 
-          const stateClass = allPassed ? 'passed' : anyStarted ? 'started' : '';
-          const icon = allPassed ? '✅' : anyStarted ? '🔶' : '⬜';
-          const tip  = allPassed ? `ผ่านทุกหัวข้อย่อย` : anyStarted ? `${subPassed}/${subTotal} หัวข้อย่อยผ่าน` : 'ยังไม่เริ่ม';
+          // สีชิป: เขียว=ผ่าน topic, ส้ม=เริ่มแล้ว, ขาว=ยังไม่เริ่ม
+          const stateClass = topicPassed ? 'passed' : anyStarted ? 'started' : '';
+          const icon = topicPassed ? '✅' : anyStarted ? '🔶' : '⬜';
+          const tip  = topicPassed ? 'ผ่าน topic แล้ว' : `${subPassed}/${subTotal} subtopic ผ่าน`;
 
           html += `<span class="topic-chip ${stateClass}" onclick="quickStart('${grade}','${t.key}')"
               title="${tip}">
@@ -216,6 +224,40 @@
       btn.textContent = hidden ? 'ซ่อน ▲' : 'แสดง ▼';
     }
 
+    // อัปเดตสถานะปุ่มสอบตาม dropdown ที่เลือก
+    function updateTestBtn() {
+      const grade      = document.getElementById('grade')?.value || '';
+      const topicKey   = document.getElementById('chapter')?.value || '';
+      const subtopicKey = document.getElementById('subtopic')?.value || '';
+      const btn = document.getElementById('test-btn');
+      if (!btn) return;
+
+      if (!grade || !topicKey) {
+        btn.disabled = true;
+        btn.title = 'กรุณาเลือกหัวข้อก่อน';
+        btn.textContent = 'สอบ (10 ข้อ)';
+        return;
+      }
+
+      if (subtopicKey) {
+        // สอบ subtopic: พร้อมเสมอ
+        btn.disabled = false;
+        btn.title = 'สอบ subtopic นี้ — ต้องได้ 8/10';
+        btn.textContent = 'สอบ subtopic (10 ข้อ)';
+      } else {
+        // สอบ topic: ต้องผ่านทุก subtopic ก่อน
+        const subs = (gradeTopicSubtopics[grade] || {})[topicKey] || [];
+        const allSubsPassed = subs.length > 0 &&
+          subs.every(s => currentPasses.subtopic[`${grade}|${topicKey}|${s.key}`]);
+
+        btn.disabled = !allSubsPassed;
+        btn.title = allSubsPassed
+          ? 'สอบ topic นี้ — ต้องได้ 8/10'
+          : `ผ่านทุก subtopic ก่อน (${subs.filter(s => currentPasses.subtopic[`${grade}|${topicKey}|${s.key}`]).length}/${subs.length})`;
+        btn.textContent = 'สอบ topic (10 ข้อ)';
+      }
+    }
+
     // คลิก chip → เซต grade/topic แล้ว scroll ลงไปที่ setup panel
     function quickStart(grade, topicKey, subtopicKey) {
       document.getElementById('grade').value = grade;
@@ -223,6 +265,7 @@
       document.getElementById('chapter').value = topicKey;
       onTopicChange(grade, topicKey);
       if (subtopicKey) document.getElementById('subtopic').value = subtopicKey;
+      updateTestBtn();
       document.getElementById('setup-panel').scrollIntoView({ behavior: 'smooth' });
     }
   </script>

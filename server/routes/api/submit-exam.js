@@ -91,6 +91,27 @@ router.post('/', async (req, res) => {
       if (answerData.length > 0) {
         await prisma.examAnswer.createMany({ data: answerData });
       }
+
+      // บันทึก pass record สำหรับ test mode
+      const TEST_PASS_SCORE = 8;
+      const isPassed = correctCount >= TEST_PASS_SCORE && questions.length === 10;
+      const { grade, topicKey, subtopicKey } = req.body;
+
+      if (mode === 'subtopic_test' && isPassed && grade && topicKey && subtopicKey) {
+        await prisma.subtopicPass.upsert({
+          where: { studentProfileId_grade_topicKey_subtopicKey: { studentProfileId, grade, topicKey, subtopicKey } },
+          create: { studentProfileId, grade, topicKey, subtopicKey },
+          update: { passedAt: new Date() }
+        });
+      }
+
+      if (mode === 'topic_test' && isPassed && grade && topicKey) {
+        await prisma.topicPass.upsert({
+          where: { studentProfileId_grade_topicKey: { studentProfileId, grade, topicKey } },
+          create: { studentProfileId, grade, topicKey },
+          update: { passedAt: new Date() }
+        });
+      }
     }
 
     // อัปเดต DailyMission (ทุก mode ยกเว้น targeted)
@@ -182,6 +203,7 @@ router.post('/', async (req, res) => {
       characterLevel = { level: newLevel, totalXp: char.totalXp + xpGain, xpGain };
     }
 
+    const TEST_MODES = ['subtopic_test', 'topic_test'];
     res.json({
       correctCount,
       total: questions.length,
@@ -190,7 +212,8 @@ router.post('/', async (req, res) => {
       questions: records,
       userAnswers: answers,
       weakAttributes,
-      characterLevel
+      characterLevel,
+      passed: TEST_MODES.includes(mode) ? correctCount >= 8 && questions.length === 10 : undefined
     });
 
   } catch (err) {

@@ -70,16 +70,27 @@ router.post('/', async (req, res) => {
         data: {
           studentProfileId,
           mode: mode || 'practice',
-          examSetCode: examSetCode || null,
-          topicTagsJson: [],
-          score,
-          total: questions.length,
+          correctCount,
+          totalCount: questions.length,
           durationSec: durationSec || 0,
-          weakAttributes,
-          questionIds: questions,
-          userAnswers: answers
         }
       });
+
+      // บันทึก ExamAnswer ทีละข้อ สำหรับ topic stats
+      const qMap = Object.fromEntries(records.map(q => [q.id, q]));
+      const answerData = questions.map((qId, i) => {
+        const q = qMap[qId];
+        if (!q) return null;
+        return {
+          studentProfileId,
+          questionId: qId,
+          selectedIdx: parseInt(answers[i]) ?? -1,
+          isCorrect: isCorrectAnswer(answers[i], q),
+        };
+      }).filter(Boolean);
+      if (answerData.length > 0) {
+        await prisma.examAnswer.createMany({ data: answerData });
+      }
     }
 
     // อัปเดต DailyMission (ทุก mode ยกเว้น targeted)

@@ -13,34 +13,46 @@
     #question-area { margin-top: 0; }
 
     /* overview */
-    .overview-grade-title {
-      font-size: 13px; font-weight: 700; color: var(--muted);
-      text-transform: uppercase; letter-spacing: .05em;
-      margin: 16px 0 8px;
+    .overview-header {
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; user-select: none;
     }
-    .overview-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 10px;
+    .overview-toggle {
+      font-size: 12px; color: var(--muted); padding: 2px 8px;
+      border: 1px solid var(--border); border-radius: 6px;
+      background: #f9fafb; transition: background .15s;
     }
-    .topic-card {
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      padding: 12px 14px;
-      background: #fff;
-      cursor: pointer;
-      transition: border-color .15s, box-shadow .15s;
+    .overview-header:hover .overview-toggle { background: #f0f0f0; }
+    .overview-body-wrap { margin-top: 12px; }
+
+    .grade-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 8px; flex-wrap: nowrap; overflow-x: auto;
+      padding-bottom: 4px;
     }
-    .topic-card:hover { border-color: var(--blue); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
-    .topic-card.passed  { border-color: #16a34a; background: #f0fdf4; }
-    .topic-card.started { border-color: #f59e0b; background: #fffbeb; }
-    .topic-card .tc-label { font-weight: 600; font-size: 13px; margin-bottom: 6px; }
-    .topic-card .tc-status { font-size: 12px; margin-bottom: 6px; }
-    .topic-card .tc-bar-bg { height: 5px; background: #e5e7eb; border-radius: 9px; }
-    .topic-card .tc-bar-fill { height: 5px; border-radius: 9px; background: #3b82f6; }
-    .topic-card.passed .tc-bar-fill { background: #16a34a; }
-    .topic-card.started .tc-bar-fill { background: #f59e0b; }
-    .topic-card .tc-meta { font-size: 11px; color: var(--muted); margin-top: 5px; }
+    .grade-row::-webkit-scrollbar { height: 3px; }
+    .grade-row::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 9px; }
+    .grade-label {
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      white-space: nowrap; min-width: 60px;
+    }
+    .topic-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 10px; border-radius: 20px; font-size: 12px;
+      border: 1.5px solid var(--border); background: #fff;
+      cursor: pointer; white-space: nowrap; flex-shrink: 0;
+      transition: border-color .15s, background .15s;
+    }
+    .topic-chip:hover { border-color: var(--blue); background: #eff6ff; }
+    .topic-chip.passed  { border-color: #16a34a; background: #f0fdf4; color: #15803d; }
+    .topic-chip.started { border-color: #f59e0b; background: #fffbeb; color: #92400e; }
+    .topic-chip .chip-bar {
+      width: 32px; height: 3px; background: #e5e7eb;
+      border-radius: 9px; overflow: hidden;
+    }
+    .topic-chip .chip-bar-fill { height: 100%; border-radius: 9px; background: #3b82f6; }
+    .topic-chip.passed  .chip-bar-fill { background: #16a34a; }
+    .topic-chip.started .chip-bar-fill { background: #f59e0b; }
   </style>
 </head>
 <body>
@@ -56,8 +68,11 @@
   <div class="page">
     <!-- topic overview (แสดงเฉพาะ mode ปกติ) -->
     <div id="overview-panel" class="card" style="display:none">
-      <div class="card-title">ภาพรวมหัวข้อ</div>
-      <div id="overview-body">
+      <div class="overview-header" onclick="toggleOverview()">
+        <span class="card-title" style="margin:0">ภาพรวมหัวข้อ</span>
+        <span class="overview-toggle" id="overview-toggle-btn">ซ่อน ▲</span>
+      </div>
+      <div id="overview-body" class="overview-body-wrap">
         <p style="color:var(--muted);font-size:13px">กำลังโหลด...</p>
       </div>
     </div>
@@ -145,33 +160,25 @@
         const topics = gradeTopics[grade] || [];
         if (!topics.length) continue;
         const gradeStats = stats[grade] || {};
+        const passed = topics.filter(t => gradeStats[t.key]?.passed).length;
 
-        // สรุประดับ grade
-        const passed  = topics.filter(t => gradeStats[t.key]?.passed).length;
-        const started = topics.filter(t => gradeStats[t.key] && !gradeStats[t.key].passed).length;
-
-        html += `
-          <div class="overview-grade-title">
-            ${gradeNames[grade]}
-            <span style="font-weight:400;color:#6b7280">— ผ่านแล้ว ${passed}/${topics.length} หัวข้อ</span>
-          </div>
-          <div class="overview-grid">`;
+        html += `<div class="grade-row">
+          <span class="grade-label">${gradeNames[grade]}<br>
+            <span style="font-weight:400;font-size:11px">${passed}/${topics.length}</span>
+          </span>`;
 
         for (const t of topics) {
           const s = gradeStats[t.key];
-          const acc   = s ? Math.round(s.accuracy * 100) : 0;
-          const att   = s?.attempted || 0;
+          const acc = s ? Math.round(s.accuracy * 100) : 0;
           const stateClass = !s ? '' : s.passed ? 'passed' : 'started';
-          const statusIcon = !s ? '⬜' : s.passed ? '✅' : '🔶';
-          const statusText = !s ? 'ยังไม่เริ่ม' : s.passed ? 'ผ่านแล้ว' : `${acc}% (${att} ข้อ)`;
+          const icon = !s ? '⬜' : s.passed ? '✅' : '🔶';
+          const tip = !s ? 'ยังไม่เริ่ม' : s.passed ? `ผ่าน ${acc}%` : `${acc}% (${s.attempted} ข้อ)`;
 
-          html += `
-            <div class="topic-card ${stateClass}" onclick="quickStart('${grade}','${t.key}')">
-              <div class="tc-label">${t.label}</div>
-              <div class="tc-status">${statusIcon} ${statusText}</div>
-              <div class="tc-bar-bg"><div class="tc-bar-fill" style="width:${acc}%"></div></div>
-              ${att > 0 ? `<div class="tc-meta">ตอบถูก ${s.correct}/${att} ข้อ</div>` : ''}
-            </div>`;
+          html += `<span class="topic-chip ${stateClass}" onclick="quickStart('${grade}','${t.key}')"
+              title="${tip}">
+            ${icon} ${t.label}
+            <span class="chip-bar"><span class="chip-bar-fill" style="width:${acc}%"></span></span>
+          </span>`;
         }
         html += '</div>';
       }
@@ -180,7 +187,15 @@
         '<p style="color:var(--muted);font-size:13px">ยังไม่มีข้อมูล</p>';
     }
 
-    // คลิกที่ topic card → เลือก grade/topic แล้วเริ่มทันที
+    function toggleOverview() {
+      const body = document.getElementById('overview-body');
+      const btn  = document.getElementById('overview-toggle-btn');
+      const hidden = body.style.display === 'none';
+      body.style.display = hidden ? '' : 'none';
+      btn.textContent = hidden ? 'ซ่อน ▲' : 'แสดง ▼';
+    }
+
+    // คลิก chip → เซต grade/topic แล้ว scroll ลงไปที่ setup panel
     function quickStart(grade, topicKey) {
       const gradeEl = document.getElementById('grade');
       gradeEl.value = grade;

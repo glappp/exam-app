@@ -252,10 +252,33 @@ async function startExam(runMode = 'practice') {
       return;
     }
 
-    // สุ่ม 10 ข้อสำหรับ test mode
+    // สุ่ม 10 ข้อสำหรับ test mode — สัดส่วน ง่าย 3 / กลาง 4 / ยาก 3
     if (isTestMode) {
-      const shuffled = [...filteredQuestions].sort(() => Math.random() - 0.5);
-      filteredQuestions = shuffled.slice(0, TEST_TOTAL);
+      const targets = { 1: 3, 2: 4, 3: 3 };
+      const byDiff  = { 1: [], 2: [], 3: [] };
+      for (const q of filteredQuestions) {
+        const d = q.attributes?.difficulty;
+        if (d === 1 || d === 2 || d === 3) byDiff[d].push(q);
+        else byDiff[2].push(q); // ไม่มี difficulty → จัดเป็นกลาง
+      }
+      for (const d of [1, 2, 3]) byDiff[d].sort(() => Math.random() - 0.5);
+
+      const selected = new Map(); // id → question (ป้องกันซ้ำ)
+      for (const d of [1, 2, 3]) {
+        for (let i = 0; i < targets[d] && i < byDiff[d].length; i++) {
+          const q = byDiff[d][i];
+          selected.set(q.id, q);
+        }
+      }
+      // เติมที่เหลือจากทั้งหมด (ถ้า block ไหนไม่พอ)
+      if (selected.size < TEST_TOTAL) {
+        const pool = filteredQuestions.filter(q => !selected.has(q.id)).sort(() => Math.random() - 0.5);
+        for (const q of pool) {
+          if (selected.size >= TEST_TOTAL) break;
+          selected.set(q.id, q);
+        }
+      }
+      filteredQuestions = [...selected.values()].sort(() => Math.random() - 0.5);
     }
 
     // Reset session

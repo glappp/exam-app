@@ -215,25 +215,31 @@ router.get('/topic-stats', requireLogin, async (req, res) => {
     });
     if (answers.length === 0) return res.json({ stats: {} });
 
-    // สะสม attempted/correct ต่อ grade+topic
+    // สะสม attempted/correct ต่อ grade → topic → subtopic
     const stats = {};
     for (const a of answers) {
       const g = a.question?.attributes?.examGrade || '';
-      const grade = /^\d/.test(g) ? 'p' + g : g;
-      const topic = (a.question?.attributes?.topic || [])[0];
+      const grade   = /^\d/.test(g) ? 'p' + g : g;
+      const topic   = (a.question?.attributes?.topic    || [])[0];
+      const subtopic = (a.question?.attributes?.subtopic || [])[0];
       if (!grade || !topic) continue;
       if (!stats[grade]) stats[grade] = {};
-      if (!stats[grade][topic]) stats[grade][topic] = { attempted: 0, correct: 0 };
-      stats[grade][topic].attempted++;
-      if (a.isCorrect) stats[grade][topic].correct++;
+      if (!stats[grade][topic]) stats[grade][topic] = {};
+      if (subtopic) {
+        if (!stats[grade][topic][subtopic]) stats[grade][topic][subtopic] = { attempted: 0, correct: 0 };
+        stats[grade][topic][subtopic].attempted++;
+        if (a.isCorrect) stats[grade][topic][subtopic].correct++;
+      }
     }
 
-    // คำนวณ accuracy + passed
+    // คำนวณ accuracy + passed ต่อ subtopic
     for (const grade of Object.keys(stats)) {
       for (const topic of Object.keys(stats[grade])) {
-        const s = stats[grade][topic];
-        s.accuracy = s.attempted > 0 ? s.correct / s.attempted : 0;
-        s.passed   = s.attempted >= PASS_MIN_ATTEMPTS && s.accuracy >= PASS_ACCURACY;
+        for (const sub of Object.keys(stats[grade][topic])) {
+          const s = stats[grade][topic][sub];
+          s.accuracy = s.attempted > 0 ? s.correct / s.attempted : 0;
+          s.passed   = s.attempted >= PASS_MIN_ATTEMPTS && s.accuracy >= PASS_ACCURACY;
+        }
       }
     }
 

@@ -331,6 +331,41 @@ model CurriculumSection {
 
 ---
 
+## รูปภาพในโจทย์และตัวเลือก (planned)
+
+### โครงสร้างปัจจุบัน
+- `Question.image` (String | null) — มีอยู่แล้วใน schema แต่ยังไม่ถูกใช้งาน
+- `Question.choices` — JSON array ของ `{ textTh, textEn }` — ยังไม่มี image
+
+### แนวทาง (ไม่ต้องแก้ schema)
+```
+รูปโจทย์   → Question.image = "/uploads/q_<id>.png"
+รูปตัวเลือก → choices[i].image = "/uploads/c_<id>.png"  (เพิ่ม field ใน JSON)
+```
+
+ตัวอย่าง choices JSON ที่มีรูป:
+```json
+[
+  { "textTh": "ตัวเลือก ก", "textEn": "Choice A", "image": "/uploads/c_abc.png" },
+  { "textTh": "ตัวเลือก ข", "textEn": "Choice B", "image": null }
+]
+```
+
+### งานที่ต้องทำ
+
+| ส่วน | รายละเอียด |
+|------|-----------|
+| Backend | `POST /api/upload` รับไฟล์รูปด้วย `multer` → บันทึกใน `server/uploads/` → คืน URL |
+| Admin UI | form กรอกโจทย์: upload รูปโจทย์ + รูปแต่ละตัวเลือก (optional) |
+| Practice/Exam UI | render `<img>` ใต้ข้อความโจทย์ + ใน choice button (ถ้า choice.image มีค่า) |
+
+### หมายเหตุ
+- `server/uploads/` เสิร์ฟที่ `/uploads/` อยู่แล้ว
+- ถ้า deploy บน Render (ephemeral FS) ควรย้ายไปเก็บที่ R2 (config พร้อมแล้วใน env)
+- ยังไม่มีข้อสอบในฐานข้อมูลที่ใช้รูปภาพ — เพิ่มได้ทีหลัง
+
+---
+
 ## Logic สำคัญ
 
 - **เกณฑ์การผ่าน** — hardcode 8/10 ทุก section

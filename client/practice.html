@@ -104,9 +104,15 @@
           </select>
         </div>
         <div class="form-group">
-          <label>หัวข้อ</label>
-          <select id="chapter" disabled>
+          <label>หัวข้อหลัก</label>
+          <select id="chapter" disabled onchange="onTopicChange(document.getElementById('grade').value, this.value)">
             <option value="">-- เลือกชั้นก่อน --</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>หัวข้อย่อย</label>
+          <select id="subtopic" disabled>
+            <option value="">ทั้งหมด</option>
           </select>
         </div>
       </div>
@@ -160,24 +166,39 @@
         const topics = gradeTopics[grade] || [];
         if (!topics.length) continue;
         const gradeStats = stats[grade] || {};
-        const passed = topics.filter(t => gradeStats[t.key]?.passed).length;
+
+        // นับ subtopic ผ่านทั้งหมดของ grade
+        let totalSubs = 0, passedSubs = 0;
+        for (const t of topics) {
+          const subs = (gradeTopicSubtopics[grade] || {})[t.key] || [];
+          totalSubs += subs.length;
+          passedSubs += subs.filter(s => gradeStats[t.key]?.[s.key]?.passed).length;
+        }
 
         html += `<div class="grade-row">
           <span class="grade-label">${gradeNames[grade]}<br>
-            <span style="font-weight:400;font-size:11px">${passed}/${topics.length}</span>
+            <span style="font-weight:400;font-size:11px">${passedSubs}/${totalSubs}</span>
           </span>`;
 
         for (const t of topics) {
-          const s = gradeStats[t.key];
-          const acc = s ? Math.round(s.accuracy * 100) : 0;
-          const stateClass = !s ? '' : s.passed ? 'passed' : 'started';
-          const icon = !s ? '⬜' : s.passed ? '✅' : '🔶';
-          const tip = !s ? 'ยังไม่เริ่ม' : s.passed ? `ผ่าน ${acc}%` : `${acc}% (${s.attempted} ข้อ)`;
+          const topicSubs = (gradeTopicSubtopics[grade] || {})[t.key] || [];
+          const topicSubStats = gradeStats[t.key] || {};
+          const subPassed = topicSubs.filter(s => topicSubStats[s.key]?.passed).length;
+          const subTotal  = topicSubs.length;
+          const allPassed = subTotal > 0 && subPassed === subTotal;
+          const anyStarted = topicSubs.some(s => topicSubStats[s.key]?.attempted > 0);
+          const avgAcc = topicSubs.reduce((sum, s) => sum + (topicSubStats[s.key]?.accuracy || 0), 0) / (subTotal || 1);
+          const accPct = Math.round(avgAcc * 100);
+
+          const stateClass = allPassed ? 'passed' : anyStarted ? 'started' : '';
+          const icon = allPassed ? '✅' : anyStarted ? '🔶' : '⬜';
+          const tip  = allPassed ? `ผ่านทุกหัวข้อย่อย` : anyStarted ? `${subPassed}/${subTotal} หัวข้อย่อยผ่าน` : 'ยังไม่เริ่ม';
 
           html += `<span class="topic-chip ${stateClass}" onclick="quickStart('${grade}','${t.key}')"
               title="${tip}">
             ${icon} ${t.label}
-            <span class="chip-bar"><span class="chip-bar-fill" style="width:${acc}%"></span></span>
+            ${subTotal > 0 ? `<small style="opacity:.65">${subPassed}/${subTotal}</small>` : ''}
+            <span class="chip-bar"><span class="chip-bar-fill" style="width:${accPct}%"></span></span>
           </span>`;
         }
         html += '</div>';
@@ -196,11 +217,12 @@
     }
 
     // คลิก chip → เซต grade/topic แล้ว scroll ลงไปที่ setup panel
-    function quickStart(grade, topicKey) {
-      const gradeEl = document.getElementById('grade');
-      gradeEl.value = grade;
+    function quickStart(grade, topicKey, subtopicKey) {
+      document.getElementById('grade').value = grade;
       onGradeChange(grade);
       document.getElementById('chapter').value = topicKey;
+      onTopicChange(grade, topicKey);
+      if (subtopicKey) document.getElementById('subtopic').value = subtopicKey;
       document.getElementById('setup-panel').scrollIntoView({ behavior: 'smooth' });
     }
   </script>

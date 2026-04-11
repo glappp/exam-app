@@ -167,8 +167,9 @@ async function startExam() {
       }
       document.getElementById('adaptive-banner').style.display = 'block';
     } else {
-      const grade    = document.getElementById('grade')?.value || '';
-      const topicKey = document.getElementById('chapter').value;
+      const grade      = document.getElementById('grade')?.value || '';
+      const topicKey   = document.getElementById('chapter').value;
+      const subtopicKey = document.getElementById('subtopic')?.value || '';
 
       if (!grade || !topicKey) {
         document.getElementById('question-area').innerHTML = '';
@@ -183,14 +184,16 @@ async function startExam() {
       allQuestions = data.questions || [];
 
       filteredQuestions = allQuestions.filter(q => {
-        // normalize grade: "4" -> "p4"
         const g = q.attributes?.examGrade || '';
         const normalGrade = /^\d/.test(g) ? 'p' + g : g;
-        return normalGrade === grade && (q.attributes?.topic || []).includes(topicKey);
+        if (normalGrade !== grade) return false;
+        if (!(q.attributes?.topic || []).includes(topicKey)) return false;
+        if (subtopicKey && !(q.attributes?.subtopic || []).includes(subtopicKey)) return false;
+        return true;
       });
 
       if (filteredQuestions.length === 0) {
-        const label = getTopicLabel(topicKey);
+        const label = subtopicKey ? getSubtopicLabel(subtopicKey) : getTopicLabel(topicKey);
         document.getElementById('question-area').innerHTML =
           `<div class="card"><p class="msg msg-error">ไม่พบโจทย์ในหัวข้อ "${label}"</p></div>`;
         document.getElementById('setup-panel').style.display = '';

@@ -2,6 +2,9 @@ let currentLang = 'th';
 let currentQuestion = null;
 let currentAnswer = -1;
 
+const CHOICE_LABELS = ['ก', 'ข', 'ค', 'ง', 'จ'];
+function choiceLabel(i) { return CHOICE_LABELS[i] ?? String(i + 1); }
+
 // Practice session state
 let sessionStartTime = null;
 let sessionQuestions = [];
@@ -67,7 +70,7 @@ function renderTargetedQuestion() {
   const done = 10 - targetedQueue.length;
   const choicesHTML = (q.choices || []).map((c, i) =>
     `<button class="choice-btn" id="choice-${i}" onclick="checkAnswerTargeted(${i})">
-      <strong>${String.fromCharCode(65 + i)}.</strong> ${getChoiceText(c)}
+      <strong>${choiceLabel(i)}.</strong> ${getChoiceText(c)}
     </button>`
   ).join('');
 
@@ -100,7 +103,7 @@ function checkAnswerTargeted(choiceIndex) {
 
   document.getElementById('answer-feedback').innerHTML = isCorrect
     ? `<span class="badge badge-success">✔ ถูกต้อง!</span>`
-    : `<span class="badge badge-error">✘ ผิด — เฉลยคือ ข้อ ${String.fromCharCode(65 + currentAnswer)} (ข้อนี้จะกลับมาอีก)</span>`;
+    : `<span class="badge badge-error">✘ ผิด — เฉลยคือ ข้อ ${choiceLabel(currentAnswer)} (ข้อนี้จะกลับมาอีก)</span>`;
 
   if (isCorrect) {
     targetedQueue.shift();
@@ -246,7 +249,7 @@ function renderCurrentQuestion() {
   const choicesHTML = (q.choices || []).map((c, i) =>
     `<button class="choice-btn" id="choice-${i}" onclick="checkAnswer(${i})">
       ${c.image ? `<img src="/uploads/${c.image}" style="max-height:50px;margin-bottom:4px;display:block">` : ''}
-      <strong>${String.fromCharCode(65 + i)}.</strong> ${getChoiceText(c)}
+      <strong>${choiceLabel(i)}.</strong> ${getChoiceText(c)}
     </button>`
   ).join('');
 
@@ -292,7 +295,7 @@ function checkAnswer(choiceIndex) {
 
   document.getElementById('answer-feedback').innerHTML = isCorrect
     ? `<span class="badge badge-success">✔ ถูกต้อง!</span>`
-    : `<span class="badge badge-error">✘ ผิด — เฉลยคือ ข้อ ${String.fromCharCode(65 + currentAnswer)}</span>`;
+    : `<span class="badge badge-error">✘ ผิด — เฉลยคือ ข้อ ${choiceLabel(currentAnswer)}</span>`;
 
   // Record
   sessionQuestions.push(currentQuestion);
@@ -347,8 +350,8 @@ function showFinalResults(data, durationSec) {
       <tr>
         <td style="text-align:center">${i + 1}</td>
         <td>${text.length > 70 ? text.substring(0, 70) + '…' : text}</td>
-        <td style="text-align:center">${String.fromCharCode(65 + sessionAnswers[i])}</td>
-        <td style="text-align:center">${String.fromCharCode(65 + q.answer)}</td>
+        <td style="text-align:center">${choiceLabel(sessionAnswers[i])}</td>
+        <td style="text-align:center">${choiceLabel(q.answer)}</td>
         <td style="text-align:center">
           <span class="badge ${correct ? 'badge-success' : 'badge-error'}">${correct ? 'ถูก' : 'ผิด'}</span>
         </td>

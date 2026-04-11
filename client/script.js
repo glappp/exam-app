@@ -157,29 +157,39 @@ async function startExam() {
       // แสดง banner ว่าเน้นหัวข้อไหน
       const desc = document.getElementById('adaptive-desc');
       if (data.weakTopicTags?.length > 0) {
-        const labels = data.weakTopicTags.map(t => {
-          const key = t.replace('topic:', '');
-          return reverseTopicMap[key] || key;
-        });
+        const labels = data.weakTopicTags.map(t => getTopicLabel(t));
         desc.textContent = `เน้นจุดอ่อน: ${labels.join(', ')}`;
       } else {
         desc.textContent = 'ยังไม่มีประวัติสอบ — สุ่มโจทย์ทั่วไปให้';
       }
       document.getElementById('adaptive-banner').style.display = 'block';
     } else {
-      const chapterText = document.getElementById('chapter').value;
-      const topicTag = topicMap[chapterText];
+      const grade    = document.getElementById('grade')?.value || '';
+      const topicKey = document.getElementById('chapter').value;
+
+      if (!grade || !topicKey) {
+        document.getElementById('question-area').innerHTML = '';
+        document.getElementById('setup-panel').style.display = '';
+        alert('กรุณาเลือกระดับชั้นและหัวข้อก่อน');
+        return;
+      }
+
       const res = await fetch('/questions/all', { credentials: 'include' });
       if (!res.ok) throw new Error('โหลดโจทย์ไม่สำเร็จ');
       const data = await res.json();
       allQuestions = data.questions || [];
-      filteredQuestions = topicTag
-        ? allQuestions.filter(q => q.attributes?.topic?.includes(`topic:${topicTag}`))
-        : allQuestions;
+
+      filteredQuestions = allQuestions.filter(q => {
+        // normalize grade: "4" -> "p4"
+        const g = q.attributes?.examGrade || '';
+        const normalGrade = /^\d/.test(g) ? 'p' + g : g;
+        return normalGrade === grade && (q.attributes?.topic || []).includes(topicKey);
+      });
 
       if (filteredQuestions.length === 0) {
+        const label = getTopicLabel(topicKey);
         document.getElementById('question-area').innerHTML =
-          `<div class="card"><p class="msg msg-error">ไม่พบโจทย์ในหัวข้อ "${chapterText}"</p></div>`;
+          `<div class="card"><p class="msg msg-error">ไม่พบโจทย์ในหัวข้อ "${label}"</p></div>`;
         document.getElementById('setup-panel').style.display = '';
         return;
       }

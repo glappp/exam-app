@@ -60,24 +60,20 @@
     <div class="card" id="setup-panel">
       <div class="card-title" id="setup-title">เลือกหัวข้อที่ต้องการฝึก</div>
 
-      <div class="form-row" style="margin-bottom:14px">
+      <div class="form-row" style="margin-bottom:14px" id="chapter-group">
         <div class="form-group">
-          <label>ภาษา</label>
-          <select id="language" onchange="changeLang(this.value)">
-            <option value="th">ไทย</option>
-            <option value="en">English</option>
+          <label>ระดับชั้น</label>
+          <select id="grade" onchange="onGradeChange(this.value)">
+            <option value="">-- เลือกชั้น --</option>
+            <option value="p4">ป.4</option>
+            <option value="p5">ป.5</option>
+            <option value="p6">ป.6</option>
           </select>
         </div>
-        <div class="form-group" id="chapter-group">
+        <div class="form-group">
           <label>หัวข้อ</label>
-          <select id="chapter">
-            <option>บวก</option>
-            <option>ลบ</option>
-            <option>คูณ</option>
-            <option>หาร</option>
-            <option>เศษส่วน</option>
-            <option>สมการ</option>
-            <option>พื้นที่</option>
+          <select id="chapter" disabled>
+            <option value="">-- เลือกชั้นก่อน --</option>
           </select>
         </div>
       </div>

@@ -15,6 +15,8 @@ router.post('/', async (req, res) => {
     const records = await prisma.question.findMany({
       where: { id: { in: questions } }
     });
+    // สร้าง map เพื่อ lookup ตาม id (Prisma ไม่รับประกันลำดับ)
+    const qMap = Object.fromEntries(records.map(q => [q.id, q]));
 
     const TIMED_MODES = ['competitive', 'official'];
     let correctCount = 0;
@@ -22,7 +24,9 @@ router.post('/', async (req, res) => {
     let fullScore = 0;
     const weakTagSet = new Set();
 
-    records.forEach((q, i) => {
+    questions.forEach((qId, i) => {
+      const q = qMap[qId];
+      if (!q) return;
       const userAns = answers[i];
       const correct = isCorrectAnswer(userAns, q);
       const thisScore = q.score || 1;

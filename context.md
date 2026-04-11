@@ -1,7 +1,7 @@
 # context.md — exam-app
 
 > อ่านไฟล์นี้ก่อนเริ่มงานทุกครั้ง
-> อัปเดตล่าสุด: 2026-04-11
+> อัปเดตล่าสุด: 2026-04-12
 
 ---
 
@@ -56,6 +56,21 @@
 ### MockBlueprint
 `name`, `grade`, `timeLimitSec`, `totalQuestions`, `avgPassScore`, `topics` (JSON), `difficulty` (JSON)
 
+### Pass Tracking Models ✅ (2026-04-12)
+```
+SubtopicPass  studentProfileId, grade, topicKey, subtopicKey, passedAt
+              @@unique([studentProfileId, grade, topicKey, subtopicKey])
+TopicPass     studentProfileId, grade, topicKey, passedAt
+              @@unique([studentProfileId, grade, topicKey])
+```
+บันทึกเมื่อผ่านการสอบ (≥8/10) โหมด `subtopic_test` / `topic_test`
+
+### ExamAnswer ✅ (2026-04-12)
+```
+ExamAnswer  studentProfileId, questionId, selectedIdx, isCorrect, createdAt
+```
+บันทึกทุก submit — ใช้คำนวณ accuracy ต่อ subtopic ใน `/api/student/topic-stats`
+
 ### Gamification Models
 - `PointTransaction`, `DailyMission`, `CharacterState` — XP, level
 - `Announcement`, `AnnouncementRead` — ประกาศ
@@ -92,6 +107,7 @@ TicketDailyUsage  userId, date(YYYY-MM-DD ICT), usedCount
 | POST | `/api/ai/generate-questions` | สร้างโจทย์ด้วย AI |
 | GET | `/api/tickets/balance` | ยอดตั๋ว + ใช้ไปวันนี้ |
 | POST | `/api/tickets/use` | หัก 1 ใบ (competitive mode) |
+| GET | `/api/student/topic-stats` | stats accuracy + passes (SubtopicPass/TopicPass) |
 
 ---
 
@@ -108,6 +124,7 @@ TicketDailyUsage  userId, date(YYYY-MM-DD ICT), usedCount
 
 - **อย่าแก้ไข code ที่รันได้ปกติอยู่แล้ว** โดยไม่มีเหตุผล — ถ้า user บอกว่า "เมื่อวานรันได้" ให้เชื่อ และหา root cause จริงๆ ก่อน
 - **อย่าเดาว่า code ผิด** แค่เพราะ server start ไม่ติดครั้งแรก — ให้อ่าน error message ให้ครบก่อนแก้
+- **Prisma findMany ไม่รับประกันลำดับ** — ถ้าต้องการ map คำตอบกับคำถาม ให้สร้าง `qMap = Object.fromEntries(records.map(q=>[q.id,q]))` แล้ว iterate `questions` array เสมอ (bug เก่าที่แก้แล้ว 2026-04-12)
 
 ---
 
@@ -179,7 +196,7 @@ node prisma/seed-questions-order-of-operations-p6.js     # 80 ข้อ (bodmas-
 
 ---
 
-## Question Bank Status (2026-04-11)
+## Question Bank Status (2026-04-12)
 
 | Grade | ข้อ | Topics |
 |-------|-----|--------|

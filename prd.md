@@ -1,7 +1,7 @@
 # prd.md — exam-app Product Requirements
 
 > แผนงานและ requirements ของ feature ที่กำลังพัฒนาหรือรอพัฒนา
-> อัปเดตล่าสุด: 2026-04-11
+> อัปเดตล่าสุด: 2026-04-12
 
 ---
 
@@ -219,7 +219,7 @@ label           String?
 year            String?
 ```
 
-### ExamAnswer (ใหม่)
+### ExamAnswer ✅ (implement แล้ว 2026-04-12)
 ```prisma
 model ExamAnswer {
   id               Int      @id @default(autoincrement())
@@ -230,6 +230,31 @@ model ExamAnswer {
   timeSec          Int?
   createdAt        DateTime @default(now())
   @@index([studentProfileId])
+}
+```
+
+### SubtopicPass ✅ (implement แล้ว 2026-04-12)
+```prisma
+model SubtopicPass {
+  id               Int            @id @default(autoincrement())
+  studentProfileId Int
+  grade            String
+  topicKey         String
+  subtopicKey      String
+  passedAt         DateTime       @default(now())
+  @@unique([studentProfileId, grade, topicKey, subtopicKey])
+}
+```
+
+### TopicPass ✅ (implement แล้ว 2026-04-12)
+```prisma
+model TopicPass {
+  id               Int            @id @default(autoincrement())
+  studentProfileId Int
+  grade            String
+  topicKey         String
+  passedAt         DateTime       @default(now())
+  @@unique([studentProfileId, grade, topicKey])
 }
 ```
 
@@ -287,6 +312,22 @@ model CurriculumSection {
   isActive     Boolean    @default(true)
 }
 ```
+
+---
+
+## Practice Mode — ระบบ Pass/Fail ✅ (implement แล้ว 2026-04-12)
+
+| โหมด | จำนวนข้อ | เกณฑ์ผ่าน | บันทึก |
+|------|---------|----------|--------|
+| `practice` (ฝึก) | ไม่จำกัด | ไม่มี | ExamAnswer, ExamResult |
+| `subtopic_test` (สอบ subtopic) | 10 ข้อ | ≥8/10 | + SubtopicPass |
+| `topic_test` (สอบ topic) | 10 ข้อ | ≥8/10 | + TopicPass |
+
+**Gate:** สอบ topic ได้ก็ต่อเมื่อผ่านทุก subtopic แล้ว
+
+**สัดส่วน difficulty ใน test:** ง่าย 3 / กลาง 4 / ยาก 3 (ถ้าไม่พอสุ่มจาก pool)
+
+**UI:** practice.html — topic overview compact row + toggle, สอบ button disabled จนกว่าเงื่อนไขผ่าน
 
 ---
 

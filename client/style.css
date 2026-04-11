@@ -106,6 +106,9 @@ body {
 .btn-navy:hover    { background: #163050; }
 .btn-ghost   { background: transparent; color: var(--muted); border: 1px solid var(--border); }
 .btn-ghost:hover   { background: #f0f0f0; }
+.btn-outline { background: transparent; color: var(--blue); border: 1.5px solid var(--blue); }
+.btn-outline:hover:not(:disabled) { background: #eff6ff; }
+.btn-outline:disabled { color: #9ca3af; border-color: #d1d5db; cursor: not-allowed; }
 .btn-danger  { background: #ef4444; color: #fff; }
 .btn-danger:hover  { background: #dc2626; }
 .btn-full { width: 100%; }

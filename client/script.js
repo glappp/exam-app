@@ -12,6 +12,15 @@ let sessionAnswers = [];
 let filteredQuestions = [];
 let usedIndices = new Set();
 
+// Test mode state
+let isTestMode = false;
+let testType = null;      // 'subtopic' | 'topic'
+let testGrade = '';
+let testTopicKey = '';
+let testSubtopicKey = '';
+const TEST_TOTAL = 10;
+const TEST_PASS  = 8;
+
 // Adaptive mode
 const isAdaptive = new URLSearchParams(location.search).get('mode') === 'adaptive';
 
@@ -142,11 +151,15 @@ function changeLang(lang) {
   if (currentQuestion) renderCurrentQuestion();
 }
 
-async function startExam() {
+async function startExam(runMode = 'practice') {
   document.getElementById('setup-panel').style.display = 'none';
   document.getElementById('results').innerHTML = '';
   document.getElementById('question-area').innerHTML =
     '<p style="text-align:center;padding:32px;color:var(--muted)">กำลังโหลดโจทย์...</p>';
+
+  // ตั้งค่า test mode
+  isTestMode = (runMode === 'test');
+  testType = null; testGrade = ''; testTopicKey = ''; testSubtopicKey = '';
 
   try {
     let allQuestions;
@@ -157,7 +170,6 @@ async function startExam() {
       const data = await res.json();
       allQuestions = data.questions || [];
 
-      // แสดง banner ว่าเน้นหัวข้อไหน
       const desc = document.getElementById('adaptive-desc');
       if (data.weakTopicTags?.length > 0) {
         const labels = data.weakTopicTags.map(t => getTopicLabel(t));
@@ -167,8 +179,8 @@ async function startExam() {
       }
       document.getElementById('adaptive-banner').style.display = 'block';
     } else {
-      const grade      = document.getElementById('grade')?.value || '';
-      const topicKey   = document.getElementById('chapter').value;
+      const grade       = document.getElementById('grade')?.value || '';
+      const topicKey    = document.getElementById('chapter').value;
       const subtopicKey = document.getElementById('subtopic')?.value || '';
 
       if (!grade || !topicKey) {
@@ -188,14 +200,44 @@ async function startExam() {
         const normalGrade = /^\d/.test(g) ? 'p' + g : g;
         if (normalGrade !== grade) return false;
         if (!(q.attributes?.topic || []).includes(topicKey)) return false;
-        if (subtopicKey && !(q.attributes?.subtopic || []).includes(subtopicKey)) return false;
+        // โหมดสอบ topic ไม่กรอง subtopic (สุ่มจากทั้ง topic)
+        if (subtopicKey && !isTestMode) {
+          if (!(q.attributes?.subtopic || []).includes(subtopicKey)) return false;
+        }
+        if (subtopicKey && isTestMode && testType === null) {
+          // ถ้าเลือก subtopic ไว้ = สอบ subtopic
+        }
         return true;
       });
+
+      if (isTestMode) {
+        if (subtopicKey) {
+          // สอบ subtopic — กรอง subtopic ด้วย
+          filteredQuestions = filteredQuestions.filter(q =>
+            (q.attributes?.subtopic || []).includes(subtopicKey)
+          );
+          testType = 'subtopic';
+          testSubtopicKey = subtopicKey;
+        } else {
+          testType = 'topic';
+        }
+        testGrade    = grade;
+        testTopicKey = topicKey;
+      }
 
       if (filteredQuestions.length === 0) {
         const label = subtopicKey ? getSubtopicLabel(subtopicKey) : getTopicLabel(topicKey);
         document.getElementById('question-area').innerHTML =
           `<div class="card"><p class="msg msg-error">ไม่พบโจทย์ในหัวข้อ "${label}"</p></div>`;
+        document.getElementById('setup-panel').style.display = '';
+        return;
+      }
+
+      // โหมดสอบต้องมี >= 10 ข้อ
+      if (isTestMode && filteredQuestions.length < TEST_TOTAL) {
+        const label = testType === 'subtopic' ? getSubtopicLabel(subtopicKey) : getTopicLabel(topicKey);
+        document.getElementById('question-area').innerHTML =
+          `<div class="card"><p class="msg msg-error">โจทย์ในหัวข้อ "${label}" มีไม่ถึง ${TEST_TOTAL} ข้อ (มี ${filteredQuestions.length} ข้อ)</p></div>`;
         document.getElementById('setup-panel').style.display = '';
         return;
       }
@@ -208,6 +250,12 @@ async function startExam() {
         `<div class="card"><p class="msg msg-error">ไม่พบโจทย์ในระบบ</p></div>`;
       document.getElementById('setup-panel').style.display = '';
       return;
+    }
+
+    // สุ่ม 10 ข้อสำหรับ test mode
+    if (isTestMode) {
+      const shuffled = [...filteredQuestions].sort(() => Math.random() - 0.5);
+      filteredQuestions = shuffled.slice(0, TEST_TOTAL);
     }
 
     // Reset session
@@ -225,13 +273,29 @@ async function startExam() {
 }
 
 function loadNextQuestion() {
+  // test mode: ครบ 10 ข้อ → submit อัตโนมัติ
+  if (isTestMode && sessionQuestions.length >= TEST_TOTAL) {
+    submitAndShowResults();
+    return;
+  }
+
+  // test mode ใช้ index ตรงๆ (pre-shuffled)
+  if (isTestMode) {
+    const idx = sessionQuestions.length; // ยังไม่บันทึก = index ถัดไป
+    // แต่ sessionQuestions บันทึกหลังตอบ ดังนั้น index = sessionAnswers.length
+    const nextIdx = sessionAnswers.length;
+    currentQuestion = filteredQuestions[nextIdx];
+    currentAnswer = currentQuestion.answer;
+    renderCurrentQuestion();
+    return;
+  }
+
   const available = filteredQuestions
     .map((_, i) => i)
     .filter(i => !usedIndices.has(i));
 
   let idx;
   if (available.length === 0) {
-    // ทำครบทุกข้อแล้ว วนใหม่
     usedIndices.clear();
     idx = Math.floor(Math.random() * filteredQuestions.length);
   } else {
@@ -247,7 +311,7 @@ function loadNextQuestion() {
 
 function renderCurrentQuestion() {
   const q = currentQuestion;
-  const answered = sessionQuestions.length;
+  const answered = sessionAnswers.length;
 
   const choicesHTML = (q.choices || []).map((c, i) =>
     `<button class="choice-btn" id="choice-${i}" onclick="checkAnswer(${i})">
@@ -256,7 +320,18 @@ function renderCurrentQuestion() {
     </button>`
   ).join('');
 
-  const endBtn = answered > 0
+  // test mode: progress bar + ไม่มีปุ่มจบกลางคัน
+  const progressHTML = isTestMode
+    ? `<div style="background:#e5e7eb;border-radius:99px;height:5px;margin-bottom:16px">
+         <div style="background:#3b82f6;height:5px;border-radius:99px;width:${answered / TEST_TOTAL * 100}%;transition:width .3s"></div>
+       </div>`
+    : '';
+
+  const headerRight = isTestMode
+    ? `<span style="font-size:13px;color:var(--muted)">${answered}/${TEST_TOTAL} ข้อ</span>`
+    : answered > 0 ? `<span style="font-size:13px;color:var(--muted)">ทำไปแล้ว ${answered} ข้อ</span>` : '';
+
+  const endBtn = !isTestMode && answered > 0
     ? `<button class="btn btn-ghost" style="margin-top:16px;width:100%" onclick="submitAndShowResults()">
         จบการฝึก (ทำแล้ว ${answered} ข้อ)
        </button>`
@@ -264,10 +339,11 @@ function renderCurrentQuestion() {
 
   document.getElementById('question-area').innerHTML = `
     <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span class="card-title" style="margin:0">ข้อที่ ${answered + 1}</span>
-        ${answered > 0 ? `<span style="font-size:13px;color:var(--muted)">ทำไปแล้ว ${answered} ข้อ</span>` : ''}
+        ${headerRight}
       </div>
+      ${progressHTML}
       <div style="font-size:15px;line-height:1.7;margin-bottom:14px">${getText(q)}</div>
       ${q.image ? `<img src="/uploads/${q.image}" style="max-width:100%;margin-bottom:14px;border-radius:8px">` : ''}
       <div class="choices">${choicesHTML}</div>
@@ -317,15 +393,19 @@ async function submitAndShowResults() {
     '<p style="text-align:center;padding:32px;color:var(--muted)">กำลังบันทึกผล...</p>';
 
   try {
+    let submitMode = isAdaptive ? 'adaptive' : 'practice';
+    if (isTestMode) submitMode = testType === 'subtopic' ? 'subtopic_test' : 'topic_test';
+
     const res = await fetch('/api/submit-exam', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        mode: isAdaptive ? 'adaptive' : 'practice',
+        mode: submitMode,
         questions: sessionQuestions.map(q => q.id),
         answers: sessionAnswers,
-        durationSec
+        durationSec,
+        ...(isTestMode ? { grade: testGrade, topicKey: testTopicKey, subtopicKey: testSubtopicKey } : {})
       })
     });
     if (!res.ok) throw new Error('บันทึกผลไม่สำเร็จ');
@@ -339,7 +419,7 @@ async function submitAndShowResults() {
 }
 
 function showFinalResults(data, durationSec) {
-  const { correctCount, total } = data;
+  const { correctCount, total, passed } = data;
   const pct = total > 0 ? Math.round(correctCount / total * 100) : 0;
   const mins = Math.floor(durationSec / 60);
   const secs = durationSec % 60;
@@ -362,11 +442,37 @@ function showFinalResults(data, durationSec) {
     `;
   }).join('');
 
+  // test mode: pass/fail banner
+  const testBanner = isTestMode ? (() => {
+    const typeName = testType === 'subtopic'
+      ? getSubtopicLabel(testSubtopicKey) || 'subtopic'
+      : getTopicLabel(testTopicKey) || 'topic';
+    if (passed) {
+      return `<div style="background:#f0fdf4;border:2px solid #16a34a;border-radius:10px;padding:16px;text-align:center;margin-bottom:16px">
+        <div style="font-size:36px">🎉</div>
+        <div style="font-weight:700;color:#15803d;font-size:18px;margin-top:4px">ผ่าน!</div>
+        <div style="color:#166534;font-size:14px;margin-top:4px">${typeName} — ${correctCount}/${total} ข้อ</div>
+      </div>`;
+    } else {
+      return `<div style="background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:16px;text-align:center;margin-bottom:16px">
+        <div style="font-size:36px">😓</div>
+        <div style="font-weight:700;color:#dc2626;font-size:18px;margin-top:4px">ยังไม่ผ่าน</div>
+        <div style="color:#991b1b;font-size:14px;margin-top:4px">${typeName} — ได้ ${correctCount}/${total} (ต้องได้ ${TEST_PASS} ขึ้นไป)</div>
+      </div>`;
+    }
+  })() : '';
+
+  const cardTitle = isTestMode ? 'ผลการสอบ' : 'ผลการฝึกหัด';
+  const retryBtn = isTestMode
+    ? `<button class="btn btn-primary" onclick="resetPractice()">สอบอีกครั้ง</button>`
+    : `<button class="btn btn-primary" onclick="resetPractice()">ฝึกต่อ</button>`;
+
   document.getElementById('question-area').innerHTML = '';
   document.getElementById('results').innerHTML = `
     <div class="card">
-      <div class="card-title">ผลการฝึกหัด</div>
-      <div style="text-align:center;padding:24px 0">
+      <div class="card-title">${cardTitle}</div>
+      ${testBanner}
+      <div style="text-align:center;padding:${isTestMode ? '8px' : '24px'} 0 24px">
         <div style="font-size:56px;font-weight:800;color:${scoreColor};line-height:1">${correctCount}/${total}</div>
         <div style="font-size:22px;font-weight:600;color:${scoreColor};margin-top:6px">${pct}%</div>
         <div style="color:var(--muted);margin-top:8px;font-size:14px">
@@ -381,11 +487,16 @@ function showFinalResults(data, durationSec) {
         <tbody>${rows}</tbody>
       </table>` : ''}
       <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="resetPractice()">ฝึกต่อ</button>
+        ${retryBtn}
         <a href="dashboard.html" class="btn btn-ghost">กลับหน้าหลัก</a>
       </div>
     </div>
   `;
+
+  // ถ้าผ่าน → reload overview เพื่ออัปเดตชิป
+  if (isTestMode && passed && typeof loadOverview === 'function') {
+    loadOverview();
+  }
 }
 
 function resetPractice() {

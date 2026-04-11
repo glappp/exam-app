@@ -192,6 +192,8 @@ function onTopicChange(grade, topicKey) {
     opt.textContent = s.label;
     subtopicSel.appendChild(opt);
   }
+
+  if (typeof updateTestBtn === 'function') updateTestBtn();
 }
 
 // compat เผื่อโค้ดเก่ายังอ้างถึง

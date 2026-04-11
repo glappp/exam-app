@@ -6,31 +6,41 @@
   <title>ฝึกหัด — คลังข้อสอบ</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .topic-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 10px;
-      margin-top: 4px;
-    }
-    .topic-chip {
-      padding: 10px 12px;
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
-      background: #fff;
-      font-size: 13px;
-      cursor: pointer;
-      text-align: center;
-      transition: all .15s;
-    }
-    .topic-chip:hover  { border-color: var(--blue); color: var(--blue); }
-    .topic-chip.active { border-color: var(--blue); background: #dbeafe; color: #1e40af; font-weight: 600; }
-
     .result-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
     .result-row:last-child { border-bottom: none; }
     .result-correct { color: #16a34a; font-weight: 700; font-size: 18px; }
     .result-wrong   { color: #dc2626; font-weight: 700; font-size: 18px; }
-
     #question-area { margin-top: 0; }
+
+    /* overview */
+    .overview-grade-title {
+      font-size: 13px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .05em;
+      margin: 16px 0 8px;
+    }
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+    }
+    .topic-card {
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      background: #fff;
+      cursor: pointer;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .topic-card:hover { border-color: var(--blue); box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+    .topic-card.passed  { border-color: #16a34a; background: #f0fdf4; }
+    .topic-card.started { border-color: #f59e0b; background: #fffbeb; }
+    .topic-card .tc-label { font-weight: 600; font-size: 13px; margin-bottom: 6px; }
+    .topic-card .tc-status { font-size: 12px; margin-bottom: 6px; }
+    .topic-card .tc-bar-bg { height: 5px; background: #e5e7eb; border-radius: 9px; }
+    .topic-card .tc-bar-fill { height: 5px; border-radius: 9px; background: #3b82f6; }
+    .topic-card.passed .tc-bar-fill { background: #16a34a; }
+    .topic-card.started .tc-bar-fill { background: #f59e0b; }
+    .topic-card .tc-meta { font-size: 11px; color: var(--muted); margin-top: 5px; }
   </style>
 </head>
 <body>
@@ -44,6 +54,14 @@
   </div>
 
   <div class="page">
+    <!-- topic overview (แสดงเฉพาะ mode ปกติ) -->
+    <div id="overview-panel" class="card" style="display:none">
+      <div class="card-title">ภาพรวมหัวข้อ</div>
+      <div id="overview-body">
+        <p style="color:var(--muted);font-size:13px">กำลังโหลด...</p>
+      </div>
+    </div>
+
     <!-- adaptive banner -->
     <div id="adaptive-banner" style="display:none;background:#dbeafe;border:1px solid #93c5fd;border-radius:10px;padding:14px 18px;margin-bottom:16px">
       <div style="font-weight:700;color:#1e40af;font-size:14px">🎯 โหมดปรับจุดอ่อน</div>
@@ -97,7 +115,79 @@
       if (!res.ok) { location.href = 'login.html'; return; }
       const me = await res.json();
       document.getElementById('greeting').textContent = `สวัสดี, ${me.firstName || me.username}`;
+
+      // แสดง overview เฉพาะ mode ปกติ (ไม่ใช่ adaptive/targeted)
+      const params = new URLSearchParams(location.search);
+      if (!params.get('mode') && !params.get('topic')) {
+        loadOverview();
+      }
     })();
+
+    async function loadOverview() {
+      const panel = document.getElementById('overview-panel');
+      panel.style.display = '';
+      try {
+        const res = await fetch('/api/student/topic-stats', { credentials: 'include' });
+        const { stats } = await res.json();
+        renderOverview(stats || {});
+      } catch {
+        document.getElementById('overview-body').innerHTML =
+          '<p style="color:var(--muted);font-size:13px">โหลดข้อมูลไม่สำเร็จ</p>';
+      }
+    }
+
+    function renderOverview(stats) {
+      const grades = ['p4', 'p5', 'p6'];
+      const gradeNames = { p4: 'ป.4', p5: 'ป.5', p6: 'ป.6' };
+      let html = '';
+
+      for (const grade of grades) {
+        const topics = gradeTopics[grade] || [];
+        if (!topics.length) continue;
+        const gradeStats = stats[grade] || {};
+
+        // สรุประดับ grade
+        const passed  = topics.filter(t => gradeStats[t.key]?.passed).length;
+        const started = topics.filter(t => gradeStats[t.key] && !gradeStats[t.key].passed).length;
+
+        html += `
+          <div class="overview-grade-title">
+            ${gradeNames[grade]}
+            <span style="font-weight:400;color:#6b7280">— ผ่านแล้ว ${passed}/${topics.length} หัวข้อ</span>
+          </div>
+          <div class="overview-grid">`;
+
+        for (const t of topics) {
+          const s = gradeStats[t.key];
+          const acc   = s ? Math.round(s.accuracy * 100) : 0;
+          const att   = s?.attempted || 0;
+          const stateClass = !s ? '' : s.passed ? 'passed' : 'started';
+          const statusIcon = !s ? '⬜' : s.passed ? '✅' : '🔶';
+          const statusText = !s ? 'ยังไม่เริ่ม' : s.passed ? 'ผ่านแล้ว' : `${acc}% (${att} ข้อ)`;
+
+          html += `
+            <div class="topic-card ${stateClass}" onclick="quickStart('${grade}','${t.key}')">
+              <div class="tc-label">${t.label}</div>
+              <div class="tc-status">${statusIcon} ${statusText}</div>
+              <div class="tc-bar-bg"><div class="tc-bar-fill" style="width:${acc}%"></div></div>
+              ${att > 0 ? `<div class="tc-meta">ตอบถูก ${s.correct}/${att} ข้อ</div>` : ''}
+            </div>`;
+        }
+        html += '</div>';
+      }
+
+      document.getElementById('overview-body').innerHTML = html ||
+        '<p style="color:var(--muted);font-size:13px">ยังไม่มีข้อมูล</p>';
+    }
+
+    // คลิกที่ topic card → เลือก grade/topic แล้วเริ่มทันที
+    function quickStart(grade, topicKey) {
+      const gradeEl = document.getElementById('grade');
+      gradeEl.value = grade;
+      onGradeChange(grade);
+      document.getElementById('chapter').value = topicKey;
+      document.getElementById('setup-panel').scrollIntoView({ behavior: 'smooth' });
+    }
   </script>
 </body>
 </html>

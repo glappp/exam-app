@@ -193,4 +193,55 @@ router.get('/daily-mission', requireLogin, async (req, res) => {
   }
 });
 
+// GET /api/student/topic-stats — accuracy ต่อ topic สำหรับ practice overview
+const PASS_ACCURACY     = 0.70;
+const PASS_MIN_ATTEMPTS = 10;
+
+router.get('/topic-stats', requireLogin, async (req, res) => {
+  try {
+    const profile = await prisma.studentProfile.findFirst({
+      where: { userId: req.session.userId },
+      orderBy: { createdAt: 'desc' }
+    });
+    if (!profile) return res.json({ stats: {} });
+
+    // ดึง ExamAnswer พร้อม Question attributes
+    const answers = await prisma.examAnswer.findMany({
+      where: { studentProfileId: profile.id },
+      select: {
+        isCorrect: true,
+        question: { select: { attributes: true } }
+      }
+    });
+    if (answers.length === 0) return res.json({ stats: {} });
+
+    // สะสม attempted/correct ต่อ grade+topic
+    const stats = {};
+    for (const a of answers) {
+      const g = a.question?.attributes?.examGrade || '';
+      const grade = /^\d/.test(g) ? 'p' + g : g;
+      const topic = (a.question?.attributes?.topic || [])[0];
+      if (!grade || !topic) continue;
+      if (!stats[grade]) stats[grade] = {};
+      if (!stats[grade][topic]) stats[grade][topic] = { attempted: 0, correct: 0 };
+      stats[grade][topic].attempted++;
+      if (a.isCorrect) stats[grade][topic].correct++;
+    }
+
+    // คำนวณ accuracy + passed
+    for (const grade of Object.keys(stats)) {
+      for (const topic of Object.keys(stats[grade])) {
+        const s = stats[grade][topic];
+        s.accuracy = s.attempted > 0 ? s.correct / s.attempted : 0;
+        s.passed   = s.attempted >= PASS_MIN_ATTEMPTS && s.accuracy >= PASS_ACCURACY;
+      }
+    }
+
+    res.json({ stats });
+  } catch (err) {
+    console.error('❌ topic-stats:', err);
+    res.status(500).json({ error: 'โหลด topic stats ล้มเหลว' });
+  }
+});
+
 module.exports = router;

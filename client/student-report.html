@@ -66,13 +66,18 @@
     }
     .chart-card canvas { max-height: 260px; }
 
-    /* ── History table ── */
+    /* ── Term tabs ── */
+    .term-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+    .term-tab {
+      padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+      border: 2px solid #e2e8f0; background: #fff; color: #64748b; cursor: pointer;
+      transition: all .15s;
+    }
+    .term-tab:hover { border-color: #3b82f6; color: #3b82f6; }
+    .term-tab.active { background: #3b82f6; border-color: #3b82f6; color: #fff; }
+
+    /* ── History table (fallback style) ── */
     .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.07); margin-bottom: 16px; }
-    .hist-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .hist-table th { padding: 8px 12px; background: #f8fafc; color: #555; font-weight: 700; border-bottom: 2px solid #e2e8f0; text-align: left; white-space: nowrap; }
-    .hist-table td { padding: 8px 12px; border-bottom: 1px solid #f0f4f8; vertical-align: middle; }
-    .hist-table tr:last-child td { border-bottom: none; }
-    .hist-table tr:hover td { background: #fafcff; }
     .pct-badge {
       display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700;
       background: #f1f5f9; color: #475569;
@@ -120,9 +125,11 @@
     </div>
   </div>
 
-  <!-- Latest result summary -->
-  <div id="latest-section" style="display:none">
-    <p class="sec-title">📊 ผลการเรียนล่าสุด — <span id="latest-label" style="color:#3b82f6"></span></p>
+  <!-- Term tabs + content -->
+  <div id="terms-section" style="display:none">
+    <div id="term-tabs" class="term-tabs"></div>
+
+    <p class="sec-title">📊 <span id="term-label" style="color:#3b82f6"></span></p>
     <div id="score-cards" class="score-cards"></div>
 
     <div class="charts-row">
@@ -130,17 +137,11 @@
         <p class="sec-title" style="font-size:13px">📈 คะแนนเทียบค่าเฉลี่ยห้อง</p>
         <canvas id="bar-chart"></canvas>
       </div>
-      <div class="chart-card">
+      <div class="chart-card" id="radar-wrap">
         <p class="sec-title" style="font-size:13px">🕸️ เรดาร์ Percentile รายวิชา</p>
         <canvas id="radar-chart"></canvas>
       </div>
     </div>
-  </div>
-
-  <!-- History -->
-  <div id="history-section" style="display:none" class="card">
-    <p class="sec-title">🗂️ ประวัติผลการเรียนทั้งหมด</p>
-    <div id="hist-wrap"></div>
   </div>
 
   <div id="empty-state" style="display:none" class="empty">
@@ -183,11 +184,25 @@ async function init() {
     return;
   }
 
-  // แสดงปีล่าสุดใน section หลัก (pass aggregates ด้วย)
-  renderLatestYear(years[0], yearGroups[years[0]], data.aggregates);
+  // สร้าง tab buttons
+  const tabsEl = document.getElementById('term-tabs');
+  tabsEl.innerHTML = years.map((key, i) =>
+    `<button class="term-tab${i === 0 ? ' active' : ''}" onclick="switchTerm('${key}', this)">${esc(termLabel(key))}</button>`
+  ).join('');
 
-  // ประวัติทุกปี
-  renderHistory(years, yearGroups, data.aggregates);
+  // เก็บ data ไว้ใช้ตอน switch tab
+  window._termData = { yearGroups, aggregates: data.aggregates };
+
+  // แสดงเทอมล่าสุด
+  renderTerm(years[0], yearGroups[years[0]], data.aggregates);
+  document.getElementById('terms-section').style.display = 'block';
+}
+
+function switchTerm(key, btn) {
+  document.querySelectorAll('.term-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const { yearGroups, aggregates } = window._termData;
+  renderTerm(key, yearGroups[key], aggregates);
 }
 
 function renderHeader(s) {
@@ -207,9 +222,9 @@ function termLabel(key) {
   return term && term !== '0' ? `ปีการศึกษา ${year} ภาคเรียน ${term}` : `ปีการศึกษา ${year}`;
 }
 
-// แสดงผลปีเดียว (รวมทุกวิชา)
-function renderLatestYear(termKey, subjects, aggregates) {
-  document.getElementById('latest-label').textContent = termLabel(termKey);
+// แสดงผลเทอมที่เลือก
+function renderTerm(termKey, subjects, aggregates) {
+  document.getElementById('term-label').textContent = termLabel(termKey);
 
   const labels  = subjects.map(r => r.subject);
   const myVals  = subjects.map(r => r.myData.score ?? 0);
@@ -248,8 +263,6 @@ function renderLatestYear(termKey, subjects, aggregates) {
 
   renderBarChart(labels, myVals, avgVals);
   renderRadarChart(labels, myVals, avgVals);
-
-  document.getElementById('latest-section').style.display = 'block';
 }
 
 function renderBarChart(labels, myVals, avgVals) {
@@ -276,7 +289,7 @@ function renderBarChart(labels, myVals, avgVals) {
 
 function renderRadarChart(labels, myVals, avgVals) {
   if (radarChart) { radarChart.destroy(); radarChart = null; }
-  const card = document.getElementById('radar-chart').parentElement;
+  const card = document.getElementById('radar-wrap');
   if (labels.length < 3) { card.style.display = 'none'; return; }
   card.style.display = '';
   radarChart = new Chart(document.getElementById('radar-chart'), {
@@ -319,50 +332,6 @@ function renderRadarChart(labels, myVals, avgVals) {
   });
 }
 
-function renderHistory(years, yearGroups, aggregates) {
-  const html = years.map(termKey => {
-    const subjects = yearGroups[termKey];
-    const heads = subjects.map(r => `<th style="text-align:center;white-space:nowrap">${esc(r.subject)}</th>`).join('');
-    const scores = subjects.map(r => {
-      const score = r.myData.score ?? '—';
-      const pct   = r.myData.percentile ?? null;
-      const rank  = r.ranks?.['_'];
-      const total = r.total;
-      const pClass = pct >= 75 ? 'top' : pct >= 40 ? 'mid' : 'low';
-      const rankIcon = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
-      return `<td style="text-align:center">
-        <span class="score-cell">${score}</span>
-        ${pct != null ? `<br><span class="pct-badge ${pClass}">P${pct}</span>` : ''}
-        ${rank != null ? `<br><span style="font-size:10px;color:#64748b">${rankIcon}#${rank}/${total}</span>` : ''}
-      </td>`;
-    }).join('');
-    const avgs = subjects.map(r => {
-      const stats = Array.isArray(r.classStats) ? r.classStats[0] : r.classStats;
-      return `<td style="text-align:center;font-size:11px;color:#64748b">${stats?.mean ?? '—'}</td>`;
-    }).join('');
-    const sds = subjects.map(r => {
-      const stats = Array.isArray(r.classStats) ? r.classStats[0] : r.classStats;
-      return `<td style="text-align:center;font-size:11px;color:#64748b">${stats?.sd ?? '—'}</td>`;
-    }).join('');
-
-    return `<div style="margin-bottom:24px">
-      <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:8px">📋 ${esc(termLabel(termKey))}</div>
-      <div style="overflow-x:auto">
-        <table class="hist-table">
-          <thead><tr><th style="white-space:nowrap">รายการ</th>${heads}</tr></thead>
-          <tbody>
-            <tr><td style="font-weight:700;color:#1e293b;white-space:nowrap">คะแนน / P / อันดับ</td>${scores}</tr>
-            <tr style="background:#f8fafc"><td style="font-size:11px;color:#64748b">เฉลี่ยห้อง</td>${avgs}</tr>
-            <tr style="background:#f8fafc"><td style="font-size:11px;color:#64748b">SD</td>${sds}</tr>
-          </tbody>
-        </table>
-      </div>
-    </div>`;
-  }).join('');
-
-  document.getElementById('hist-wrap').innerHTML = html;
-  document.getElementById('history-section').style.display = 'block';
-}
 
 function esc(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');

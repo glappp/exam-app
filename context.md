@@ -1,7 +1,7 @@
 # context.md — exam-app
 
 > อ่านไฟล์นี้ก่อนเริ่มงานทุกครั้ง
-> อัปเดตล่าสุด: 2026-04-12
+> อัปเดตล่าสุด: 2026-04-13
 
 ---
 
@@ -76,6 +76,14 @@ ExamAnswer  studentProfileId, questionId, selectedIdx, isCorrect, createdAt
 - `Announcement`, `AnnouncementRead` — ประกาศ
 - `AttributeDictionary` — `key` (PK), `type`, `th`, `en`, `grade`
 
+### QuestionReport ✅ (2026-04-13)
+```
+QuestionReport  id, questionId, studentProfileId(optional), reportType, note, createdAt
+                reportType: 'wrong_answer' | 'display_issue' | 'typo' | 'other'
+                @@index([questionId])
+```
+นักเรียนกด "แจ้งปัญหา" ในหน้า practice → admin ดูและลบ (mark resolved) ใน admin.html แท็บ "แจ้งปัญหา"
+
 ### Ticket Models (Phase 1)
 ```
 TicketWallet      userId(unique), balance, updatedAt
@@ -108,6 +116,9 @@ TicketDailyUsage  userId, date(YYYY-MM-DD ICT), usedCount
 | GET | `/api/tickets/balance` | ยอดตั๋ว + ใช้ไปวันนี้ |
 | POST | `/api/tickets/use` | หัก 1 ใบ (competitive mode) |
 | GET | `/api/student/topic-stats` | stats accuracy + passes (SubtopicPass/TopicPass) |
+| POST | `/api/questions/:id/report` | นักเรียนแจ้งปัญหาโจทย์ |
+| GET | `/api/admin/question-reports` | admin ดูรายการ report |
+| DELETE | `/api/admin/question-reports/:id` | admin ลบ report (resolved) |
 
 ---
 

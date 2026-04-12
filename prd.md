@@ -1,7 +1,7 @@
 # prd.md — exam-app Product Requirements
 
 > แผนงานและ requirements ของ feature ที่กำลังพัฒนาหรือรอพัฒนา
-> อัปเดตล่าสุด: 2026-04-12
+> อัปเดตล่าสุด: 2026-04-13
 
 ---
 
@@ -378,10 +378,11 @@ model CurriculumSection {
 | Admin UI | form กรอกโจทย์: upload รูปโจทย์ + รูปแต่ละตัวเลือก (optional) |
 | Practice/Exam UI | render `<img>` ใต้ข้อความโจทย์ + ใน choice button (ถ้า choice.image มีค่า) |
 
-### หมายเหตุ
+### สถานะ (2026-04-13)
+- ✅ การแสดงผลรูป: script.js รองรับ `question.image` และ `choice.image` แล้ว (max-width 420px / 160px)
+- ✅ Upload UI: add-question.html มี field อัปโหลดรูปโจทย์ + รูปตัวเลือกอยู่แล้ว
 - `server/uploads/` เสิร์ฟที่ `/uploads/` อยู่แล้ว
 - ถ้า deploy บน Render (ephemeral FS) ควรย้ายไปเก็บที่ R2 (config พร้อมแล้วใน env)
-- ยังไม่มีข้อสอบในฐานข้อมูลที่ใช้รูปภาพ — เพิ่มได้ทีหลัง
 
 ---
 

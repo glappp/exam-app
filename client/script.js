@@ -11,6 +11,7 @@ let sessionQuestions = [];
 let sessionAnswers = [];
 let filteredQuestions = [];
 let usedIndices = new Set();
+let viewIndex = null; // null = ข้อปัจจุบัน, 0..N-1 = ดูข้อที่ทำแล้ว
 
 // Test mode state
 let isTestMode = false;
@@ -291,6 +292,7 @@ async function startExam(runMode = 'practice') {
     sessionQuestions = [];
     sessionAnswers = [];
     usedIndices = new Set();
+    viewIndex = null;
 
     loadNextQuestion();
   } catch (err) {
@@ -337,7 +339,76 @@ function loadNextQuestion() {
   renderCurrentQuestion();
 }
 
+function navBtns(pos, total) {
+  // pos: 0..total-1 = ข้อที่ทำแล้ว, total = ข้อปัจจุบัน
+  const isCurrentQ = pos === total;
+  const prevDisabled = pos === 0 ? 'disabled style="opacity:.35;cursor:default"' : '';
+  const prevAction = pos === 0 ? '' : `onclick="navigateQuestion(${pos - 1})"`;
+  const nextLabel = pos === total - 1 ? '▸ ข้อปัจจุบัน' : '▸';
+  const nextAction = isCurrentQ ? '' : `onclick="navigateQuestion(${pos === total - 1 ? null : pos + 1})"`;
+  const nextDisabled = isCurrentQ ? 'disabled style="opacity:.35;cursor:default"' : '';
+  return `<div style="display:flex;align-items:center;gap:6px;margin-top:14px">
+    <button ${prevDisabled} ${prevAction} style="padding:6px 12px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer;font-size:13px">◂</button>
+    <span style="flex:1;text-align:center;font-size:12px;color:var(--muted)">${isCurrentQ ? 'ข้อปัจจุบัน' : `ดูย้อนหลัง ${pos + 1}/${total}`}</span>
+    <button ${nextDisabled} ${nextAction} style="padding:6px 12px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer;font-size:13px">${nextLabel}</button>
+  </div>`;
+}
+
+function navigateQuestion(idx) {
+  // idx: null = ข้อปัจจุบัน, number = ข้อที่ทำแล้ว
+  viewIndex = idx;
+  if (idx === null || idx === undefined) {
+    viewIndex = null;
+    renderCurrentQuestion();
+  } else {
+    renderReviewQuestion(idx);
+  }
+}
+
+function renderReviewQuestion(idx) {
+  const q = sessionQuestions[idx];
+  const userAnswer = sessionAnswers[idx];
+  const correctAnswer = q.answer;
+  const isCorrect = userAnswer === correctAnswer;
+  const total = sessionQuestions.length;
+
+  const choicesHTML = (q.choices || []).map((c, i) => {
+    let bg = '', border = '', color = '';
+    if (i === correctAnswer) { bg = '#dcfce7'; border = '#16a34a'; color = '#15803d'; }
+    if (i === userAnswer && !isCorrect) { bg = '#fee2e2'; border = '#dc2626'; color = '#b91c1c'; }
+    const style = bg ? `style="background:${bg};border-color:${border};color:${color};cursor:default"` : 'style="cursor:default"';
+    return `<button class="choice-btn" disabled ${style}>
+      ${c.image ? `<img src="/uploads/${c.image}" style="max-width:100%;max-height:160px;margin-bottom:6px;display:block;border-radius:6px;object-fit:contain">` : ''}
+      <strong>${choiceLabel(i)}.</strong> ${getChoiceText(c)}
+    </button>`;
+  }).join('');
+
+  const feedback = isCorrect
+    ? `<span class="badge badge-success">✔ ถูกต้อง</span>`
+    : `<span class="badge badge-error">✘ ผิด — เฉลยคือ ข้อ ${choiceLabel(correctAnswer)}</span>`;
+
+  const qCode = getQuestionCode(q);
+  document.getElementById('question-area').innerHTML = `
+    <div class="card" style="border-top:3px solid #3b82f6">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span class="card-title" style="margin:0">ย้อนหลัง ข้อ ${idx + 1}</span>
+        <span style="font-size:12px;color:var(--muted)">${total} ข้อที่ทำแล้ว</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:11px;color:var(--muted);background:#f3f4f6;padding:2px 7px;border-radius:99px">${qCode}</span>
+        <button onclick="showReportModal('${q.id}','${qCode}')" style="font-size:11px;color:#9ca3af;background:none;border:none;cursor:pointer;padding:2px 4px">แจ้งปัญหา</button>
+      </div>
+      <div style="font-size:15px;line-height:1.7;margin-bottom:14px">${getText(q)}</div>
+      ${q.image ? `<div style="text-align:center;margin-bottom:14px"><img src="/uploads/${q.image}" style="max-width:min(100%,420px);max-height:280px;border-radius:8px;object-fit:contain"></div>` : ''}
+      <div class="choices">${choicesHTML}</div>
+      <div style="margin-top:12px">${feedback}</div>
+      ${navBtns(idx, total)}
+    </div>
+  `;
+}
+
 function renderCurrentQuestion() {
+  viewIndex = null;
   const q = currentQuestion;
   const answered = sessionAnswers.length;
 
@@ -348,7 +419,6 @@ function renderCurrentQuestion() {
     </button>`
   ).join('');
 
-  // test mode: progress bar + ไม่มีปุ่มจบกลางคัน
   const progressHTML = isTestMode
     ? `<div style="background:#e5e7eb;border-radius:99px;height:5px;margin-bottom:16px">
          <div style="background:#3b82f6;height:5px;border-radius:99px;width:${answered / TEST_TOTAL * 100}%;transition:width .3s"></div>
@@ -363,6 +433,10 @@ function renderCurrentQuestion() {
     ? `<button class="btn btn-ghost" style="margin-top:16px;width:100%" onclick="submitAndShowResults()">
         จบการฝึก (ทำแล้ว ${answered} ข้อ)
        </button>`
+    : '';
+
+  const backBtn = answered > 0
+    ? navBtns(answered, answered)
     : '';
 
   const qCode = getQuestionCode(q);
@@ -381,6 +455,7 @@ function renderCurrentQuestion() {
       ${q.image ? `<div style="text-align:center;margin-bottom:14px"><img src="/uploads/${q.image}" style="max-width:min(100%,420px);max-height:280px;border-radius:8px;object-fit:contain"></div>` : ''}
       <div class="choices">${choicesHTML}</div>
       <div id="answer-feedback" style="margin-top:12px"></div>
+      ${backBtn}
       ${endBtn}
     </div>
   `;

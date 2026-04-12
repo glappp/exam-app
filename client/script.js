@@ -83,6 +83,7 @@ function renderTargetedQuestion() {
     </button>`
   ).join('');
 
+  const qCode = getQuestionCode(q);
   document.getElementById('question-area').innerHTML = `
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -92,8 +93,12 @@ function renderTargetedQuestion() {
       <div style="background:#f0f0f0;border-radius:99px;height:6px;margin-bottom:16px">
         <div style="background:#16a34a;height:6px;border-radius:99px;width:${done / 10 * 100}%;transition:width .3s"></div>
       </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:11px;color:var(--muted);background:#f3f4f6;padding:2px 7px;border-radius:99px">${qCode}</span>
+        <button onclick="showReportModal('${q.id}','${qCode}')" style="font-size:11px;color:#9ca3af;background:none;border:none;cursor:pointer;padding:2px 4px">แจ้งปัญหา</button>
+      </div>
       <div style="font-size:15px;line-height:1.7;margin-bottom:14px">${getText(q)}</div>
-      ${q.image ? `<img src="/uploads/${q.image}" style="max-width:100%;margin-bottom:14px;border-radius:8px">` : ''}
+      ${q.image ? `<div style="text-align:center;margin-bottom:14px"><img src="/uploads/${q.image}" style="max-width:min(100%,420px);max-height:280px;border-radius:8px;object-fit:contain"></div>` : ''}
       <div class="choices">${choicesHTML}</div>
       <div id="answer-feedback" style="margin-top:12px"></div>
     </div>
@@ -338,7 +343,7 @@ function renderCurrentQuestion() {
 
   const choicesHTML = (q.choices || []).map((c, i) =>
     `<button class="choice-btn" id="choice-${i}" onclick="checkAnswer(${i})">
-      ${c.image ? `<img src="/uploads/${c.image}" style="max-height:50px;margin-bottom:4px;display:block">` : ''}
+      ${c.image ? `<img src="/uploads/${c.image}" style="max-width:100%;max-height:160px;margin-bottom:6px;display:block;border-radius:6px;object-fit:contain">` : ''}
       <strong>${choiceLabel(i)}.</strong> ${getChoiceText(c)}
     </button>`
   ).join('');
@@ -360,6 +365,7 @@ function renderCurrentQuestion() {
        </button>`
     : '';
 
+  const qCode = getQuestionCode(q);
   document.getElementById('question-area').innerHTML = `
     <div class="card">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -367,8 +373,12 @@ function renderCurrentQuestion() {
         ${headerRight}
       </div>
       ${progressHTML}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:11px;color:var(--muted);background:#f3f4f6;padding:2px 7px;border-radius:99px">${qCode}</span>
+        <button onclick="showReportModal('${q.id}','${qCode}')" style="font-size:11px;color:#9ca3af;background:none;border:none;cursor:pointer;padding:2px 4px">แจ้งปัญหา</button>
+      </div>
       <div style="font-size:15px;line-height:1.7;margin-bottom:14px">${getText(q)}</div>
-      ${q.image ? `<img src="/uploads/${q.image}" style="max-width:100%;margin-bottom:14px;border-radius:8px">` : ''}
+      ${q.image ? `<div style="text-align:center;margin-bottom:14px"><img src="/uploads/${q.image}" style="max-width:min(100%,420px);max-height:280px;border-radius:8px;object-fit:contain"></div>` : ''}
       <div class="choices">${choicesHTML}</div>
       <div id="answer-feedback" style="margin-top:12px"></div>
       ${endBtn}
@@ -539,3 +549,78 @@ function logout() {
   fetch('/api/logout', { method: 'POST', credentials: 'include' });
   location.href = 'login.html';
 }
+
+// ─── Question code helper ──────────────────────────────────────────────────────
+function getQuestionCode(q) {
+  if (q.code) return q.code;
+  return '#' + q.id.slice(-6);
+}
+
+// ─── Report modal ──────────────────────────────────────────────────────────────
+function showReportModal(qId, qCode) {
+  document.getElementById('report-modal-code').textContent = qCode;
+  document.getElementById('report-modal-type').value = 'wrong_answer';
+  document.getElementById('report-modal-note').value = '';
+  document.getElementById('report-modal-msg').textContent = '';
+  document.getElementById('report-modal').dataset.qid = qId;
+  document.getElementById('report-modal').style.display = 'flex';
+}
+
+function closeReportModal() {
+  document.getElementById('report-modal').style.display = 'none';
+}
+
+async function submitReport() {
+  const modal = document.getElementById('report-modal');
+  const qId = modal.dataset.qid;
+  const reportType = document.getElementById('report-modal-type').value;
+  const note = document.getElementById('report-modal-note').value.trim();
+  const msgEl = document.getElementById('report-modal-msg');
+
+  try {
+    const res = await fetch(`/api/questions/${qId}/report`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ reportType, note }),
+    });
+    if (!res.ok) throw new Error('ส่งไม่สำเร็จ');
+    msgEl.style.color = '#16a34a';
+    msgEl.textContent = '✓ ส่งรายงานแล้ว ขอบคุณ!';
+    setTimeout(closeReportModal, 1500);
+  } catch {
+    msgEl.style.color = '#dc2626';
+    msgEl.textContent = 'เกิดข้อผิดพลาด ลองใหม่อีกครั้ง';
+  }
+}
+
+// inject report modal HTML ครั้งเดียวตอน load
+(function injectReportModal() {
+  const div = document.createElement('div');
+  div.id = 'report-modal';
+  div.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;padding:16px';
+  div.innerHTML = `
+    <div style="background:#fff;border-radius:12px;padding:24px;width:100%;max-width:400px;box-shadow:0 8px 32px rgba(0,0,0,.2)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <strong style="font-size:16px">แจ้งปัญหาโจทย์</strong>
+        <button onclick="closeReportModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#666;line-height:1">&times;</button>
+      </div>
+      <div style="font-size:13px;color:#666;margin-bottom:12px">รหัสข้อ: <span id="report-modal-code" style="font-weight:600;color:#333"></span></div>
+      <label style="display:block;margin-bottom:6px;font-size:14px;font-weight:500">ประเภทปัญหา</label>
+      <select id="report-modal-type" style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;margin-bottom:12px;font-size:14px">
+        <option value="wrong_answer">เฉลยผิด</option>
+        <option value="display_issue">แสดงผลไม่ถูกต้อง (ข้อความ/รูปภาพ)</option>
+        <option value="typo">ตัวสะกดผิด / ภาษาไม่ถูกต้อง</option>
+        <option value="other">อื่นๆ</option>
+      </select>
+      <label style="display:block;margin-bottom:6px;font-size:14px;font-weight:500">หมายเหตุ (ไม่บังคับ)</label>
+      <textarea id="report-modal-note" rows="3" placeholder="อธิบายเพิ่มเติม..." style="width:100%;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;resize:vertical;box-sizing:border-box"></textarea>
+      <div id="report-modal-msg" style="font-size:13px;margin-top:8px;min-height:18px"></div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button onclick="closeReportModal()" style="flex:1;padding:9px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer;font-size:14px">ยกเลิก</button>
+        <button onclick="submitReport()" style="flex:2;padding:9px;border:none;border-radius:8px;background:#2563eb;color:#fff;cursor:pointer;font-size:14px;font-weight:500">ส่งรายงาน</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(div);
+})();

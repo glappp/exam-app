@@ -92,6 +92,17 @@ model ExamAnswer {
   @@index([studentProfileId])
 }
 
+model QuestionReport {
+  id               Int      @id @default(autoincrement())
+  questionId       String
+  studentProfileId Int?
+  reportType       String   // 'wrong_answer' | 'display_issue' | 'typo' | 'other'
+  note             String?
+  createdAt        DateTime @default(now())
+
+  @@index([questionId])
+}
+
 model WeakTopicState {
   id               Int      @id @default(autoincrement())
   studentProfileId Int

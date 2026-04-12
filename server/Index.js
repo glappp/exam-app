@@ -122,6 +122,7 @@ app.use('/api/teacher', require('./routes/api/teacher'));
 app.use('/api/school-admin', require('./routes/api/school-admin'));
 app.use('/api/time-trial', require('./routes/api/time-trial'));
 app.use('/api/tickets', require('./routes/api/tickets'));
+app.use('/api/questions', require('./routes/api/question-report'));
 
 // GET /api/schools?province=X&district=Y — public, no auth
 app.get('/api/schools', async (req, res) => {

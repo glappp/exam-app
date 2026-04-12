@@ -136,4 +136,42 @@ router.delete('/schools/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// GET /api/admin/question-reports — รายการ report จากนักเรียน
+router.get('/question-reports', requireAdmin, async (req, res) => {
+  try {
+    const reports = await prisma.questionReport.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+
+    // ดึง question code + text พร้อมกัน
+    const qIds = [...new Set(reports.map(r => r.questionId))];
+    const questions = await prisma.question.findMany({
+      where: { id: { in: qIds } },
+      select: { id: true, code: true, textTh: true },
+    });
+    const qMap = Object.fromEntries(questions.map(q => [q.id, q]));
+
+    const result = reports.map(r => ({
+      ...r,
+      questionCode: qMap[r.questionId]?.code || '#' + r.questionId.slice(-6),
+      questionText: qMap[r.questionId]?.textTh?.slice(0, 60) || '',
+    }));
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/admin/question-reports/:id — ลบ report (mark resolved)
+router.delete('/question-reports/:id', requireAdmin, async (req, res) => {
+  try {
+    await prisma.questionReport.delete({ where: { id: parseInt(req.params.id) } });
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

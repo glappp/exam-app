@@ -59,6 +59,7 @@
       <button class="tab-btn" onclick="switchTab('results')">ผลการสอบ</button>
       <button class="tab-btn" onclick="switchTab('announce')">ประกาศ</button>
       <button class="tab-btn" onclick="switchTab('mock')">Mock Blueprint</button>
+      <button class="tab-btn" onclick="switchTab('reports')" id="tab-btn-reports">แจ้งปัญหา</button>
     </div>
 
     <!-- Users tab -->
@@ -182,16 +183,25 @@
       <div class="card-title">Blueprint ที่มีอยู่</div>
       <div id="bp-list-admin"><div style="color:var(--muted);font-size:13px">กำลังโหลด...</div></div>
     </div>
+
+    <div class="tab-panel card" id="tab-reports">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <strong>รายการแจ้งปัญหาโจทย์</strong>
+        <button onclick="loadReports()" style="padding:5px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:13px">รีเฟรช</button>
+      </div>
+      <div id="reports-content"><p style="color:var(--muted);font-size:13px">คลิก tab เพื่อโหลด</p></div>
+    </div>
   </div>
 
   <script>
-    const TABS = ['users','schools','results','announce','mock'];
+    const TABS = ['users','schools','results','announce','mock','reports'];
     function switchTab(name) {
       document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', TABS[i] === name));
       document.querySelectorAll('.tab-panel').forEach((p,i) => p.classList.toggle('active', `tab-${TABS[i]}` === `tab-${name}`));
       if (name === 'announce') loadAnnList();
       if (name === 'mock') loadBlueprintList();
       if (name === 'schools') loadSchools();
+      if (name === 'reports') loadReports();
     }
 
     // ---- Announcements ----
@@ -491,7 +501,78 @@
       addTopicRow();
     }
 
+    // ---- Question Reports ----
+    const REPORT_TYPE_LABEL = {
+      wrong_answer:  'เฉลยผิด',
+      display_issue: 'แสดงผลไม่ถูกต้อง',
+      typo:          'ตัวสะกดผิด',
+      other:         'อื่นๆ',
+    };
+
+    async function loadReports() {
+      const el = document.getElementById('reports-content');
+      el.innerHTML = '<p style="color:var(--muted);font-size:13px">กำลังโหลด...</p>';
+      const r = await fetch('/api/admin/question-reports', { credentials: 'include' });
+      if (!r.ok) { el.innerHTML = '<p style="color:red">โหลดไม่สำเร็จ</p>'; return; }
+      const data = await r.json();
+      if (data.length === 0) { el.innerHTML = '<p style="color:var(--muted);font-size:13px">ยังไม่มีรายงาน</p>'; return; }
+
+      el.innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="background:#f3f4f6;text-align:left">
+              <th style="padding:8px 10px">รหัสข้อ</th>
+              <th style="padding:8px 10px">โจทย์</th>
+              <th style="padding:8px 10px">ประเภท</th>
+              <th style="padding:8px 10px">หมายเหตุ</th>
+              <th style="padding:8px 10px">วันที่</th>
+              <th style="padding:8px 10px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map(rpt => `
+              <tr style="border-bottom:1px solid #e5e7eb" id="rpt-${rpt.id}">
+                <td style="padding:8px 10px">
+                  <a href="/edit-question.html?id=${rpt.questionId}" target="_blank"
+                     style="color:#2563eb;text-decoration:none;font-weight:500">${rpt.questionCode}</a>
+                </td>
+                <td style="padding:8px 10px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+                    title="${rpt.questionText}">${rpt.questionText}</td>
+                <td style="padding:8px 10px">
+                  <span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:99px;font-size:11px">
+                    ${REPORT_TYPE_LABEL[rpt.reportType] || rpt.reportType}
+                  </span>
+                </td>
+                <td style="padding:8px 10px;color:#555">${rpt.note || '—'}</td>
+                <td style="padding:8px 10px;color:var(--muted);white-space:nowrap">${new Date(rpt.createdAt).toLocaleDateString('th-TH')}</td>
+                <td style="padding:8px 10px">
+                  <button onclick="resolveReport(${rpt.id})"
+                    style="padding:4px 10px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:12px">
+                    ✓ จัดการแล้ว
+                  </button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>`;
+
+      // badge จำนวน report
+      document.getElementById('tab-btn-reports').textContent = `แจ้งปัญหา (${data.length})`;
+    }
+
+    async function resolveReport(id) {
+      await fetch(`/api/admin/question-reports/${id}`, { method: 'DELETE', credentials: 'include' });
+      document.getElementById(`rpt-${id}`)?.remove();
+      const remaining = document.querySelectorAll('#reports-content tr[id^="rpt-"]').length;
+      document.getElementById('tab-btn-reports').textContent =
+        remaining > 0 ? `แจ้งปัญหา (${remaining})` : 'แจ้งปัญหา';
+      if (remaining === 0)
+        document.getElementById('reports-content').innerHTML =
+          '<p style="color:var(--muted);font-size:13px">ยังไม่มีรายงาน</p>';
+    }
+
     init();
   </script>
+
 </body>
 </html>

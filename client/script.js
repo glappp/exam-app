@@ -150,7 +150,8 @@ function showTargetedComplete() {
 }
 
 function getText(q) {
-  return currentLang === 'th' ? (q.textTh || q.text || '') : (q.textEn || q.text || '');
+  const raw = currentLang === 'th' ? (q.textTh || q.text || '') : (q.textEn || q.text || '');
+  return raw.replace(/\n/g, '<br>');
 }
 
 function getChoiceText(c) {

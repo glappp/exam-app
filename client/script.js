@@ -22,6 +22,11 @@ let testSubtopicKey = '';
 const TEST_TOTAL = 10;
 const TEST_PASS  = 8;
 
+// Exam mode state — ทำครบก่อน submit (subtopic_test / topic_test)
+let examMode = false;
+let examAnswers = [];     // index = ลำดับข้อ, value = index ที่เลือก (-1 = ยังไม่ตอบ)
+let examCurrentIdx = 0;
+
 // Adaptive mode
 const isAdaptive = new URLSearchParams(location.search).get('mode') === 'adaptive';
 
@@ -294,7 +299,11 @@ async function startExam(runMode = 'practice') {
     usedIndices = new Set();
     viewIndex = null;
 
-    loadNextQuestion();
+    if (isTestMode) {
+      startExamMode();
+    } else {
+      loadNextQuestion();
+    }
   } catch (err) {
     document.getElementById('question-area').innerHTML =
       `<div class="card"><p class="msg msg-error">เกิดข้อผิดพลาด: ${err.message}</p></div>`;
@@ -614,10 +623,109 @@ function resetPractice() {
   filteredQuestions = [];
   usedIndices = new Set();
   currentQuestion = null;
+  examMode = false;
+  examAnswers = [];
+  examCurrentIdx = 0;
 
   document.getElementById('question-area').innerHTML = '';
   document.getElementById('results').innerHTML = '';
   document.getElementById('setup-panel').style.display = '';
+}
+
+// ─── Exam Mode — ทำครบก่อน submit ────────────────────────────────────────────
+
+function startExamMode() {
+  examMode = true;
+  examAnswers = new Array(filteredQuestions.length).fill(-1);
+  examCurrentIdx = 0;
+  renderExamQuestion(0);
+}
+
+function renderExamQuestion(idx) {
+  examCurrentIdx = idx;
+  const q = filteredQuestions[idx];
+  const total = filteredQuestions.length;
+  const answeredCount = examAnswers.filter(a => a !== -1).length;
+  const selectedAnswer = examAnswers[idx];
+  const unanswered = total - answeredCount;
+
+  const dots = filteredQuestions.map((_, i) => {
+    const isAnswered = examAnswers[i] !== -1;
+    const isCurrent = i === idx;
+    let bg, border, color;
+    if (isCurrent) { bg = '#2563eb'; border = '#1d4ed8'; color = '#fff'; }
+    else if (isAnswered) { bg = '#bbf7d0'; border = '#16a34a'; color = '#15803d'; }
+    else { bg = '#f3f4f6'; border = '#d1d5db'; color = '#9ca3af'; }
+    return `<button onclick="renderExamQuestion(${i})"
+      style="width:28px;height:28px;border-radius:50%;border:2px solid ${border};background:${bg};cursor:pointer;font-size:11px;font-weight:700;color:${color};padding:0;flex-shrink:0">${i + 1}</button>`;
+  }).join('');
+
+  const choicesHTML = (q.choices || []).map((c, i) => {
+    const isSelected = i === selectedAnswer;
+    const extraStyle = isSelected ? ' style="background:#dbeafe;border-color:#2563eb;color:#1d4ed8"' : '';
+    return `<button class="choice-btn" id="choice-${i}" onclick="selectExamAnswer(${idx},${i})"${extraStyle}>
+      ${c.image ? `<img src="/uploads/${c.image}" style="max-width:100%;max-height:160px;margin-bottom:6px;display:block;border-radius:6px;object-fit:contain">` : ''}
+      <strong>${choiceLabel(i)}.</strong> ${getChoiceText(c)}
+    </button>`;
+  }).join('');
+
+  const submitBtnStyle = unanswered === 0
+    ? 'background:#16a34a;color:#fff;border:none'
+    : 'background:#f59e0b;color:#fff;border:none';
+  const submitLabel = unanswered === 0
+    ? 'ส่งคำตอบ'
+    : `ส่งคำตอบ (เหลือ ${unanswered} ข้อ)`;
+
+  const qCode = getQuestionCode(q);
+  document.getElementById('question-area').innerHTML = `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span class="card-title" style="margin:0">ข้อที่ ${idx + 1} / ${total}</span>
+        <span style="font-size:13px;color:var(--muted)">${answeredCount}/${total} ตอบแล้ว</span>
+      </div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px">${dots}</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:11px;color:var(--muted);background:#f3f4f6;padding:2px 7px;border-radius:99px">${qCode}</span>
+        <button onclick="showReportModal('${q.id}','${qCode}')" style="font-size:11px;color:#9ca3af;background:none;border:none;cursor:pointer;padding:2px 4px">แจ้งปัญหา</button>
+      </div>
+      <div style="font-size:15px;line-height:1.7;margin-bottom:14px">${getText(q)}</div>
+      ${q.image ? `<div style="text-align:center;margin-bottom:14px"><img src="/uploads/${q.image}" style="max-width:min(100%,420px);max-height:280px;border-radius:8px;object-fit:contain"></div>` : ''}
+      <div class="choices">${choicesHTML}</div>
+      <div style="display:flex;gap:8px;margin-top:16px;align-items:center">
+        <button onclick="${idx > 0 ? `renderExamQuestion(${idx - 1})` : ''}"
+          ${idx === 0 ? 'disabled' : ''}
+          style="padding:8px 14px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:${idx === 0 ? 'default' : 'pointer'};font-size:14px;opacity:${idx === 0 ? .35 : 1}">◂</button>
+        <div style="flex:1"></div>
+        ${idx < total - 1
+          ? `<button onclick="renderExamQuestion(${idx + 1})"
+              style="padding:8px 14px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer;font-size:14px">▸</button>`
+          : `<button onclick="submitExamMode()"
+              style="padding:8px 16px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;${submitBtnStyle}">${submitLabel}</button>`
+        }
+      </div>
+      ${idx < total - 1 && unanswered === 0
+        ? `<button onclick="submitExamMode()" style="margin-top:10px;width:100%;padding:9px;border:none;border-radius:8px;background:#16a34a;color:#fff;cursor:pointer;font-size:14px;font-weight:600">ส่งคำตอบ</button>`
+        : ''
+      }
+    </div>
+  `;
+}
+
+function selectExamAnswer(idx, choiceIndex) {
+  examAnswers[idx] = choiceIndex;
+  renderExamQuestion(idx);
+  if (idx < filteredQuestions.length - 1) {
+    setTimeout(() => { if (examCurrentIdx === idx) renderExamQuestion(idx + 1); }, 600);
+  }
+}
+
+function submitExamMode() {
+  const unanswered = examAnswers.filter(a => a === -1).length;
+  if (unanswered > 0 && !confirm(`ยังมี ${unanswered} ข้อที่ยังไม่ได้ตอบ\nต้องการส่งคำตอบหรือไม่?`)) return;
+  sessionQuestions = [...filteredQuestions];
+  sessionAnswers = examAnswers.map(a => a === -1 ? 0 : a);
+  examMode = false;
+  submitAndShowResults();
 }
 
 function logout() {

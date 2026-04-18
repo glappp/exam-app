@@ -554,6 +554,7 @@ function showFinalResults(data, durationSec) {
         <td style="text-align:center">${choiceLabel(q.answer)}</td>
         <td style="text-align:center">
           <span class="badge ${correct ? 'badge-success' : 'badge-error'}">${correct ? 'ถูก' : 'ผิด'}</span>
+          <button onclick="openResultReview(${i})" style="margin-left:6px;font-size:11px;padding:2px 8px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;color:#374151;vertical-align:middle">ดู</button>
         </td>
       </tr>
     `;
@@ -614,6 +615,65 @@ function showFinalResults(data, durationSec) {
   if (isTestMode && passed && typeof loadOverview === 'function') {
     loadOverview();
   }
+}
+
+function openResultReview(idx) {
+  document.getElementById('question-area').scrollIntoView({ behavior: 'smooth' });
+  renderResultReviewCard(idx);
+}
+
+function renderResultReviewCard(idx) {
+  const q = sessionQuestions[idx];
+  const userAnswer = sessionAnswers[idx];
+  const correctAnswer = q.answer;
+  const isCorrect = userAnswer === correctAnswer;
+  const total = sessionQuestions.length;
+
+  const choicesHTML = (q.choices || []).map((c, i) => {
+    let bg = '', border = '', color = '';
+    if (i === correctAnswer) { bg = '#dcfce7'; border = '#16a34a'; color = '#15803d'; }
+    if (i === userAnswer && !isCorrect) { bg = '#fee2e2'; border = '#dc2626'; color = '#b91c1c'; }
+    const style = bg ? `style="background:${bg};border-color:${border};color:${color};cursor:default"` : 'style="cursor:default"';
+    return `<button class="choice-btn" disabled ${style}>
+      ${c.image ? `<img src="/uploads/${c.image}" style="max-width:100%;max-height:160px;margin-bottom:6px;display:block;border-radius:6px;object-fit:contain">` : ''}
+      <strong>${choiceLabel(i)}.</strong> ${getChoiceText(c)}
+    </button>`;
+  }).join('');
+
+  const feedback = isCorrect
+    ? `<span class="badge badge-success">✔ ถูกต้อง</span>`
+    : `<span class="badge badge-error">✘ ผิด — เฉลยคือ ข้อ ${choiceLabel(correctAnswer)}</span>`;
+
+  const prevBtn = idx > 0
+    ? `<button onclick="renderResultReviewCard(${idx - 1})" style="padding:7px 14px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer;font-size:13px">◂ ข้อ ${idx}</button>`
+    : `<button disabled style="padding:7px 14px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:default;opacity:.35;font-size:13px">◂</button>`;
+  const nextBtn = idx < total - 1
+    ? `<button onclick="renderResultReviewCard(${idx + 1})" style="padding:7px 14px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer;font-size:13px">ข้อ ${idx + 2} ▸</button>`
+    : `<button disabled style="padding:7px 14px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:default;opacity:.35;font-size:13px">▸</button>`;
+
+  const qCode = getQuestionCode(q);
+  document.getElementById('question-area').innerHTML = `
+    <div class="card" style="border-top:3px solid #3b82f6">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <span class="card-title" style="margin:0">ข้อ ${idx + 1} / ${total}</span>
+        <button onclick="closeResultReview()" style="font-size:13px;padding:5px 12px;border:1px solid #d1d5db;border-radius:8px;background:#f9fafb;cursor:pointer">← กลับผลสอบ</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <span style="font-size:11px;color:var(--muted);background:#f3f4f6;padding:2px 7px;border-radius:99px">${qCode}</span>
+        <button onclick="showReportModal('${q.id}','${qCode}')" style="font-size:11px;color:#9ca3af;background:none;border:none;cursor:pointer;padding:2px 4px">แจ้งปัญหา</button>
+      </div>
+      <div style="font-size:15px;line-height:1.7;margin-bottom:14px">${getText(q)}</div>
+      ${q.image ? `<div style="text-align:center;margin-bottom:14px"><img src="/uploads/${q.image}" style="max-width:min(100%,420px);max-height:280px;border-radius:8px;object-fit:contain"></div>` : ''}
+      <div class="choices">${choicesHTML}</div>
+      <div style="margin-top:12px">${feedback}</div>
+      <div style="display:flex;justify-content:space-between;margin-top:14px">${prevBtn}${nextBtn}</div>
+    </div>
+  `;
+}
+
+function closeResultReview() {
+  document.getElementById('question-area').innerHTML = '';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
 }
 
 function resetPractice() {

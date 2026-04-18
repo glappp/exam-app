@@ -39,7 +39,8 @@
       "Bash(grep -v \"//\" /d/work/Claude_sandbox/exam-app/server/prisma/seed-questions-order-of-operations-p6.js)",
       "Bash(grep -v \"//\" /d/work/Claude_sandbox/exam-app/server/prisma/seed-questions-statistics-p6.js)",
       "Bash(grep -v \"//\" /d/work/Claude_sandbox/exam-app/server/prisma/seed-questions-percentage-p5.js)",
-      "Bash(Remove-Item \"D:\\\\work\\\\Claude_sandbox\\\\exam-app\\\\.git\\\\worktrees\\\\beautiful-satoshi\\\\index.lock\" -Force)"
+      "Bash(Remove-Item \"D:\\\\work\\\\Claude_sandbox\\\\exam-app\\\\.git\\\\worktrees\\\\beautiful-satoshi\\\\index.lock\" -Force)",
+      "Bash(node -e ' *)"
     ]
   }
 }

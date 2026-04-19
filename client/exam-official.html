@@ -7,9 +7,17 @@
   <link rel="stylesheet" href="/style.css">
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>
   <style>
-    .timer { font-size: 20px; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; }
-    .timer.warn   { color: #d97706; }
-    .timer.danger { color: #dc2626; }
+    .timer-wrap { display:none; align-items:center; gap:6px; }
+    .timer-bar-bg { width:72px; height:9px; background:#e5e7eb; border-radius:99px; overflow:hidden; }
+    .timer-bar    { height:100%; width:100%; background:#16a34a; border-radius:99px; transition:width 1s linear, background 1s; }
+    .timer-text   { font-size:13px; font-weight:700; font-variant-numeric:tabular-nums; color:var(--navy); min-width:40px; display:none; }
+    .timer-text.warn   { color:#d97706; }
+    .timer-text.danger { color:#dc2626; }
+    .timer-toggle { background:none; border:none; cursor:pointer; font-size:14px; padding:2px 3px; line-height:1; opacity:.6; }
+    .timer-toggle:hover { opacity:1; }
+
+    @keyframes toast-in  { from { opacity:0; transform:translateX(-50%) translateY(-8px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+    @keyframes toast-out { from { opacity:1; } to { opacity:0; } }
 
     .question-text { font-size: 15px; line-height: 1.7; margin-bottom: 12px; }
 
@@ -56,7 +64,11 @@
 <div class="topbar">
   <span class="topbar-title" id="exam-title">📄 ข้อสอบจริง</span>
   <div class="topbar-nav">
-    <span id="timer-display" class="timer" style="display:none"></span>
+    <div id="timer-wrap" class="timer-wrap">
+      <button id="timer-toggle" class="timer-toggle" title="แสดง/ซ่อนตัวเลข">👁</button>
+      <div class="timer-bar-bg"><div id="timer-bar" class="timer-bar"></div></div>
+      <span id="timer-text" class="timer-text"></span>
+    </div>
     <span style="font-size:13px;color:var(--muted)" id="progress-text"></span>
     <a href="exam.html">เลือกการสอบ</a>
   </div>
@@ -138,19 +150,70 @@
   }
 
   // ─── Timer ───────────────────────────────────────────────────────────────────
+  let alertedFive = false;
+  let alertedOne  = false;
+  let timerTextVisible = false;
+
   function startTimer() {
-    const el = document.getElementById('timer-display');
-    el.style.display = 'inline';
+    const wrap   = document.getElementById('timer-wrap');
+    const bar    = document.getElementById('timer-bar');
+    const text   = document.getElementById('timer-text');
+    const toggle = document.getElementById('timer-toggle');
+    wrap.style.display = 'flex';
+
+    toggle.addEventListener('click', () => {
+      timerTextVisible = !timerTextVisible;
+      text.style.display = timerTextVisible ? 'inline' : 'none';
+      toggle.textContent = timerTextVisible ? '🙈' : '👁';
+      toggle.title = timerTextVisible ? 'ซ่อนตัวเลข' : 'แสดงตัวเลข';
+    });
+
     timerInterval = setInterval(() => {
-      const elapsed    = Math.floor((Date.now() - examStartTime) / 1000);
-      const remaining  = timeLimitSec - elapsed;
-      const display    = Math.max(0, remaining);
-      const mm = String(Math.floor(display / 60)).padStart(2, '0');
-      const ss = String(display % 60).padStart(2, '0');
-      el.textContent = `${mm}:${ss}`;
-      el.className = 'timer' + (remaining < 60 ? ' danger' : remaining < 180 ? ' warn' : '');
+      const elapsed   = Math.floor((Date.now() - examStartTime) / 1000);
+      const remaining = timeLimitSec - elapsed;
+      const pct       = Math.max(0, remaining / timeLimitSec * 100);
+
+      // หลอดพลัง
+      bar.style.width = pct + '%';
+      bar.style.background = remaining < 60 ? '#dc2626'
+                           : remaining < 180 ? '#d97706'
+                           : remaining < 600 ? '#eab308'
+                           : '#16a34a';
+
+      // ตัวเลข (ซ่อนโดย default)
+      const disp = Math.max(0, remaining);
+      const mm   = String(Math.floor(disp / 60)).padStart(2, '0');
+      const ss   = String(disp % 60).padStart(2, '0');
+      text.textContent = `${mm}:${ss}`;
+      text.className = 'timer-text' + (remaining < 60 ? ' danger' : remaining < 180 ? ' warn' : '');
+
+      // เตือน 5 นาที
+      if (!alertedFive && remaining <= 300 && remaining > 294) {
+        alertedFive = true;
+        showTimerToast('⏰ เหลือเวลาอีก 5 นาที', 'warn');
+      }
+      // เตือน 1 นาที
+      if (!alertedOne && remaining <= 60 && remaining > 54) {
+        alertedOne = true;
+        showTimerToast('🚨 เหลือเวลาอีก 1 นาที!', 'danger');
+      }
+
       if (remaining <= 0) { clearInterval(timerInterval); submitExam(); }
     }, 1000);
+  }
+
+  function showTimerToast(msg, type) {
+    const t = document.createElement('div');
+    t.textContent = msg;
+    const colors = type === 'danger'
+      ? 'background:#fef2f2;color:#991b1b;border:2px solid #fca5a5'
+      : 'background:#fffbeb;color:#92400e;border:2px solid #fcd34d';
+    t.style.cssText = `position:fixed;top:64px;left:50%;transform:translateX(-50%);
+      padding:12px 28px;border-radius:10px;font-weight:700;font-size:15px;
+      z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.15);
+      animation:toast-in .3s ease;${colors}`;
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.animation = 'toast-out .4s ease forwards'; setTimeout(() => t.remove(), 400); }, 4000);
   }
 
   // ─── Dots ─────────────────────────────────────────────────────────────────

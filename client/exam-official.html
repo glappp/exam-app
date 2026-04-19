@@ -19,6 +19,30 @@
     @keyframes toast-in  { from { opacity:0; transform:translateX(-50%) translateY(-8px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
     @keyframes toast-out { from { opacity:1; } to { opacity:0; } }
 
+    /* Lightbox */
+    .lightbox-overlay {
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.85);
+      z-index:10000; align-items:center; justify-content:center;
+      cursor:zoom-out; animation:lb-in .2s ease;
+    }
+    .lightbox-overlay.open { display:flex; }
+    .lightbox-overlay img {
+      max-width:92vw; max-height:88vh; border-radius:10px;
+      box-shadow:0 8px 40px rgba(0,0,0,.5); object-fit:contain;
+      cursor:default;
+    }
+    .lightbox-close {
+      position:absolute; top:14px; right:18px;
+      background:rgba(255,255,255,.15); border:none; color:#fff;
+      font-size:22px; width:36px; height:36px; border-radius:50%;
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      line-height:1;
+    }
+    .lightbox-close:hover { background:rgba(255,255,255,.3); }
+    .zoomable { cursor:zoom-in !important; transition:opacity .1s; }
+    .zoomable:hover { opacity:.85; }
+    @keyframes lb-in { from { opacity:0; } to { opacity:1; } }
+
     .question-text { font-size: 15px; line-height: 1.7; margin-bottom: 12px; }
 
     .answer-section label {
@@ -72,6 +96,12 @@
     <span style="font-size:13px;color:var(--muted)" id="progress-text"></span>
     <a href="exam.html">เลือกการสอบ</a>
   </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox" class="lightbox-overlay" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()" title="ปิด">✕</button>
+  <img id="lightbox-img" src="" alt="" onclick="event.stopPropagation()">
 </div>
 
 <div class="page">
@@ -202,6 +232,18 @@
     }, 1000);
   }
 
+  // ─── Lightbox ─────────────────────────────────────────────────────────────
+  function openLightbox(img) {
+    document.getElementById('lightbox-img').src = img.src;
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
   function showTimerToast(msg, type) {
     const t = document.createElement('div');
     t.textContent = msg;
@@ -255,7 +297,7 @@
           return `
             <label>
               <input type="radio" name="ans" value="${letter}" ${checked}>
-              <span><strong>${LABELS[i]}.</strong> ${c.image ? `<img src="/uploads/${c.image}" style="max-height:40px;margin-left:6px;vertical-align:middle">` : ''} ${c.textTh || ''}</span>
+              <span><strong>${LABELS[i]}.</strong> ${c.image ? `<img src="/uploads/${c.image}" class="zoomable" onclick="event.preventDefault();openLightbox(this)" style="max-height:40px;margin-left:6px;vertical-align:middle">` : ''} ${c.textTh || ''}</span>
             </label>`;
         }).join('');
 
@@ -267,7 +309,7 @@
         </div>
         <div style="font-size:12px;color:var(--muted);margin-bottom:10px">ข้อที่ ${currentIndex + 1}</div>
         <div class="question-text">${(q.textTh || '').replace(/\n/g, '<br>')}</div>
-        ${q.image ? `<div style="text-align:center;margin-bottom:14px"><img src="/uploads/${q.image}" style="max-width:min(100%,420px);max-height:300px;border-radius:8px;object-fit:contain"></div>` : ''}
+        ${q.image ? `<div style="text-align:center;margin-bottom:14px"><img src="/uploads/${q.image}" class="zoomable" onclick="openLightbox(this)" style="max-width:min(100%,420px);max-height:300px;border-radius:8px;object-fit:contain"></div>` : ''}
         <div class="answer-section">${choicesHTML}</div>
       </div>
     `;

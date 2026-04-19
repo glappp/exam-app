@@ -31,6 +31,9 @@ const httpServer = http.createServer(app);
 const io = new Server(httpServer, { cors: { origin: true, credentials: true } });
 require('./grand-prix-socket')(io);
 
+// ✅ Trust Render/proxy reverse proxy (ต้องมีก่อน session)
+app.set('trust proxy', 1);
+
 // ✅ Middleware (ต้องอยู่ก่อน routes ทั้งหมด)
 app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());

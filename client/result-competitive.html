@@ -53,13 +53,20 @@
     renderResult(result);
   }
 
+  const LETTERS = ['a','b','c','d','e'];
+  const LABELS  = ['ก','ข','ค','ง','จ'];
+  function answerLabel(ans) {
+    const i = LETTERS.indexOf(String(ans));
+    return i >= 0 ? LABELS[i] : String(ans ?? '?');
+  }
+
   function isAnswerCorrect(ans, q) {
-    if (q.answer != null) return parseInt(ans) === q.answer;
-    if (Array.isArray(q.shortAnswer)) {
-      const clean = a => String(a).trim().toLowerCase().replace(/\s+/g, '');
+    if (q.type === 'numeric' || q.answer == null) {
+      if (!Array.isArray(q.shortAnswer)) return false;
+      const clean = a => { const n = parseFloat(String(a).trim()); return isNaN(n) ? String(a).toLowerCase().trim() : n.toFixed(6); };
       return q.shortAnswer.some(sa => clean(sa) === clean(ans));
     }
-    return false;
+    return String(ans) === q.answer;
   }
 
   function renderResult(result) {
@@ -103,11 +110,12 @@
       const userAns = userAnswers[i];
       const correct = isAnswerCorrect(userAns, q);
       const choicesHTML = (q.choices || []).map((c, idx) => {
+        const letter = LETTERS[idx];
         let cls = 'choice-line';
-        if (idx === q.answer) cls += ' is-answer';
-        if (idx === userAns && !correct) cls += ' user-wrong';
-        const mark = idx === userAns ? (correct ? '✔ ' : '✘ ') : (idx === q.answer && !correct ? '→ ' : '');
-        return `<div class="${cls}">${mark}<strong>${String.fromCharCode(65 + idx)}.</strong> ${c.textTh || ''}</div>`;
+        if (letter === q.answer) cls += ' is-answer';
+        if (letter === userAns && !correct) cls += ' user-wrong';
+        const mark = letter === userAns ? (correct ? '✔ ' : '✘ ') : (letter === q.answer && !correct ? '→ ' : '');
+        return `<div class="${cls}">${mark}<strong>${LABELS[idx]}.</strong> ${c.textTh || ''}</div>`;
       }).join('');
 
       return `

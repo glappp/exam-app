@@ -29,7 +29,7 @@ router.post('/', async (req, res) => {
       if (!q) return;
       const userAns = answers[i];
       const correct = isCorrectAnswer(userAns, q);
-      const thisScore = q.score || 1;
+      const thisScore = q.attributes?.score || 1;
       fullScore += thisScore;
 
       if (correct) {

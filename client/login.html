@@ -3,49 +3,156 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>เข้าสู่ระบบ — คลังข้อสอบ</title>
+  <title>SchoolPL — Play & Learn</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    body { display: flex; flex-direction: column; min-height: 100vh; }
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #f0f4ff;
+    }
+
+    /* ── Brand hero ─────────────────────────────────────────── */
+    .login-hero {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #7c3aed 100%);
+      padding: 40px 24px 36px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* floating circles decoration */
+    .login-hero::before,
+    .login-hero::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      opacity: .12;
+      background: #fff;
+    }
+    .login-hero::before { width: 200px; height: 200px; top: -60px; left: -50px; }
+    .login-hero::after  { width: 140px; height: 140px; bottom: -40px; right: -30px; }
+
+    .brand-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px; height: 64px;
+      background: rgba(255,255,255,.18);
+      border-radius: 18px;
+      font-size: 32px;
+      margin-bottom: 14px;
+      backdrop-filter: blur(4px);
+      border: 1.5px solid rgba(255,255,255,.25);
+    }
+
+    .brand-name {
+      font-size: 32px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -.5px;
+      line-height: 1;
+    }
+    .brand-name span { color: #93c5fd; }
+
+    .brand-tagline {
+      margin-top: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,.15);
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 99px;
+      padding: 5px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #e0f2fe;
+      letter-spacing: .06em;
+    }
+    .brand-tagline .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #34d399;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity:1; transform:scale(1); }
+      50%      { opacity:.5; transform:scale(1.4); }
+    }
+
+    .brand-sub {
+      margin-top: 10px;
+      font-size: 12px;
+      color: rgba(255,255,255,.6);
+    }
+
+    /* ── Login card ─────────────────────────────────────────── */
     .login-wrap {
       flex: 1;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
-      padding: 24px 16px;
+      padding: 0 16px 40px;
     }
+
     .login-card {
       background: #fff;
-      border-radius: 14px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.10);
-      padding: 36px 32px;
+      border-radius: 0 0 16px 16px;
+      box-shadow: 0 8px 32px rgba(37,99,235,.12);
+      padding: 28px 28px 32px;
       width: 100%;
       max-width: 380px;
     }
-    .login-logo {
+
+    .login-card h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1e3a8a;
+      margin-bottom: 20px;
       text-align: center;
-      margin-bottom: 24px;
     }
-    .login-logo .icon { font-size: 40px; display: block; margin-bottom: 6px; }
-    .login-logo h1 { font-size: 18px; font-weight: 700; color: var(--navy); }
-    .login-logo p { font-size: 13px; color: var(--muted); margin-top: 2px; }
-    .error-msg { background: #fee2e2; color: #b91c1c; padding: 10px 14px; border-radius: 7px; font-size: 13px; margin-bottom: 14px; display: none; }
-    .register-link { text-align: center; font-size: 13px; color: var(--muted); margin-top: 16px; }
-    .register-link a { color: var(--blue); text-decoration: none; font-weight: 600; }
+
+    .error-msg {
+      background: #fee2e2;
+      color: #b91c1c;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 14px;
+      display: none;
+    }
+
+    .register-link {
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 16px;
+    }
+    .register-link a { color: #2563eb; text-decoration: none; font-weight: 600; }
+    .register-link a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <span class="topbar-title">คลังข้อสอบออนไลน์</span>
+
+  <!-- Brand Hero -->
+  <div class="login-hero">
+    <div class="brand-logo">🎓</div>
+    <div class="brand-name">School<span>PL</span></div>
+    <div style="margin-top:10px">
+      <div class="brand-tagline">
+        <span class="dot"></span>
+        Play &amp; Learn
+      </div>
+    </div>
+    <div class="brand-sub">ระบบฝึกสอบออนไลน์ ป.4 — ม.3</div>
   </div>
 
+  <!-- Login Form -->
   <div class="login-wrap">
     <div class="login-card">
-      <div class="login-logo">
-        <span class="icon">📚</span>
-        <h1>คลังข้อสอบออนไลน์</h1>
-        <p>ป.4 — ม.3 | เข้าสู่ระบบเพื่อเริ่มใช้งาน</p>
-      </div>
+      <h2>เข้าสู่ระบบ</h2>
 
       <div class="error-msg" id="error-msg"></div>
 
@@ -72,8 +179,6 @@
       if (e.key === 'Enter') login();
     });
 
-    // Override login-script.js error display to use new UI
-    const _origLogin = window.login;
     window.login = async function() {
       const btn = document.getElementById('login-btn');
       const errEl = document.getElementById('error-msg');

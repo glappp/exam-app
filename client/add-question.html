@@ -293,9 +293,10 @@
   // ─── Choices ─────────────────────────────────────────────
   function renderChoices() {
     const list = document.getElementById('choice-list');
+    const LETTERS = ['a','b','c','d'];
     list.innerHTML = CHOICES.map((label, i) => `
       <div class="choice-item" id="choice-row-${i}">
-        <input type="radio" name="correct" value="${i}" onchange="highlightCorrect(${i})" title="เลือกเป็นคำตอบที่ถูก">
+        <input type="radio" name="correct" value="${LETTERS[i]}" onchange="highlightCorrect(${i})" title="เลือกเป็นคำตอบที่ถูก">
         <input type="text" id="choice-text-${i}" placeholder="ตัวเลือก ${label}">
         <input type="file" id="choice-img-${i}" accept="image/*" style="font-size:12px;width:130px" onchange="previewImg(this, 'choice-img-preview-${i}')">
         <img id="choice-img-preview-${i}" style="display:none;max-height:40px;border-radius:4px">
@@ -354,14 +355,15 @@
       file: document.getElementById(`choice-img-${i}`).files[0]
     }));
 
+    const LETTERS = ['a','b','c','d'];
     const correctRadio = document.querySelector('input[name=correct]:checked');
-    const correctIdx = correctRadio ? parseInt(correctRadio.value) : null;
+    const correctLetter = correctRadio ? correctRadio.value : null;
 
     let html = `<strong>โจทย์:</strong> ${text}<br><br>`;
     html += `<strong>ตัวเลือก:</strong><ul style="margin-top:6px;padding-left:16px">`;
     choices.forEach((c, i) => {
       if (c.text || c.file) {
-        const mark = correctIdx === i ? ' ✔️' : '';
+        const mark = correctLetter === LETTERS[i] ? ' ✔️' : '';
         const imgHTML = c.file ? `<br><img src="${URL.createObjectURL(c.file)}" height="50" style="margin-top:4px;border-radius:4px">` : '';
         html += `<li>${CHOICES[i]}. ${c.text}${mark}${imgHTML}</li>`;
       }

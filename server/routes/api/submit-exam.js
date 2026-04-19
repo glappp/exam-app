@@ -88,7 +88,7 @@ router.post('/', async (req, res) => {
         return {
           studentProfileId,
           questionId: qId,
-          selectedIdx: parseInt(answers[i]) ?? -1,
+          selectedAnswer: String(answers[i] ?? ''),
           isCorrect: isCorrectAnswer(answers[i], q),
         };
       }).filter(Boolean);
@@ -271,12 +271,13 @@ function normalizeAnswer(ans) {
 }
 
 function isCorrectAnswer(userAns, q) {
-  const a = normalizeAnswer(userAns);
-  if (q.answer != null) return parseInt(userAns) === q.answer;
-  if (Array.isArray(q.shortAnswer)) {
+  if (q.type === 'numeric' || q.answer == null) {
+    if (!Array.isArray(q.shortAnswer)) return false;
+    const a = normalizeAnswer(userAns);
     return q.shortAnswer.some(sa => normalizeAnswer(sa) === a);
   }
-  return false;
+  // mc: compare string directly ('a'/'b'/'c'/'d')
+  return String(userAns) === q.answer;
 }
 
 module.exports = router;

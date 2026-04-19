@@ -3,7 +3,13 @@ let currentQuestion = null;
 let currentAnswer = -1;
 
 const CHOICE_LABELS = ['ก', 'ข', 'ค', 'ง', 'จ'];
+const ANSWER_LETTERS = ['a', 'b', 'c', 'd', 'e'];
 function choiceLabel(i) { return CHOICE_LABELS[i] ?? String(i + 1); }
+function answerLabel(ans) {
+  const i = ANSWER_LETTERS.indexOf(String(ans));
+  return i >= 0 ? CHOICE_LABELS[i] : String(ans ?? '?');
+}
+function choiceToAnswer(i) { return ANSWER_LETTERS[i] ?? String(i); }
 
 // Practice session state
 let sessionStartTime = null;
@@ -112,18 +118,19 @@ function renderTargetedQuestion() {
 }
 
 function checkAnswerTargeted(choiceIndex) {
-  const isCorrect = choiceIndex === currentAnswer;
+  const selected = choiceToAnswer(choiceIndex);
+  const isCorrect = selected === currentAnswer;
 
   document.querySelectorAll('.choice-btn').forEach((btn, i) => {
     btn.disabled = true;
     btn.style.cursor = 'default';
-    if (i === currentAnswer) { btn.style.background = '#dcfce7'; btn.style.borderColor = '#16a34a'; btn.style.color = '#15803d'; }
+    if (choiceToAnswer(i) === currentAnswer) { btn.style.background = '#dcfce7'; btn.style.borderColor = '#16a34a'; btn.style.color = '#15803d'; }
     if (i === choiceIndex && !isCorrect) { btn.style.background = '#fee2e2'; btn.style.borderColor = '#dc2626'; btn.style.color = '#b91c1c'; }
   });
 
   document.getElementById('answer-feedback').innerHTML = isCorrect
     ? `<span class="badge badge-success">✔ ถูกต้อง!</span>`
-    : `<span class="badge badge-error">✘ ผิด — เฉลยคือ ข้อ ${choiceLabel(currentAnswer)} (ข้อนี้จะกลับมาอีก)</span>`;
+    : `<span class="badge badge-error">✘ ผิด — เฉลยคือ ข้อ ${answerLabel(currentAnswer)} (ข้อนี้จะกลับมาอีก)</span>`;
 
   if (isCorrect) {
     targetedQueue.shift();
@@ -384,8 +391,9 @@ function renderReviewQuestion(idx) {
 
   const choicesHTML = (q.choices || []).map((c, i) => {
     let bg = '', border = '', color = '';
-    if (i === correctAnswer) { bg = '#dcfce7'; border = '#16a34a'; color = '#15803d'; }
-    if (i === userAnswer && !isCorrect) { bg = '#fee2e2'; border = '#dc2626'; color = '#b91c1c'; }
+    const letter = choiceToAnswer(i);
+    if (letter === correctAnswer) { bg = '#dcfce7'; border = '#16a34a'; color = '#15803d'; }
+    if (letter === userAnswer && !isCorrect) { bg = '#fee2e2'; border = '#dc2626'; color = '#b91c1c'; }
     const style = bg ? `style="background:${bg};border-color:${border};color:${color};cursor:default"` : 'style="cursor:default"';
     return `<button class="choice-btn" disabled ${style}>
       ${c.image ? `<img src="/uploads/${c.image}" style="max-width:100%;max-height:160px;margin-bottom:6px;display:block;border-radius:6px;object-fit:contain">` : ''}
@@ -395,7 +403,7 @@ function renderReviewQuestion(idx) {
 
   const feedback = isCorrect
     ? `<span class="badge badge-success">✔ ถูกต้อง</span>`
-    : `<span class="badge badge-error">✘ ผิด — เฉลยคือ ข้อ ${choiceLabel(correctAnswer)}</span>`;
+    : `<span class="badge badge-error">✘ ผิด — เฉลยคือ ข้อ ${answerLabel(correctAnswer)}</span>`;
 
   const qCode = getQuestionCode(q);
   document.getElementById('question-area').innerHTML = `
@@ -472,13 +480,14 @@ function renderCurrentQuestion() {
 }
 
 function checkAnswer(choiceIndex) {
-  const isCorrect = choiceIndex === currentAnswer;
+  const selected = choiceToAnswer(choiceIndex);
+  const isCorrect = selected === currentAnswer;
 
   // Disable all buttons + highlight
   document.querySelectorAll('.choice-btn').forEach((btn, i) => {
     btn.disabled = true;
     btn.style.cursor = 'default';
-    if (i === currentAnswer) {
+    if (choiceToAnswer(i) === currentAnswer) {
       btn.style.background = '#dcfce7';
       btn.style.borderColor = '#16a34a';
       btn.style.color = '#15803d';
@@ -492,11 +501,11 @@ function checkAnswer(choiceIndex) {
 
   document.getElementById('answer-feedback').innerHTML = isCorrect
     ? `<span class="badge badge-success">✔ ถูกต้อง!</span>`
-    : `<span class="badge badge-error">✘ ผิด — เฉลยคือ ข้อ ${choiceLabel(currentAnswer)}</span>`;
+    : `<span class="badge badge-error">✘ ผิด — เฉลยคือ ข้อ ${answerLabel(currentAnswer)}</span>`;
 
   // Record
   sessionQuestions.push(currentQuestion);
-  sessionAnswers.push(choiceIndex);
+  sessionAnswers.push(selected);
 
   // โหลดข้อถัดไปหลัง 1.8 วินาที
   setTimeout(loadNextQuestion, 1800);
@@ -545,14 +554,14 @@ function showFinalResults(data, durationSec) {
   const scoreColor = pct >= 80 ? '#16a34a' : pct >= 60 ? '#d97706' : '#dc2626';
 
   const rows = sessionQuestions.map((q, i) => {
-    const correct = sessionAnswers[i] === q.answer;
+    const correct = String(sessionAnswers[i]) === q.answer;
     const text = getText(q);
     return `
       <tr>
         <td style="text-align:center">${i + 1}</td>
         <td>${text.length > 70 ? text.substring(0, 70) + '…' : text}</td>
-        <td style="text-align:center">${choiceLabel(sessionAnswers[i])}</td>
-        <td style="text-align:center">${choiceLabel(q.answer)}</td>
+        <td style="text-align:center">${answerLabel(sessionAnswers[i])}</td>
+        <td style="text-align:center">${answerLabel(q.answer)}</td>
         <td style="text-align:center">
           <span class="badge ${correct ? 'badge-success' : 'badge-error'}">${correct ? 'ถูก' : 'ผิด'}</span>
           <button onclick="openResultReview(${i})" style="margin-left:6px;font-size:11px;padding:2px 8px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;color:#374151;vertical-align:middle">ดู</button>
@@ -632,8 +641,9 @@ function renderResultReviewCard(idx) {
 
   const choicesHTML = (q.choices || []).map((c, i) => {
     let bg = '', border = '', color = '';
-    if (i === correctAnswer) { bg = '#dcfce7'; border = '#16a34a'; color = '#15803d'; }
-    if (i === userAnswer && !isCorrect) { bg = '#fee2e2'; border = '#dc2626'; color = '#b91c1c'; }
+    const letter = choiceToAnswer(i);
+    if (letter === correctAnswer) { bg = '#dcfce7'; border = '#16a34a'; color = '#15803d'; }
+    if (letter === userAnswer && !isCorrect) { bg = '#fee2e2'; border = '#dc2626'; color = '#b91c1c'; }
     const style = bg ? `style="background:${bg};border-color:${border};color:${color};cursor:default"` : 'style="cursor:default"';
     return `<button class="choice-btn" disabled ${style}>
       ${c.image ? `<img src="/uploads/${c.image}" style="max-width:100%;max-height:160px;margin-bottom:6px;display:block;border-radius:6px;object-fit:contain">` : ''}
@@ -643,7 +653,7 @@ function renderResultReviewCard(idx) {
 
   const feedback = isCorrect
     ? `<span class="badge badge-success">✔ ถูกต้อง</span>`
-    : `<span class="badge badge-error">✘ ผิด — เฉลยคือ ข้อ ${choiceLabel(correctAnswer)}</span>`;
+    : `<span class="badge badge-error">✘ ผิด — เฉลยคือ ข้อ ${answerLabel(correctAnswer)}</span>`;
 
   const prevBtn = idx > 0
     ? `<button onclick="renderResultReviewCard(${idx - 1})" style="padding:7px 14px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer;font-size:13px">◂ ข้อ ${idx}</button>`
@@ -697,7 +707,7 @@ function resetPractice() {
 
 function startExamMode() {
   examMode = true;
-  examAnswers = new Array(filteredQuestions.length).fill(-1);
+  examAnswers = new Array(filteredQuestions.length).fill(null);
   examCurrentIdx = 0;
   renderExamQuestion(0);
 }
@@ -706,7 +716,7 @@ function renderExamQuestion(idx) {
   examCurrentIdx = idx;
   const q = filteredQuestions[idx];
   const total = filteredQuestions.length;
-  const answeredCount = examAnswers.filter(a => a !== -1).length;
+  const answeredCount = examAnswers.filter(a => a !== null).length;
   const selectedAnswer = examAnswers[idx];
   const unanswered = total - answeredCount;
 
@@ -722,7 +732,7 @@ function renderExamQuestion(idx) {
   }).join('');
 
   const choicesHTML = (q.choices || []).map((c, i) => {
-    const isSelected = i === selectedAnswer;
+    const isSelected = choiceToAnswer(i) === selectedAnswer;
     const extraStyle = isSelected ? ' style="background:#dbeafe;border-color:#2563eb;color:#1d4ed8"' : '';
     return `<button class="choice-btn" id="choice-${i}" onclick="selectExamAnswer(${idx},${i})"${extraStyle}>
       ${c.image ? `<img src="/uploads/${c.image}" style="max-width:100%;max-height:160px;margin-bottom:6px;display:block;border-radius:6px;object-fit:contain">` : ''}
@@ -773,7 +783,7 @@ function renderExamQuestion(idx) {
 }
 
 function selectExamAnswer(idx, choiceIndex) {
-  examAnswers[idx] = choiceIndex;
+  examAnswers[idx] = choiceToAnswer(choiceIndex);
   renderExamQuestion(idx);
   if (idx < filteredQuestions.length - 1) {
     setTimeout(() => { if (examCurrentIdx === idx) renderExamQuestion(idx + 1); }, 600);
@@ -781,10 +791,10 @@ function selectExamAnswer(idx, choiceIndex) {
 }
 
 function submitExamMode() {
-  const unanswered = examAnswers.filter(a => a === -1).length;
+  const unanswered = examAnswers.filter(a => a === null).length;
   if (unanswered > 0 && !confirm(`ยังมี ${unanswered} ข้อที่ยังไม่ได้ตอบ\nต้องการส่งคำตอบหรือไม่?`)) return;
   sessionQuestions = [...filteredQuestions];
-  sessionAnswers = examAnswers.map(a => a === -1 ? 0 : a);
+  sessionAnswers = examAnswers.map(a => a ?? '');
   examMode = false;
   submitAndShowResults();
 }

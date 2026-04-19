@@ -84,7 +84,7 @@ model ExamAnswer {
   studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id])
   questionId       String
   question         Question       @relation(fields: [questionId], references: [id])
-  selectedIdx      Int
+  selectedAnswer   String    // mc: 'a'|'b'|'c'|'d' — numeric: ตัวเลขเป็น string
   isCorrect        Boolean
   timeSec          Int?
   createdAt        DateTime       @default(now())
@@ -140,9 +140,10 @@ model Question {
   textTh           String
   textEn           String
   image            String?
+  type             String    @default("mc") // "mc" | "numeric"
   choices          Json      // [{ textTh, textEn, image? }]
-  answer           Int?      // index ของคำตอบที่ถูก (สำหรับ multiple choice)
-  shortAnswer      Json?     // สำหรับ short answer เช่น ["43", "43.0"]
+  answer           String?   // mc: 'a'|'b'|'c'|'d' — numeric: null (ใช้ shortAnswer)
+  shortAnswer      Json?     // numeric: ["42", "42.0"] — exact match
   attributes       Json
   // {
   //   "examGrade": "p5",

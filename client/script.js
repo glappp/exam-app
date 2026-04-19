@@ -430,12 +430,21 @@ function renderCurrentQuestion() {
   const q = currentQuestion;
   const answered = sessionAnswers.length;
 
-  const choicesHTML = (q.choices || []).map((c, i) =>
-    `<button class="choice-btn" id="choice-${i}" onclick="checkAnswer(${i})">
-      ${c.image ? `<img src="/uploads/${c.image}" style="max-width:100%;max-height:160px;margin-bottom:6px;display:block;border-radius:6px;object-fit:contain">` : ''}
-      <strong>${choiceLabel(i)}.</strong> ${getChoiceText(c)}
-    </button>`
-  ).join('');
+  const choicesHTML = q.type === 'numeric'
+    ? `<div style="margin-top:8px">
+         <label style="font-size:14px;color:var(--muted);display:block;margin-bottom:6px">กรอกคำตอบ (ตัวเลข)</label>
+         <div style="display:flex;gap:8px;align-items:center">
+           <input type="number" id="numeric-answer" placeholder="คำตอบ"
+             style="max-width:160px;font-size:20px;font-weight:700;text-align:center;padding:8px 12px;border:2px solid #d1d5db;border-radius:8px;outline:none">
+           <button onclick="checkNumericAnswer()" class="btn btn-primary" style="height:auto;padding:9px 18px">ตรวจ</button>
+         </div>
+       </div>`
+    : (q.choices || []).map((c, i) =>
+        `<button class="choice-btn" id="choice-${i}" onclick="checkAnswer(${i})">
+          ${c.image ? `<img src="/uploads/${c.image}" style="max-width:100%;max-height:160px;margin-bottom:6px;display:block;border-radius:6px;object-fit:contain">` : ''}
+          <strong>${choiceLabel(i)}.</strong> ${getChoiceText(c)}
+        </button>`
+      ).join('');
 
   const progressHTML = isTestMode
     ? `<div style="background:#e5e7eb;border-radius:99px;height:5px;margin-bottom:16px">
@@ -508,6 +517,36 @@ function checkAnswer(choiceIndex) {
   sessionAnswers.push(selected);
 
   // โหลดข้อถัดไปหลัง 1.8 วินาที
+  setTimeout(loadNextQuestion, 1800);
+}
+
+function checkNumericAnswer() {
+  const inp = document.getElementById('numeric-answer');
+  if (!inp) return;
+  const val = inp.value.trim();
+  if (!val) return;
+
+  // normalize: parseFloat → toFixed(6) หรือ string lowercase
+  function normalize(v) {
+    const n = parseFloat(String(v).trim());
+    return isNaN(n) ? String(v).toLowerCase().trim() : n.toFixed(6);
+  }
+
+  const shortAnswers = currentQuestion.shortAnswer || [];
+  const isCorrect = shortAnswers.some(sa => normalize(sa) === normalize(val));
+  const correctDisplay = shortAnswers[0] ?? '?';
+
+  inp.disabled = true;
+  inp.style.borderColor = isCorrect ? '#16a34a' : '#dc2626';
+
+  document.getElementById('answer-feedback').innerHTML = isCorrect
+    ? `<span class="badge badge-success">✔ ถูกต้อง!</span>`
+    : `<span class="badge badge-error">✘ ผิด — เฉลยคือ ${correctDisplay}</span>`;
+
+  // Record
+  sessionQuestions.push(currentQuestion);
+  sessionAnswers.push(val);
+
   setTimeout(loadNextQuestion, 1800);
 }
 
@@ -731,14 +770,22 @@ function renderExamQuestion(idx) {
       style="width:28px;height:28px;border-radius:50%;border:2px solid ${border};background:${bg};cursor:pointer;font-size:11px;font-weight:700;color:${color};padding:0;flex-shrink:0">${i + 1}</button>`;
   }).join('');
 
-  const choicesHTML = (q.choices || []).map((c, i) => {
-    const isSelected = choiceToAnswer(i) === selectedAnswer;
-    const extraStyle = isSelected ? ' style="background:#dbeafe;border-color:#2563eb;color:#1d4ed8"' : '';
-    return `<button class="choice-btn" id="choice-${i}" onclick="selectExamAnswer(${idx},${i})"${extraStyle}>
-      ${c.image ? `<img src="/uploads/${c.image}" style="max-width:100%;max-height:160px;margin-bottom:6px;display:block;border-radius:6px;object-fit:contain">` : ''}
-      <strong>${choiceLabel(i)}.</strong> ${getChoiceText(c)}
-    </button>`;
-  }).join('');
+  const choicesHTML = q.type === 'numeric'
+    ? `<div style="margin-top:8px">
+         <label style="font-size:14px;color:var(--muted);display:block;margin-bottom:6px">กรอกคำตอบ (ตัวเลข)</label>
+         <input type="number" id="exam-numeric-${idx}" placeholder="คำตอบ"
+           value="${selectedAnswer ?? ''}"
+           oninput="selectExamNumeric(${idx}, this.value)"
+           style="max-width:160px;font-size:20px;font-weight:700;text-align:center;padding:8px 12px;border:2px solid #d1d5db;border-radius:8px;outline:none">
+       </div>`
+    : (q.choices || []).map((c, i) => {
+        const isSelected = choiceToAnswer(i) === selectedAnswer;
+        const extraStyle = isSelected ? ' style="background:#dbeafe;border-color:#2563eb;color:#1d4ed8"' : '';
+        return `<button class="choice-btn" id="choice-${i}" onclick="selectExamAnswer(${idx},${i})"${extraStyle}>
+          ${c.image ? `<img src="/uploads/${c.image}" style="max-width:100%;max-height:160px;margin-bottom:6px;display:block;border-radius:6px;object-fit:contain">` : ''}
+          <strong>${choiceLabel(i)}.</strong> ${getChoiceText(c)}
+        </button>`;
+      }).join('');
 
   const submitBtnStyle = unanswered === 0
     ? 'background:#16a34a;color:#fff;border:none'
@@ -788,6 +835,12 @@ function selectExamAnswer(idx, choiceIndex) {
   if (idx < filteredQuestions.length - 1) {
     setTimeout(() => { if (examCurrentIdx === idx) renderExamQuestion(idx + 1); }, 600);
   }
+}
+
+function selectExamNumeric(idx, value) {
+  examAnswers[idx] = value.trim() || null;
+  // อัปเดต dot nav แบบ lightweight (ไม่ re-render ทั้งหน้า)
+  const dots = document.querySelectorAll('.dot-nav button, [style*="border-radius:50%"]');
 }
 
 function submitExamMode() {

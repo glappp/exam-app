@@ -109,14 +109,21 @@
     const details = qna.map((q, i) => {
       const userAns = userAnswers[i];
       const correct = isAnswerCorrect(userAns, q);
-      const choicesHTML = (q.choices || []).map((c, idx) => {
-        const letter = LETTERS[idx];
-        let cls = 'choice-line';
-        if (letter === q.answer) cls += ' is-answer';
-        if (letter === userAns && !correct) cls += ' user-wrong';
-        const mark = letter === userAns ? (correct ? '✔ ' : '✘ ') : (letter === q.answer && !correct ? '→ ' : '');
-        return `<div class="${cls}">${mark}<strong>${LABELS[idx]}.</strong> ${c.textTh || ''}</div>`;
-      }).join('');
+      const choicesHTML = q.type === 'numeric'
+        ? `<div style="margin-top:6px;font-size:14px">
+             <div style="color:${correct ? '#15803d' : '#dc2626'};font-weight:700">
+               ${correct ? '✔' : '✘'} คำตอบของคุณ: <strong>${userAns ?? '(ไม่ได้ตอบ)'}</strong>
+             </div>
+             ${!correct ? `<div style="color:#15803d;margin-top:4px">→ เฉลย: <strong>${(q.shortAnswer || [])[0] ?? '?'}</strong></div>` : ''}
+           </div>`
+        : (q.choices || []).map((c, idx) => {
+            const letter = LETTERS[idx];
+            let cls = 'choice-line';
+            if (letter === q.answer) cls += ' is-answer';
+            if (letter === userAns && !correct) cls += ' user-wrong';
+            const mark = letter === userAns ? (correct ? '✔ ' : '✘ ') : (letter === q.answer && !correct ? '→ ' : '');
+            return `<div class="${cls}">${mark}<strong>${LABELS[idx]}.</strong> ${c.textTh || ''}</div>`;
+          }).join('');
 
       return `
         <div class="result-question-card ${correct ? 'correct' : 'wrong'}">

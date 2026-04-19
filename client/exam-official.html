@@ -179,8 +179,14 @@
 
     const sectionLabels = { 1: 'ตอนที่ 1', 2: 'ตอนที่ 2', 3: 'ตอนที่ 3' };
 
-    const choicesHTML = (q.choices || []).length
-      ? (q.choices || []).map((c, i) => {
+    const choicesHTML = q.type === 'numeric'
+      ? `<div style="margin-top:8px">
+           <label style="font-size:14px;color:var(--muted);display:block;margin-bottom:6px">กรอกคำตอบ (ตัวเลข)</label>
+           <input class="form-group input" type="number" id="short-answer"
+             value="${answers[currentIndex] ?? ''}" placeholder="คำตอบ"
+             style="max-width:180px;font-size:18px;font-weight:700;text-align:center">
+         </div>`
+      : (q.choices || []).map((c, i) => {
           const letter = LETTERS[i];
           const checked = answers[currentIndex] === letter ? 'checked' : '';
           return `
@@ -188,10 +194,7 @@
               <input type="radio" name="ans" value="${letter}" ${checked}>
               <span><strong>${LABELS[i]}.</strong> ${c.image ? `<img src="/uploads/${c.image}" style="max-height:40px;margin-left:6px;vertical-align:middle">` : ''} ${c.textTh || ''}</span>
             </label>`;
-        }).join('')
-      : `<input class="form-group input" type="text" id="short-answer"
-           value="${answers[currentIndex] || ''}" placeholder="พิมพ์คำตอบ (ตัวเลข)"
-           style="margin-top:8px;max-width:200px">`;
+        }).join('');
 
     document.getElementById('question-container').innerHTML = `
       <div class="card">

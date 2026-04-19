@@ -4,8 +4,7 @@
   "description": "Online Exam App",
   "main": "server/index.js",
   "scripts": {
-    "start": "node server/Index.js",
-    "postinstall": "npx prisma generate"
+    "start": "node server/Index.js"
   },
   "dependencies": {
     "@prisma/client": "4.16.2",

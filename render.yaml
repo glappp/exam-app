@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: exam-app
+    name: schoolpl
     env: node
     region: singapore
     rootDir: server

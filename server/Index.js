@@ -1,3 +1,13 @@
+// ── Catch startup crashes ──────────────────────────────────────────────────
+process.on('uncaughtException', (err) => {
+  console.error('💥 uncaughtException:', err);
+  process.exit(1);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('💥 unhandledRejection:', reason);
+  process.exit(1);
+});
+
 const cors = require('cors');
 const express = require('express');
 const http = require('http');
@@ -7,6 +17,12 @@ const fs = require('fs');
 const { PrismaClient } = require('@prisma/client');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
+console.log('🚀 Starting server...');
+console.log('   NODE_ENV:', process.env.NODE_ENV);
+console.log('   PORT:', process.env.PORT);
+console.log('   DATABASE_URL set:', !!process.env.DATABASE_URL);
+console.log('   R2 set:', !!process.env.R2_ACCOUNT_ID);
+
 const { upload, getFilename, useR2 } = require('./storage');
 
 const prisma = new PrismaClient();

@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { PrismaClient } = require('@prisma/client');
 const session = require('express-session');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const { upload, getFilename, useR2 } = require('./storage');
 
 const prisma = new PrismaClient();

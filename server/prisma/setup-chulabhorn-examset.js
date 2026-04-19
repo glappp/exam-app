@@ -46,8 +46,8 @@ async function main() {
   console.log('✅ set Question.source = chulabhorn-2565');
 
   // map questionNo ที่ถูกต้อง (27 ข้อ รวม 21.1/21.2/21.3)
-  // ตอนที่ 1: ข้อ 1-10 (score=1), ตอนที่ 2: ข้อ 11-20 (score=2), ตอนที่ 3: ข้อ 21-25 (score=3)
-  // แต่มี 27 records เพราะ 21.1/21.2/21.3
+  // ตอนที่ 1: ข้อ 1-10 (score=1), ตอนที่ 2: ข้อ 11-20 (score=2), ตอนที่ 3: ข้อ 22-25 (score=3)
+  // ข้อ 21 แบ่งเป็น 3 ข้อย่อย → แต่ละข้อได้ score=1 (รวม 3 คะแนนพอดี)
   const scoreMap = (no) => {
     if (no <= 10) return 1;
     if (no <= 20) return 2;
@@ -69,7 +69,9 @@ async function main() {
       : String(i + 1 - (questions.slice(0, i).filter(x => x.textTh?.includes('21.2') || x.textTh?.includes('21.3')).length)).padStart(3, '0');
 
     const numericNo = parseInt(qNo);
-    const score = scoreMap(is21sub ? 21 : numericNo);
+    // ข้อ 21.1/21.2/21.3 → score=1 ต่อข้อ (ทั้ง 3 ข้อรวมกัน = 3 คะแนนของตอนที่ 3)
+    const is21group = is21sub || numericNo === 21;
+    const score = is21group ? 1 : scoreMap(numericNo);
 
     if (attrs.questionNo !== qNo || attrs.score !== score) {
       await prisma.question.update({

@@ -568,7 +568,7 @@ function logEvent(event, data) {
   const entry = { t: +ts, event, ...data, positions: snap };
   gameLog.push(entry);
   const posStr = snap.map(p => `${p.name}:${p.pos}`).join(' | ');
-  console.log(`[${ts}s] [${event}]`, data, '→', posStr);
+  // console.log(`[${ts}s] [${event}]`, data, '→', posStr);
 }
 
 function startLocalGame(names, count, tables) {

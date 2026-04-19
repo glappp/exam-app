@@ -6,12 +6,14 @@
   <title>ผลสอบ — คลังข้อสอบ</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>
+  <script src="topicMap.js"></script>
   <style>
+    /* ── ผลข้อสอบ ──────────────────────────────────────────── */
     .star-row { display: flex; gap: 6px; justify-content: center; margin: 12px 0 4px; }
     .star { font-size: 36px; color: #d1d5db; transition: color .2s; }
     .star.lit { color: #f59e0b; }
     .result-question-card {
-      border-left: 4px solid var(--border);
+      border-left: 5px solid var(--border);
       padding: 14px 16px;
       margin-bottom: 10px;
       border-radius: 0 8px 8px 0;
@@ -24,6 +26,56 @@
     .choice-line { font-size: 14px; padding: 4px 0; }
     .choice-line.is-answer { font-weight: 700; color: #15803d; }
     .choice-line.user-wrong { color: #dc2626; text-decoration: line-through; }
+
+    /* ── จุดอ่อน ────────────────────────────────────────────── */
+    .weak-section { display: flex; flex-direction: column; gap: 14px; }
+    .weak-group { background: #f9fafb; border-radius: 10px; padding: 14px 16px; }
+    .weak-group-title {
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      text-transform: uppercase; letter-spacing: .05em; margin-bottom: 10px;
+    }
+    .weak-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+    .weak-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #fff; border: 1px solid #e5e7eb;
+      border-radius: 20px; padding: 4px 10px 4px 12px;
+      font-size: 13px; font-weight: 500;
+    }
+    .weak-tag .count {
+      background: #fef3c7; color: #92400e;
+      border-radius: 99px; padding: 1px 7px;
+      font-size: 12px; font-weight: 700;
+    }
+    .weak-tag a.fix-btn {
+      background: #eff6ff; color: #1d4ed8;
+      border-radius: 99px; padding: 2px 9px;
+      font-size: 11px; font-weight: 600;
+      text-decoration: none; white-space: nowrap;
+    }
+    .weak-tag a.fix-btn:hover { background: #dbeafe; }
+
+    /* ── Print A4 Portrait ──────────────────────────────────── */
+    @media print {
+      @page { size: A4 portrait; margin: 18mm 18mm 20mm; }
+
+      body { background: #fff !important; }
+      .topbar, .no-print { display: none !important; }
+      .page { padding: 0 !important; max-width: 100% !important; }
+      .card { box-shadow: none !important; border: 1px solid #e5e7eb !important; break-inside: avoid; }
+
+      /* หัวกระดาษ */
+      #print-header { display: block !important; }
+
+      /* ซ่อน detail ข้อสอบ — พิมพ์แค่สรุปกับจุดอ่อน */
+      #detail-section { display: none !important; }
+
+      /* ปรับสีให้ printer เห็น */
+      .result-question-card.correct { background: #f0fdf4 !important; }
+      .result-question-card.wrong   { background: #fff5f5 !important; }
+      .weak-group { background: #f9fafb !important; }
+      .weak-tag { background: #fff !important; border: 1px solid #d1d5db !important; }
+      .weak-tag .count { background: #fef3c7 !important; }
+    }
   </style>
 </head>
 <body>
@@ -36,6 +88,12 @@
   </div>
 </div>
 
+<!-- หัวกระดาษ (แสดงเฉพาะตอนพิมพ์) -->
+<div id="print-header" style="display:none; margin-bottom:16px; padding-bottom:12px; border-bottom:2px solid #374151;">
+  <div style="font-size:18px; font-weight:800; color:#111827;">คลังข้อสอบ — สรุปผลการสอบ</div>
+  <div id="print-date" style="font-size:12px; color:#6b7280; margin-top:4px;"></div>
+</div>
+
 <div class="page" id="main-content">
   <p style="text-align:center;padding:40px;color:var(--muted)">กำลังโหลดผลสอบ...</p>
 </div>
@@ -45,6 +103,7 @@
 
   const LETTERS = ['a','b','c','d','e'];
   const LABELS  = ['ก','ข','ค','ง','จ'];
+
   function answerLabel(ans) {
     const i = LETTERS.indexOf(String(ans));
     return i >= 0 ? LABELS[i] : String(ans ?? '?');
@@ -59,6 +118,75 @@
     return String(ans) === q.answer;
   }
 
+  // ── แปล key เป็นภาษาไทย ──────────────────────────────────────────────────
+  const SKILL_MAP = {
+    'logical-reasoning':    'การใช้เหตุผล',
+    'multi-step':           'โจทย์หลายขั้นตอน',
+    'visual-spatial':       'มิติและรูปทรง',
+    'arithmetic':           'การคำนวณ',
+    'estimation':           'การประมาณค่า',
+    'pattern-recognition':  'การหารูปแบบ',
+    'comparison':           'การเปรียบเทียบ',
+    'unit-conversion':      'การแปลงหน่วย',
+    'reading-graph':        'อ่านกราฟ/ตาราง',
+    'word-problem':         'โจทย์ปัญหา',
+    'number-sense':         'ความรู้สึกเชิงตัวเลข',
+    'fraction-sense':       'ความรู้สึกเชิงเศษส่วน',
+  };
+
+  const TRAP_MAP = {
+    'alternate-interior-angles': 'สลับมุมใน',
+    'off-by-one':                'ผิดหนึ่งหน่วย',
+    'misread-question':          'อ่านโจทย์ผิด',
+    'wrong-formula':             'ใช้สูตรผิด',
+    'unit-mismatch':             'หน่วยไม่ตรงกัน',
+    'order-of-operations':       'ลำดับการดำเนินการ',
+    'sign-error':                'ติดลบผิด',
+    'fraction-invert':           'พลิกเศษส่วนผิด',
+    'extra-step':                'เผลอคิดเพิ่ม',
+  };
+
+  function keyToThai(type, rawKey) {
+    // rawKey อาจมี prefix เช่น "skill:logical-reasoning" หรือ "topic:geometry"
+    const clean = rawKey.replace(/^[^:]+:/, '');
+    if (type === 'topic') return getTopicLabel(rawKey);      // จาก topicMap.js
+    if (type === 'skill') return SKILL_MAP[clean] || clean;
+    if (type === 'trap')  return TRAP_MAP[clean]  || clean;
+    return clean;
+  }
+
+  // ── ส่วนจุดอ่อน ──────────────────────────────────────────────────────────
+  function weakSection(weakness) {
+    const GROUPS = [
+      { type: 'topic', title: '📚 หัวข้อวิชา',    icon: '📚' },
+      { type: 'skill', title: '🧠 ทักษะที่ต้องฝึก', icon: '🧠' },
+      { type: 'trap',  title: '⚠️ กับดักที่ต้องระวัง', icon: '⚠️' },
+    ];
+
+    const parts = GROUPS.map(({ type, title }) => {
+      const items = weakness[type];
+      const entries = Object.entries(items).sort((a, b) => b[1] - a[1]);
+      if (!entries.length) return '';
+
+      const tags = entries.map(([k, n]) => `
+        <div class="weak-tag">
+          <span>${keyToThai(type, k)}</span>
+          <span class="count">${n} ข้อ</span>
+          <a href="practice.html?mode=targeted&topic=${encodeURIComponent(k)}"
+             class="fix-btn no-print">ฝึกซ่อม</a>
+        </div>`).join('');
+
+      return `
+        <div class="weak-group">
+          <div class="weak-group-title">${title}</div>
+          <div class="weak-tags">${tags}</div>
+        </div>`;
+    }).join('');
+
+    return `<div class="weak-section">${parts}</div>`;
+  }
+
+  // ── render หลัก ──────────────────────────────────────────────────────────
   function renderResult(result) {
     const qna = result.questions || [];
     const userAnswers = result.userAnswers || result.answers || [];
@@ -77,23 +205,7 @@
         });
       });
     });
-
     const hasWeakness = Object.values(weakness).some(m => Object.keys(m).length > 0);
-
-    function weakList(title, items) {
-      const entries = Object.entries(items).sort((a, b) => b[1] - a[1]);
-      if (!entries.length) return '';
-      return `<div style="margin-bottom:8px">
-        <strong>${title}:</strong>
-        ${entries.map(([k, n]) => `
-          <span style="display:inline-flex;align-items:center;gap:6px;margin:4px 0 4px 6px">
-            <span class="badge badge-warn">${k.replace(/^[^:]+:/, '')} (${n})</span>
-            <a href="practice.html?mode=targeted&topic=${encodeURIComponent(k)}"
-               class="btn btn-ghost"
-               style="padding:2px 10px;font-size:12px;height:auto;line-height:1.6">ซ่อม</a>
-          </span>`).join('')}
-      </div>`;
-    }
 
     // รายละเอียดแต่ละข้อ
     const details = qna.map((q, i) => {
@@ -124,11 +236,10 @@
           <p style="margin:0 0 10px;font-size:15px;line-height:1.6">${q.textTh || ''}</p>
           ${q.image ? `<img src="${q.image.startsWith('/') ? q.image : '/uploads/' + q.image}" style="max-width:100%;border-radius:6px;margin-bottom:8px">` : ''}
           ${choicesHTML}
-        </div>
-      `;
+        </div>`;
     }).join('');
 
-    // คำนวณดาว mock
+    // ดาว mock
     let starsHTML = '';
     if (result.mode === 'mock' && result.avgPassScore != null) {
       const diff = correctCount - result.avgPassScore;
@@ -137,9 +248,7 @@
       starsHTML = `
         <div style="margin-bottom:8px">
           <div style="font-size:12px;color:var(--muted);margin-bottom:4px">ผลการประเมิน (เทียบคะแนนเฉลี่ยผู้ผ่าน ${result.avgPassScore} คะแนน)</div>
-          <div class="star-row">
-            ${Array.from({length:5},(_,i) => `<span class="star ${i < stars ? 'lit' : ''}">★</span>`).join('')}
-          </div>
+          <div class="star-row">${Array.from({length:5},(_,i) => `<span class="star ${i < stars ? 'lit' : ''}">★</span>`).join('')}</div>
           <div style="font-size:14px;font-weight:700;color:#f59e0b">${starLabel}</div>
         </div>`;
     }
@@ -160,10 +269,10 @@
           ตอบถูก ${correctCount} ข้อ จาก ${total} ข้อ
           ${result.durationSec ? ` · เวลา ${Math.floor(result.durationSec/60)} นาที ${result.durationSec%60} วินาที` : ''}
         </div>
-        <div style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap">
+        <div class="no-print" style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap">
           ${backBtn}
           <a href="dashboard.html" class="btn btn-ghost">กลับหน้าหลัก</a>
-          <button class="btn btn-ghost" onclick="window.print()">พิมพ์ผล</button>
+          <button class="btn btn-ghost" onclick="printResult()">🖨 พิมพ์ผล</button>
         </div>
       </div>
 
@@ -171,20 +280,26 @@
       ${hasWeakness ? `
       <div class="card">
         <div class="card-title">📌 จุดที่ควรทบทวน</div>
-        ${weakList('หัวข้อ', weakness.topic)}
-        ${weakList('ทักษะ', weakness.skill)}
-        ${weakList('กับดัก', weakness.trap)}
+        ${weakSection(weakness)}
       </div>` : ''}
 
       <!-- รายละเอียดข้อสอบ -->
       ${qna.length > 0 ? `
-      <div class="card">
+      <div class="card" id="detail-section">
         <div class="card-title">รายละเอียดข้อสอบ</div>
         ${details}
       </div>` : ''}
     `;
 
     if (window.MathJax) MathJax.typesetPromise();
+  }
+
+  function printResult() {
+    // ตั้งวันที่บนหัวกระดาษ
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    document.getElementById('print-date').textContent = 'วันที่พิมพ์: ' + dateStr;
+    window.print();
   }
 
   if (!result) {

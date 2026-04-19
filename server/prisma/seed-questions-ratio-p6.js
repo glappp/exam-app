@@ -4,11 +4,12 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+const IDX_TO_LETTER = ['a','b','c','d'];
 const BASE = { examGrade: 'p6', topic: ['topic:ratio'] };
 const Q = (textTh, textEn, choices, answer, subtopic, skill, difficulty, trap = []) => ({
   textTh, textEn,
   choices: choices.map(c => ({ textTh: c[0], textEn: c[1] })),
-  answer,
+  answer: IDX_TO_LETTER[answer] ?? answer,
   attributes: { ...BASE, subtopic: [subtopic], skill: [skill], trap, difficulty },
   ownerOrg: 'system', createdBy: 'seed', updatedBy: 'seed',
   aiGenerated: false, needsReview: false,

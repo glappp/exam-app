@@ -75,7 +75,7 @@ router.put('/:id', async (req, res) => {
 
     const data = {};
     if (questionText !== undefined) { data.textTh = questionText; data.textEn = questionText; }
-    if (answer !== undefined) data.answer = parseInt(answer);
+    if (answer !== undefined) data.answer = answer || null;
     if (attributes !== undefined) {
       data.attributes = attributes;
       data.difficulty = String(attributes.difficulty ?? 1);

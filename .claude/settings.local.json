@@ -39,7 +39,31 @@
       "Bash(grep -v \"//\" /d/work/Claude_sandbox/exam-app/server/prisma/seed-questions-order-of-operations-p6.js)",
       "Bash(grep -v \"//\" /d/work/Claude_sandbox/exam-app/server/prisma/seed-questions-statistics-p6.js)",
       "Bash(grep -v \"//\" /d/work/Claude_sandbox/exam-app/server/prisma/seed-questions-percentage-p5.js)",
-      "Bash(Remove-Item \"D:\\\\work\\\\Claude_sandbox\\\\exam-app\\\\.git\\\\worktrees\\\\beautiful-satoshi\\\\index.lock\" -Force)"
+      "Bash(Remove-Item \"D:\\\\work\\\\Claude_sandbox\\\\exam-app\\\\.git\\\\worktrees\\\\beautiful-satoshi\\\\index.lock\" -Force)",
+      "Bash(node -e ' *)",
+      "Bash(node prisma/seed-questions-chulabhorn-p6-2565.js)",
+      "Bash(node -e \"require\\('sharp'\\); console.log\\('sharp ok'\\)\")",
+      "Bash(node prisma/crop-chulabhorn-images.js)",
+      "Bash(node prisma/recrop-chulabhorn.js q04)",
+      "Bash(node prisma/recrop-chulabhorn.js q05)",
+      "Bash(node prisma/recrop-chulabhorn.js q06)",
+      "Bash(find /d/work/Claude_sandbox/exam-app/.claude/worktrees/agitated-rosalind-5774ba/client -name \"*.html\" -exec grep -l \"answer\" {} \\\\;)",
+      "Bash(node prisma/migrate-answer-to-string.js)",
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(node server.js)",
+      "Bash(curl -s http://localhost:3000/questions/all)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); q=d['questions'][0]; print\\('answer:', q.get\\('answer'\\), 'type:', q.get\\('type'\\)\\)\")",
+      "Bash(curl -v http://localhost:3000/health)",
+      "Bash(curl -s http://localhost:3000/api/health)",
+      "Bash(curl -s \"http://localhost:3000/questions?page=1&limit=1\")",
+      "Bash(curl -s \"http://localhost:3000/questions?page=1\")",
+      "Bash(curl -s \"http://localhost:3001/questions?page=1\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); q=d['questions'][0]; print\\('answer:', repr\\(q.get\\('answer'\\)\\), ' type:', repr\\(q.get\\('type'\\)\\)\\)\")",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(python -c ' *)",
+      "Bash(curl -s 'http://localhost:3001/questions?page=1')",
+      "Bash(curl -s -X POST http://localhost:3001/api/submit-exam -H 'Content-Type: application/json' -d '{\"mode\":\"practice\",\"questions\":[\"__CMDSUB_OUTPUT__')"
     ]
   }
 }

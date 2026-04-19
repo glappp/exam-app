@@ -298,13 +298,15 @@
   }
 
   function renderChoices(choices, correctAnswer) {
+    const LETTERS = ['a','b','c','d'];
     const list = document.getElementById('choice-list');
     list.innerHTML = CHOICES.map((label, i) => {
       const c = choices[i] || {};
-      const isCorrect = correctAnswer === i;
+      const letter = LETTERS[i];
+      const isCorrect = correctAnswer === letter;
       return `
         <div class="choice-item ${isCorrect ? 'correct' : ''}" id="choice-row-${i}">
-          <input type="radio" name="correct" value="${i}" ${isCorrect ? 'checked' : ''} onchange="highlightCorrect(${i})" title="เลือกเป็นคำตอบที่ถูก">
+          <input type="radio" name="correct" value="${letter}" ${isCorrect ? 'checked' : ''} onchange="highlightCorrect(${i})" title="เลือกเป็นคำตอบที่ถูก">
           <div class="choice-content">
             <input type="text" id="choice-text-${i}" value="${(c.textTh || '').replace(/"/g, '&quot;')}" placeholder="ตัวเลือก ${label}">
             ${c.image ? `<img src="/uploads/${c.image}" class="choice-img-current">` : ''}

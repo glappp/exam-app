@@ -119,8 +119,8 @@
       data.grades.forEach(g => {
         gradeEl.innerHTML += `<option value="${g}">${gradeLabel(g)}</option>`;
       });
-      data.examTypes.forEach(e => {
-        examTypeEl.innerHTML += `<option value="${e}">${examLabel(e)}</option>`;
+      (data.examSets || []).forEach(e => {
+        examTypeEl.innerHTML += `<option value="${e.source}">${e.label}</option>`;
       });
 
       if (mode === 'official') {

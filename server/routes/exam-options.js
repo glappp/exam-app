@@ -14,10 +14,9 @@ router.get('/exam-options', async (req, res) => {
   });
 
 
-    // ดึงเฉพาะค่าไม่ซ้ำ (เช่น grade, examType, year)
     const unique = {
       grades: [...new Set(sets.map(e => e.grade))],
-      examTypes: [...new Set(sets.map(e => e.examType))],
+      examSets: sets.map(e => ({ source: e.questionSource, label: e.label || e.questionSource, year: e.year })),
       years: [...new Set(sets.map(e => e.year).filter(Boolean))]
     };
 

@@ -6,20 +6,7 @@
   "scripts": {
     "start": "node server/Index.js"
   },
-  "dependencies": {
-    "@prisma/client": "4.16.2",
-    "bcrypt": "^5.1.0",
-    "cors": "^2.8.5",
-    "express": "^4.18.2",
-    "express-session": "^1.18.1",
-    "multer": "^1.4.5-lts.1",
-    "prisma": "4.16.2"
-  },
   "engines": {
     "node": ">=18.0.0"
-  },
-  "optionalDependencies": {
-    "@aws-sdk/client-s3": "^3.600.0",
-    "multer-s3": "^3.0.2"
   }
 }

@@ -103,12 +103,41 @@
     }, 1000);
   }
 
+  function _renderBlock(block) {
+    if (block.type === 'text') {
+      return `<div class="qb-text">${(block.value || '').replace(/\n/g, '<br>')}</div>`;
+    }
+    if (block.type === 'image') {
+      const src = (block.url || '').startsWith('/') ? block.url : `/uploads/${block.url}`;
+      return `<div class="qb-img"><img src="${src}" onclick="openLightbox && openLightbox(this)" style="max-width:min(100%,420px);max-height:300px;border-radius:8px;object-fit:contain;cursor:zoom-in"></div>`;
+    }
+    return '';
+  }
+  function renderQuestionBody(q) {
+    if (q.content && Array.isArray(q.content)) {
+      return q.content.map(block => {
+        if (block.type === 'hint') {
+          const inner = (block.content || []).map(_renderBlock).join('');
+          return `<details class="qb-hint"><summary>${block.label || 'ความรู้เพิ่มเติม'}</summary><div class="qb-hint-body">${inner}</div></details>`;
+        }
+        return _renderBlock(block);
+      }).join('');
+    }
+    const lang = typeof currentLang !== 'undefined' ? currentLang : 'th';
+    const text = lang === 'th' ? (q.textTh || q.text || '') : (q.textEn || q.text || '');
+    let html = `<div class="qb-text">${text.replace(/\n/g, '<br>')}</div>`;
+    if (q.image) {
+      const src = q.image.startsWith('/') ? q.image : `/uploads/${q.image}`;
+      html += `<div class="qb-img"><img src="${src}" onclick="openLightbox && openLightbox(this)" style="max-width:min(100%,420px);max-height:300px;border-radius:8px;object-fit:contain;cursor:zoom-in"></div>`;
+    }
+    return html;
+  }
+
   function renderQuestion() {
     const q = questions[currentIndex];
     document.getElementById('question-container').innerHTML = `
       <div class="card">
-        <div class="question-text">${(q.textTh || '').replace(/\n/g, '<br>')}</div>
-        ${q.image ? `<img src="${q.image.startsWith('/') ? q.image : '/uploads/' + q.image}" class="question-image">` : ''}
+        <div class="qb-wrap">${renderQuestionBody(q)}</div>
         <div class="answer-section">
           ${q.choices?.length ? q.choices.map((c, i) => `
             <label>

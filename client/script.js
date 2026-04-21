@@ -109,8 +109,7 @@ function renderTargetedQuestion() {
         <span style="font-size:11px;color:var(--muted);background:#f3f4f6;padding:2px 7px;border-radius:99px">${qCode}</span>
         <button onclick="showReportModal('${q.id}','${qCode}')" style="font-size:11px;color:#9ca3af;background:none;border:none;cursor:pointer;padding:2px 4px">แจ้งปัญหา</button>
       </div>
-      <div style="font-size:15px;line-height:1.7;margin-bottom:14px">${getText(q)}</div>
-      ${q.image ? `<div style="text-align:center;margin-bottom:14px"><img src="/uploads/${q.image}" style="max-width:min(100%,420px);max-height:280px;border-radius:8px;object-fit:contain"></div>` : ''}
+      <div class="qb-wrap">${renderQuestionBody(q)}</div>
       <div class="choices">${choicesHTML}</div>
       <div id="answer-feedback" style="margin-top:12px"></div>
     </div>
@@ -159,6 +158,39 @@ function showTargetedComplete() {
 function getText(q) {
   const raw = currentLang === 'th' ? (q.textTh || q.text || '') : (q.textEn || q.text || '');
   return raw.replace(/\n/g, '<br>');
+}
+
+// render block เดี่ยว (ใช้ภายใน renderQuestionBody)
+function _renderBlock(block) {
+  if (block.type === 'text') {
+    return `<div class="qb-text">${(block.value || '').replace(/\n/g, '<br>')}</div>`;
+  }
+  if (block.type === 'image') {
+    const src = (block.url || '').startsWith('/') ? block.url : `/uploads/${block.url}`;
+    return `<div class="qb-img"><img src="${src}" onclick="openLightbox && openLightbox(this)" style="max-width:min(100%,420px);max-height:300px;border-radius:8px;object-fit:contain;cursor:zoom-in"></div>`;
+  }
+  return '';
+}
+
+// render โจทย์ทั้งข้อ — รองรับทั้ง content blocks (ใหม่) และ textTh+image (เดิม)
+function renderQuestionBody(q) {
+  if (q.content && Array.isArray(q.content)) {
+    return q.content.map(block => {
+      if (block.type === 'hint') {
+        const inner = (block.content || []).map(_renderBlock).join('');
+        return `<details class="qb-hint"><summary>${block.label || 'ความรู้เพิ่มเติม'}</summary><div class="qb-hint-body">${inner}</div></details>`;
+      }
+      return _renderBlock(block);
+    }).join('');
+  }
+  // backward compat: textTh + image
+  const text = currentLang === 'th' ? (q.textTh || q.text || '') : (q.textEn || q.text || '');
+  let html = `<div class="qb-text">${text.replace(/\n/g, '<br>')}</div>`;
+  if (q.image) {
+    const src = q.image.startsWith('/') ? q.image : `/uploads/${q.image}`;
+    html += `<div class="qb-img"><img src="${src}" onclick="openLightbox && openLightbox(this)" style="max-width:min(100%,420px);max-height:280px;border-radius:8px;object-fit:contain;cursor:zoom-in"></div>`;
+  }
+  return html;
 }
 
 function getChoiceText(c) {
@@ -416,8 +448,7 @@ function renderReviewQuestion(idx) {
         <span style="font-size:11px;color:var(--muted);background:#f3f4f6;padding:2px 7px;border-radius:99px">${qCode}</span>
         <button onclick="showReportModal('${q.id}','${qCode}')" style="font-size:11px;color:#9ca3af;background:none;border:none;cursor:pointer;padding:2px 4px">แจ้งปัญหา</button>
       </div>
-      <div style="font-size:15px;line-height:1.7;margin-bottom:14px">${getText(q)}</div>
-      ${q.image ? `<div style="text-align:center;margin-bottom:14px"><img src="/uploads/${q.image}" style="max-width:min(100%,420px);max-height:280px;border-radius:8px;object-fit:contain"></div>` : ''}
+      <div class="qb-wrap">${renderQuestionBody(q)}</div>
       <div class="choices">${choicesHTML}</div>
       <div style="margin-top:12px">${feedback}</div>
       ${navBtns(idx, total)}
@@ -478,8 +509,7 @@ function renderCurrentQuestion() {
         <span style="font-size:11px;color:var(--muted);background:#f3f4f6;padding:2px 7px;border-radius:99px">${qCode}</span>
         <button onclick="showReportModal('${q.id}','${qCode}')" style="font-size:11px;color:#9ca3af;background:none;border:none;cursor:pointer;padding:2px 4px">แจ้งปัญหา</button>
       </div>
-      <div style="font-size:15px;line-height:1.7;margin-bottom:14px">${getText(q)}</div>
-      ${q.image ? `<div style="text-align:center;margin-bottom:14px"><img src="/uploads/${q.image}" style="max-width:min(100%,420px);max-height:280px;border-radius:8px;object-fit:contain"></div>` : ''}
+      <div class="qb-wrap">${renderQuestionBody(q)}</div>
       <div class="choices">${choicesHTML}</div>
       <div id="answer-feedback" style="margin-top:12px"></div>
       ${backBtn}
@@ -712,8 +742,7 @@ function renderResultReviewCard(idx) {
         <span style="font-size:11px;color:var(--muted);background:#f3f4f6;padding:2px 7px;border-radius:99px">${qCode}</span>
         <button onclick="showReportModal('${q.id}','${qCode}')" style="font-size:11px;color:#9ca3af;background:none;border:none;cursor:pointer;padding:2px 4px">แจ้งปัญหา</button>
       </div>
-      <div style="font-size:15px;line-height:1.7;margin-bottom:14px">${getText(q)}</div>
-      ${q.image ? `<div style="text-align:center;margin-bottom:14px"><img src="/uploads/${q.image}" style="max-width:min(100%,420px);max-height:280px;border-radius:8px;object-fit:contain"></div>` : ''}
+      <div class="qb-wrap">${renderQuestionBody(q)}</div>
       <div class="choices">${choicesHTML}</div>
       <div style="margin-top:12px">${feedback}</div>
       <div style="display:flex;justify-content:space-between;margin-top:14px">${prevBtn}${nextBtn}</div>
@@ -806,8 +835,7 @@ function renderExamQuestion(idx) {
         <span style="font-size:11px;color:var(--muted);background:#f3f4f6;padding:2px 7px;border-radius:99px">${qCode}</span>
         <button onclick="showReportModal('${q.id}','${qCode}')" style="font-size:11px;color:#9ca3af;background:none;border:none;cursor:pointer;padding:2px 4px">แจ้งปัญหา</button>
       </div>
-      <div style="font-size:15px;line-height:1.7;margin-bottom:14px">${getText(q)}</div>
-      ${q.image ? `<div style="text-align:center;margin-bottom:14px"><img src="/uploads/${q.image}" style="max-width:min(100%,420px);max-height:280px;border-radius:8px;object-fit:contain"></div>` : ''}
+      <div class="qb-wrap">${renderQuestionBody(q)}</div>
       <div class="choices">${choicesHTML}</div>
       <div style="display:flex;gap:8px;margin-top:16px;align-items:center">
         <button onclick="${idx > 0 ? `renderExamQuestion(${idx - 1})` : ''}"

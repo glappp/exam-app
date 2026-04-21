@@ -140,6 +140,7 @@ model Question {
   textTh           String
   textEn           String
   image            String?
+  content          Json?     // content blocks: [{type:'text',value:''} | {type:'image',url:''} | {type:'hint',label:'',content:[]}]
   type             String    @default("mc") // "mc" | "numeric"
   choices          Json      // [{ textTh, textEn, image? }]
   answer           String?   // mc: 'a'|'b'|'c'|'d' — numeric: null (ใช้ shortAnswer)

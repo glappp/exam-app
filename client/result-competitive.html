@@ -186,6 +186,36 @@
     return `<div class="weak-section">${parts}</div>`;
   }
 
+  function _renderBlock(block) {
+    if (block.type === 'text') {
+      return `<div class="qb-text">${(block.value || '').replace(/\n/g, '<br>')}</div>`;
+    }
+    if (block.type === 'image') {
+      const src = (block.url || '').startsWith('/') ? block.url : `/uploads/${block.url}`;
+      return `<div class="qb-img"><img src="${src}" onclick="openLightbox && openLightbox(this)" style="max-width:min(100%,420px);max-height:300px;border-radius:8px;object-fit:contain;cursor:zoom-in"></div>`;
+    }
+    return '';
+  }
+  function renderQuestionBody(q) {
+    if (q.content && Array.isArray(q.content)) {
+      return q.content.map(block => {
+        if (block.type === 'hint') {
+          const inner = (block.content || []).map(_renderBlock).join('');
+          return `<details class="qb-hint"><summary>${block.label || 'ความรู้เพิ่มเติม'}</summary><div class="qb-hint-body">${inner}</div></details>`;
+        }
+        return _renderBlock(block);
+      }).join('');
+    }
+    const lang = typeof currentLang !== 'undefined' ? currentLang : 'th';
+    const text = lang === 'th' ? (q.textTh || q.text || '') : (q.textEn || q.text || '');
+    let html = `<div class="qb-text">${text.replace(/\n/g, '<br>')}</div>`;
+    if (q.image) {
+      const src = q.image.startsWith('/') ? q.image : `/uploads/${q.image}`;
+      html += `<div class="qb-img"><img src="${src}" onclick="openLightbox && openLightbox(this)" style="max-width:min(100%,420px);max-height:300px;border-radius:8px;object-fit:contain;cursor:zoom-in"></div>`;
+    }
+    return html;
+  }
+
   // ── render หลัก ──────────────────────────────────────────────────────────
   function renderResult(result) {
     const qna = result.questions || [];
@@ -233,8 +263,7 @@
             <strong>ข้อ ${i + 1}</strong>
             <span class="badge ${correct ? 'badge-success' : 'badge-error'}">${correct ? 'ถูก' : 'ผิด'}</span>
           </div>
-          <p style="margin:0 0 10px;font-size:15px;line-height:1.6">${q.textTh || ''}</p>
-          ${q.image ? `<img src="${q.image.startsWith('/') ? q.image : '/uploads/' + q.image}" style="max-width:100%;border-radius:6px;margin-bottom:8px">` : ''}
+          <div class="qb-wrap">${renderQuestionBody(q)}</div>
           ${choicesHTML}
         </div>`;
     }).join('');

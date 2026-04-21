@@ -521,7 +521,6 @@
     const single = results.filter(r => !r.isMulti);
     if (!single.length) return;
 
-    // ดึง aggregate ของปีล่าสุด (key = "year|term")
     const latestKey = Object.keys(aggregates || {}).sort((a,b) => b.localeCompare(a))[0];
     const agg = latestKey ? aggregates[latestKey] : null;
     const aggLabel = agg ? `ปีการศึกษา ${agg.year} ภาคเรียน ${agg.term}` : '';
@@ -529,42 +528,64 @@
     const rankEmoji = agg ? (agg.rank === 1 ? '🥇' : agg.rank === 2 ? '🥈' : agg.rank === 3 ? '🥉' : '') : '';
     const pct = agg ? Math.round(agg.myTotal / agg.fullTotal * 100) : null;
     const pctColor = pct >= 80 ? '#16a34a' : pct >= 60 ? '#d97706' : '#dc2626';
+    const pctBg   = pct >= 80 ? '#f0fdf4' : pct >= 60 ? '#fffbeb' : '#fff1f2';
 
     const aggHtml = agg ? `
-      <div style="font-size:13px;color:#444;margin-bottom:10px;padding:8px 10px;background:#f8fafc;border-radius:8px;display:flex;gap:16px;flex-wrap:wrap">
-        <span>คะแนนรวม <strong style="color:${pctColor}">${agg.myTotal}/${agg.fullTotal}</strong></span>
-        <span>อันดับ <strong style="color:#1e3a5f">${rankEmoji}${agg.rank}/${agg.total}</strong></span>
-        <span>เฉลี่ยห้อง <strong>${agg.classMeanTotal}</strong></span>
-        <span>SD <strong>${agg.classSDTotal}</strong></span>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px">
+        <div style="background:${pctBg};border-radius:10px;padding:14px 10px;text-align:center">
+          <div style="font-size:30px;font-weight:800;color:${pctColor};line-height:1">${pct}%</div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">รวม ${agg.myTotal}/${agg.fullTotal}</div>
+        </div>
+        <div style="background:#eff6ff;border-radius:10px;padding:14px 10px;text-align:center">
+          <div style="font-size:30px;font-weight:800;color:#1e40af;line-height:1">${rankEmoji || '#'}${rankEmoji ? '' : agg.rank}</div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">อันดับ ${rankEmoji ? agg.rank : ''} / ${agg.total} คน</div>
+        </div>
+        <div style="background:#f8fafc;border-radius:10px;padding:14px 10px;text-align:center">
+          <div style="font-size:30px;font-weight:800;color:#475569;line-height:1">${agg.classMeanTotal}</div>
+          <div style="font-size:11px;color:#64748b;margin-top:4px">เฉลี่ยห้อง (SD ${agg.classSDTotal})</div>
+        </div>
       </div>` : '';
+
+    const subjectRows = single.slice(0, 8).map((r, i) => {
+      const d = r.myData;
+      const rank = r.ranks?.['_'];
+      const total = r.total;
+      const re = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
+      const scorePct = d.fullScore > 0 ? Math.round(d.score / d.fullScore * 100) : 0;
+      const barColor = scorePct >= 80 ? '#16a34a' : scorePct >= 60 ? '#f59e0b' : '#ef4444';
+      const gradeColor = d.grade >= 3 ? '#15803d' : d.grade >= 2 ? '#b45309' : '#b91c1c';
+      const gradeBg    = d.grade >= 3 ? '#dcfce7' : d.grade >= 2 ? '#fef3c7' : '#fee2e2';
+      const border = i < single.slice(0,8).length - 1 ? 'border-bottom:1px solid #f1f5f9' : '';
+      return `
+        <div style="padding:12px 0;${border}">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:8px">
+            <span style="font-size:15px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.subject}</span>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+              <span style="font-size:13px;color:#64748b">${d.score}<span style="color:#cbd5e1">/${d.fullScore}</span></span>
+              <span style="font-size:15px;font-weight:800;color:${gradeColor};background:${gradeBg};padding:3px 12px;border-radius:8px">${d.grade}</span>
+              <span style="font-size:13px;color:#94a3b8;min-width:44px;text-align:right">${re}${rank ? rank+'/'+total : '—'}</span>
+            </div>
+          </div>
+          <div style="background:#e2e8f0;border-radius:4px;height:7px">
+            <div style="background:${barColor};width:${scorePct}%;height:7px;border-radius:4px;transition:width .4s"></div>
+          </div>
+        </div>`;
+    }).join('');
 
     const grid = document.querySelector('.grid2');
     const card = document.createElement('div');
     card.className = 'card';
     card.style.marginTop = '16px';
     card.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-        <div class="card-title" style="margin:0">คะแนนจากครู${aggLabel ? ` (${aggLabel})` : ''}</div>
-        <a href="student-report.html" style="font-size:12px;color:#3b82f6;text-decoration:none;font-weight:600">ดูรายงานเต็ม →</a>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div>
+          <div class="card-title" style="margin:0">📋 คะแนนจากครู</div>
+          ${aggLabel ? `<div style="font-size:12px;color:#94a3b8;margin-top:2px">${aggLabel}</div>` : ''}
+        </div>
+        <a href="student-report.html" style="font-size:12px;color:#3b82f6;text-decoration:none;font-weight:600;white-space:nowrap">ดูรายงานเต็ม →</a>
       </div>
       ${aggHtml}
-      <table class="history-table">
-        <thead><tr><th>วิชา</th><th>คะแนน</th><th>เกรด</th><th>อันดับ</th></tr></thead>
-        <tbody>${single.slice(0, 8).map(r => {
-          const d = r.myData;
-          const rank = r.ranks?.['_'];
-          const total = r.total;
-          const re = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
-          const gradeColor = d.grade >= 3 ? '#16a34a' : d.grade >= 2 ? '#d97706' : '#dc2626';
-          return `<tr>
-            <td>${r.subject}</td>
-            <td>${d.score}/${d.fullScore}</td>
-            <td style="font-weight:700;color:${gradeColor}">${d.grade}</td>
-            <td>${re} ${rank ? rank+'/'+total : '—'}</td>
-          </tr>`;
-        }).join('')}
-        </tbody>
-      </table>`;
+      <div>${subjectRows}</div>`;
     grid.after(card);
   }
 

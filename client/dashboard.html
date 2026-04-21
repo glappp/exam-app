@@ -585,6 +585,14 @@
         <a href="student-report.html" style="font-size:12px;color:#3b82f6;text-decoration:none;font-weight:600;white-space:nowrap">ดูรายงานเต็ม →</a>
       </div>
       ${aggHtml}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0 0 6px;border-bottom:2px solid #e2e8f0;margin-bottom:2px">
+        <span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;flex:1">รายละเอียด</span>
+        <div style="display:flex;gap:8px;flex-shrink:0">
+          <span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;min-width:60px;text-align:right">คะแนน</span>
+          <span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;min-width:52px;text-align:center">เกรด</span>
+          <span style="font-size:11px;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px;min-width:44px;text-align:right">ลำดับที่</span>
+        </div>
+      </div>
       <div>${subjectRows}</div>`;
     grid.after(card);
   }

@@ -60,8 +60,21 @@
     <span class="topbar-title" id="topbar-title">📗 โหมดฝึกหัด</span>
     <div class="topbar-nav">
       <span class="topbar-user" id="greeting"></span>
-      <a href="dashboard.html">หน้าหลัก</a>
+      <button id="back-btn" onclick="confirmExit('dashboard.html')" style="background:none;border:none;cursor:pointer;font-size:13px;color:#555;padding:0;font-family:inherit">← ย้อนกลับ</button>
       <a href="#" onclick="logout()">ออกจากระบบ</a>
+    </div>
+  </div>
+
+  <!-- Exit Confirmation Modal -->
+  <div id="exit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:14px;padding:28px 32px;max-width:340px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+      <div style="font-size:36px;margin-bottom:10px">⚠️</div>
+      <h3 style="margin:0 0 8px;font-size:17px;color:#111">ออกจากการฝึกหัด?</h3>
+      <p style="margin:0 0 22px;color:#6b7280;font-size:14px;line-height:1.5">ความคืบหน้าในเซสชันนี้จะหายไป</p>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button onclick="doExitExam()" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:10px 22px;font-size:14px;font-weight:600;cursor:pointer">ออก</button>
+        <button onclick="closeExitModal()" style="background:#f3f4f6;color:#374151;border:none;border-radius:8px;padding:10px 22px;font-size:14px;font-weight:600;cursor:pointer">ฝึกต่อ</button>
+      </div>
     </div>
   </div>
 
@@ -268,6 +281,20 @@
       updateTestBtn();
       document.getElementById('setup-panel').scrollIntoView({ behavior: 'smooth' });
     }
+
+  // ── Exit modal ──────────────────────────────────────────────────
+  let _exitDest = 'dashboard.html';
+  function confirmExit(dest) {
+    // ถ้าไม่ได้เริ่มทำข้อสอบ (ยังอยู่หน้า overview) ออกเลยไม่ต้อง confirm
+    const examScreen = document.getElementById('exam-screen');
+    if (!examScreen || examScreen.style.display === 'none') { location.href = dest || _exitDest; return; }
+    _exitDest = dest || 'dashboard.html';
+    document.getElementById('exit-modal').style.display = 'flex';
+  }
+  function closeExitModal() { document.getElementById('exit-modal').style.display = 'none'; }
+  function doExitExam() { sessionStorage.clear(); location.href = _exitDest; }
+  history.pushState(null, '', location.href);
+  window.addEventListener('popstate', () => { history.pushState(null, '', location.href); confirmExit(); });
   </script>
 </body>
 </html>

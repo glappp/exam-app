@@ -41,6 +41,20 @@
   <div class="topbar-nav">
     <span id="timer-display" class="timer"></span>
     <span style="font-size:13px;color:var(--muted);font-weight:600" id="progress-label"></span>
+    <button onclick="confirmExit('exam.html')" style="background:none;border:none;cursor:pointer;font-size:13px;color:#555;padding:0;font-family:inherit">← ออก</button>
+  </div>
+</div>
+
+<!-- Exit Confirmation Modal -->
+<div id="exit-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:14px;padding:28px 32px;max-width:340px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+    <div style="font-size:36px;margin-bottom:10px">⚠️</div>
+    <h3 style="margin:0 0 8px;font-size:17px;color:#111">ออกจากการสอบ?</h3>
+    <p style="margin:0 0 22px;color:#6b7280;font-size:14px;line-height:1.5">คำตอบทั้งหมดจะหายไป<br>ไม่สามารถกลับมาต่อได้</p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button onclick="doExitExam()" style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:10px 22px;font-size:14px;font-weight:600;cursor:pointer">ออกจากการสอบ</button>
+      <button onclick="closeExitModal()" style="background:#f3f4f6;color:#374151;border:none;border-radius:8px;padding:10px 22px;font-size:14px;font-weight:600;cursor:pointer">สอบต่อ</button>
+    </div>
   </div>
 </div>
 
@@ -234,6 +248,14 @@
   }
 
   init();
+
+  // ── Exit modal ──────────────────────────────────────────────────
+  let _exitDest = 'exam.html';
+  function confirmExit(dest) { _exitDest = dest || 'exam.html'; document.getElementById('exit-modal').style.display = 'flex'; }
+  function closeExitModal() { document.getElementById('exit-modal').style.display = 'none'; }
+  function doExitExam() { sessionStorage.clear(); location.href = _exitDest; }
+  history.pushState(null, '', location.href);
+  window.addEventListener('popstate', () => { history.pushState(null, '', location.href); confirmExit(); });
 </script>
 </body>
 </html>

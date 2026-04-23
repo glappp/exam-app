@@ -46,7 +46,11 @@
     .score-card .subj { font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .score-card .big  { font-size: 32px; font-weight: 800; line-height: 1; }
     .score-card .fs   { font-size: 13px; color: #94a3b8; }
-    .score-card .pct-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 11px; color: #64748b; }
+    .score-card .pct-row { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; color: #64748b; }
+    .score-card .minmax-row { display: flex; gap: 8px; margin-top: 4px; font-size: 11px; color: #94a3b8; }
+    .score-card .minmax-row span { display: flex; align-items: center; gap: 3px; }
+    .score-card .minmax-row .mx { color: #16a34a; font-weight: 700; }
+    .score-card .minmax-row .mn { color: #dc2626; font-weight: 700; }
     .score-card .pct-pill {
       padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700;
       background: #f1f5f9; color: #475569;
@@ -254,6 +258,11 @@ function renderTerm(termKey, subjects, aggregates) {
         <span>เฉลี่ย ${stats?.mean ?? '—'}</span>
         ${pct != null ? `<span class="pct-pill ${pctClass}">P${pct}</span>` : ''}
       </div>
+      ${(stats?.max != null || stats?.min != null) ? `
+      <div class="minmax-row">
+        <span>สูงสุด <b class="mx">${stats.max ?? '—'}</b></span>
+        <span>ต่ำสุด <b class="mn">${stats.min ?? '—'}</b></span>
+      </div>` : ''}
       ${rank != null ? `<div style="font-size:12px;color:#64748b;margin-top:4px">${rankIcon} อันดับ <b>${rank}</b> / ${total}</div>` : ''}
       <div class="bar-wrap">
         <div class="bar-fill" style="width:${pctPct}%;background:${clr}"></div>

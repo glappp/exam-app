@@ -12,8 +12,9 @@ router.get('/', async (req, res) => {
       take: 100
     });
 
-    // กรอง grade ใน JS (SQLite ไม่รองรับ JSON path filter)
-    const filtered = grade
+    // กรอง grade ใน JS — ถ้ามี source อยู่แล้วไม่ต้อง filter grade ซ้ำ
+    // (source เช่น ipst-p6-2558 บ่งบอก grade ชัดเจนอยู่แล้ว)
+    const filtered = (grade && !source)
       ? raw.filter(q => {
           const g = q.attributes?.examGrade || '';
           const normalized = /^\d/.test(g) ? 'p' + g : g;

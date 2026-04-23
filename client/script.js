@@ -166,7 +166,7 @@ function _renderBlock(block) {
     return `<div class="qb-text">${(block.value || '').replace(/\n/g, '<br>')}</div>`;
   }
   if (block.type === 'image') {
-    const src = (block.url || '').startsWith('/') ? block.url : `/uploads/${block.url}`;
+    const src = /^https?:\/\//.test(block.url || '') || (block.url || '').startsWith('/') ? block.url : `/uploads/${block.url}`;
     return `<div class="qb-img"><img src="${src}" onclick="openLightbox && openLightbox(this)" style="max-width:min(100%,420px);max-height:300px;border-radius:8px;object-fit:contain;cursor:zoom-in"></div>`;
   }
   return '';
@@ -187,7 +187,7 @@ function renderQuestionBody(q) {
   const text = currentLang === 'th' ? (q.textTh || q.text || '') : (q.textEn || q.text || '');
   let html = `<div class="qb-text">${text.replace(/\n/g, '<br>')}</div>`;
   if (q.image) {
-    const src = q.image.startsWith('/') ? q.image : `/uploads/${q.image}`;
+    const src = /^https?:\/\//.test(q.image) || q.image.startsWith('/') ? q.image : `/uploads/${q.image}`;
     html += `<div class="qb-img"><img src="${src}" onclick="openLightbox && openLightbox(this)" style="max-width:min(100%,420px);max-height:280px;border-radius:8px;object-fit:contain;cursor:zoom-in"></div>`;
   }
   return html;

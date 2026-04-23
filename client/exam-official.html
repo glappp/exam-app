@@ -142,7 +142,6 @@
   const params   = new URLSearchParams(location.search);
   const grade    = params.get('grade');
   const examType = params.get('examType');
-  const year     = params.get('year');
   const timed    = params.get('timed') === '1';
 
   let questions    = [];
@@ -423,7 +422,7 @@
         body: JSON.stringify({
           mode: 'official',
           source: examType,
-          year,
+          year: examMeta?.year || null,
           grade,
           questions: questions.map(q => q.id),
           answers,

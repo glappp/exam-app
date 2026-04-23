@@ -315,6 +315,17 @@ router.get('/my-scores', async (req, res) => {
         yearRawData[termKey].push({ rows, fullScore: parseFloat(myRow.fullScore) || 100 });
       }
 
+      // เติม max/min ถ้า stats เก่าไม่มี — คำนวณจาก raw scores
+      let enrichedStats = stats;
+      if (!isMulti && stats && (stats.max == null || stats.min == null)) {
+        const allScores = rows.map(r => parseFloat(r.score)).filter(x => !isNaN(x));
+        enrichedStats = {
+          ...stats,
+          max: allScores.length ? Math.max(...allScores) : null,
+          min: allScores.length ? Math.min(...allScores) : null,
+        };
+      }
+
       results.push({
         uploadId: u.id,
         subject: u.subject,
@@ -325,7 +336,7 @@ router.get('/my-scores', async (req, res) => {
         term: u.term || '1',
         createdAt: u.createdAt,
         myData: myRow,
-        classStats: stats,
+        classStats: enrichedStats,
         ranks,
         total: rows.length
       });

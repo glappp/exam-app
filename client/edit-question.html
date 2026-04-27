@@ -215,7 +215,12 @@
         </div>
         <div class="form-group">
           <label>ภาพประกอบโจทย์</label>
-          ${q.image ? `<img src="/uploads/${q.image}" class="choice-img-current" style="max-height:100px;margin-bottom:8px">` : ''}
+          ${(() => {
+            const imgUrl = q.image
+              ? (/^https?:\/\//.test(q.image) ? q.image : `/uploads/${q.image}`)
+              : (q.content?.find(b => b.type === 'image')?.url || null);
+            return imgUrl ? `<img src="${imgUrl}" class="choice-img-current" style="max-height:100px;margin-bottom:8px">` : '';
+          })()}
           <input type="file" id="f-image" accept="image/*" onchange="previewImg(this, 'q-img-preview')">
           <img id="q-img-preview" style="display:none;max-height:120px;margin-top:8px;border-radius:6px">
           <div class="file-hint">เลือกไฟล์ใหม่เพื่อแทนที่รูปเดิม</div>

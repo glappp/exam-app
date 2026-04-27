@@ -102,7 +102,16 @@ app.put('/questions/:id', upload.fields([
       data.attributes = attributes;
     }
     if (code !== undefined) data.code = code || null;
-    if (files.questionImage?.[0]) data.image = getFilename(files.questionImage[0]);
+    if (files.questionImage?.[0]) {
+      const newFilename = getFilename(files.questionImage[0]);
+      data.image = newFilename;
+      // อัปเดต image blocks ใน content ให้ชี้ไปรูปใหม่ด้วย
+      const existing = await prisma.question.findUnique({ where: { id: req.params.id }, select: { content: true } });
+      if (Array.isArray(existing?.content)) {
+        const newUrl = useR2 ? `${process.env.R2_PUBLIC_URL}/${newFilename}` : `/uploads/${newFilename}`;
+        data.content = existing.content.map(b => b.type === 'image' ? { ...b, url: newUrl } : b);
+      }
+    }
 
     // Build choices if any choice text or image provided
     const choiceTexts = [0, 1, 2, 3].map(i => req.body[`choice${i}`]);

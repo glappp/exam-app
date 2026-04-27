@@ -104,6 +104,7 @@
 
     async function fetchOptions(mode) {
       const res = await fetch(`/api/exam-options?mode=${mode}`);
+      if (!res.ok) return;
       const data = await res.json();
       const suffix = mode === 'official' ? '-official' : '-practice';
 

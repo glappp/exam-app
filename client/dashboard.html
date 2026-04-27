@@ -115,6 +115,7 @@
   <span class="topbar-title">SchoolPL</span>
   <div class="topbar-right">
     <span id="topbar-name"></span>
+    <a href="list-questions.html" id="admin-link" style="display:none">จัดการโจทย์</a>
     <a href="#" onclick="logout()">ออกจากระบบ</a>
   </div>
 </div>
@@ -311,6 +312,7 @@
     document.getElementById('topbar-name').textContent = me.firstName || me.username || '';
     if (['admin','teacher'].includes(me.role)) {
       document.getElementById('teacher-btn').style.display = '';
+      document.getElementById('admin-link').style.display = '';
     }
     document.getElementById('welcome-name').textContent = `สวัสดี, ${me.firstName || 'นักเรียน'} 👋`;
 

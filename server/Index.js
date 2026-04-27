@@ -272,8 +272,35 @@ app.post('/add-question', upload.fields([
   }
 });
 
+// ✅ Seed subject/grade entries ถ้ายังไม่มี
+async function seedSubjectGradeIfNeeded() {
+  const count = await prisma.attributeDictionary.count({ where: { type: { in: ['subject', 'grade'] } } });
+  if (count > 0) return;
+  const entries = [
+    { key: 'math',    type: 'subject', th: 'คณิตศาสตร์', en: 'Mathematics' },
+    { key: 'science', type: 'subject', th: 'วิทยาศาสตร์', en: 'Science' },
+    { key: 'thai',    type: 'subject', th: 'ภาษาไทย',     en: 'Thai Language' },
+    { key: 'english', type: 'subject', th: 'ภาษาอังกฤษ',  en: 'English' },
+    { key: 'social',  type: 'subject', th: 'สังคมศึกษา',  en: 'Social Studies' },
+    { key: 'p1', type: 'grade', th: 'ป.1', en: 'Grade 1', grade: 1 },
+    { key: 'p2', type: 'grade', th: 'ป.2', en: 'Grade 2', grade: 2 },
+    { key: 'p3', type: 'grade', th: 'ป.3', en: 'Grade 3', grade: 3 },
+    { key: 'p4', type: 'grade', th: 'ป.4', en: 'Grade 4', grade: 4 },
+    { key: 'p5', type: 'grade', th: 'ป.5', en: 'Grade 5', grade: 5 },
+    { key: 'p6', type: 'grade', th: 'ป.6', en: 'Grade 6', grade: 6 },
+    { key: 'm1', type: 'grade', th: 'ม.1', en: 'Grade 7',  grade: 7 },
+    { key: 'm2', type: 'grade', th: 'ม.2', en: 'Grade 8',  grade: 8 },
+    { key: 'm3', type: 'grade', th: 'ม.3', en: 'Grade 9',  grade: 9 },
+  ];
+  for (const e of entries) {
+    await prisma.attributeDictionary.upsert({ where: { key: e.key }, update: {}, create: e });
+  }
+  console.log('✅ seeded subject/grade entries');
+}
+
 // ✅ Start server
 const PORT = process.env.PORT || 3001;
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, async () => {
   console.log(`✅ Backend is running on http://localhost:${PORT}`);
+  await seedSubjectGradeIfNeeded().catch(e => console.error('seed error:', e));
 });

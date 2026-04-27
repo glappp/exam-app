@@ -100,7 +100,6 @@ app.put('/questions/:id', upload.fields([
     if (shortAnswerJson !== undefined) data.shortAnswer = JSON.parse(shortAnswerJson);
     if (attributes !== undefined) {
       data.attributes = attributes;
-      data.difficulty = String(attributes.difficulty ?? 1);
     }
     if (code !== undefined) data.code = code || null;
     if (files.questionImage?.[0]) data.image = getFilename(files.questionImage[0]);
@@ -122,7 +121,7 @@ app.put('/questions/:id', upload.fields([
     res.json({ success: true, question });
   } catch (err) {
     console.error('❌ แก้ไขโจทย์ล้มเหลว:', err);
-    res.status(500).json({ error: 'แก้ไขโจทย์ไม่สำเร็จ' });
+    res.status(500).json({ error: `แก้ไขโจทย์ไม่สำเร็จ: ${err.message}` });
   }
 });
 

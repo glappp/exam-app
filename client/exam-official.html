@@ -337,6 +337,13 @@
              value="${answers[currentIndex] ?? ''}" placeholder="คำตอบ"
              style="max-width:180px;font-size:18px;font-weight:700;text-align:center">
          </div>`
+      : q.type === 'short_answer'
+      ? `<div style="margin-top:8px">
+           <label style="font-size:14px;color:var(--muted);display:block;margin-bottom:6px">กรอกคำตอบ</label>
+           <input class="form-group input" type="text" id="short-answer"
+             value="${answers[currentIndex] ?? ''}" placeholder="คำตอบ"
+             style="max-width:220px;font-size:18px;font-weight:700;text-align:center">
+         </div>`
       : (q.choices || []).map((c, i) => {
           const letter = LETTERS[i];
           const checked = answers[currentIndex] === letter ? 'checked' : '';

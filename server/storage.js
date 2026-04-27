@@ -49,9 +49,13 @@ if (useR2) {
       bucket:      process.env.R2_BUCKET_NAME,
       contentType: multerS3.AUTO_CONTENT_TYPE,
       key: (req, file, cb) => {
-        const ext  = path.extname(file.originalname).toLowerCase();
-        const name = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
-        cb(null, `uploads/${name}`);
+        if (req.overwriteImageKey) {
+          cb(null, req.overwriteImageKey);  // ทับ key เดิมใน R2
+        } else {
+          const ext  = path.extname(file.originalname).toLowerCase();
+          const name = `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`;
+          cb(null, `uploads/${name}`);
+        }
       },
     }),
     limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB

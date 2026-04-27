@@ -82,7 +82,29 @@ const registerRoute = require('./routes/register');
 app.use('/api/register', registerRoute);
 
 // ✅ Edit question with optional image upload (must come before questionsRoute)
-app.put('/questions/:id', upload.fields([
+// Pre-middleware: ดึง R2 key เดิมเพื่อ overwrite แทนการสร้าง key ใหม่
+async function attachOverwriteKey(req, res, next) {
+  if (useR2) {
+    try {
+      const q = await prisma.question.findUnique({
+        where: { id: req.params.id },
+        select: { image: true, content: true }
+      });
+      if (q?.image) {
+        req.overwriteImageKey = `uploads/${q.image}`;
+      } else if (Array.isArray(q?.content)) {
+        const imgBlock = q.content.find(b => b.type === 'image');
+        if (imgBlock?.url) {
+          const base = (process.env.R2_PUBLIC_URL || '').replace(/\/$/, '');
+          req.overwriteImageKey = imgBlock.url.replace(base + '/', '');
+        }
+      }
+    } catch (_) {}
+  }
+  next();
+}
+
+app.put('/questions/:id', attachOverwriteKey, upload.fields([
   { name: 'questionImage', maxCount: 1 },
   { name: 'choiceImage0', maxCount: 1 },
   { name: 'choiceImage1', maxCount: 1 },
@@ -98,19 +120,12 @@ app.put('/questions/:id', upload.fields([
     if (questionText !== undefined) { data.textTh = questionText; data.textEn = questionText; }
     if (answer !== undefined) data.answer = answer || null;
     if (shortAnswerJson !== undefined) data.shortAnswer = JSON.parse(shortAnswerJson);
-    if (attributes !== undefined) {
-      data.attributes = attributes;
-    }
+    if (attributes !== undefined) data.attributes = attributes;
     if (code !== undefined) data.code = code || null;
-    if (files.questionImage?.[0]) {
-      const newFilename = getFilename(files.questionImage[0]);
-      data.image = newFilename;
-      // อัปเดต image blocks ใน content ให้ชี้ไปรูปใหม่ด้วย
-      const existing = await prisma.question.findUnique({ where: { id: req.params.id }, select: { content: true } });
-      if (Array.isArray(existing?.content)) {
-        const newUrl = `/uploads/${newFilename}`;
-        data.content = existing.content.map(b => b.type === 'image' ? { ...b, url: newUrl } : b);
-      }
+    // ถ้า overwrite key เดิม → URL ไม่เปลี่ยน ไม่ต้องอัปเดต DB
+    // ถ้าเป็น key ใหม่ (ไม่มีรูปเดิม) → บันทึก filename ใหม่
+    if (files.questionImage?.[0] && !req.overwriteImageKey) {
+      data.image = getFilename(files.questionImage[0]);
     }
 
     // Build choices if any choice text or image provided

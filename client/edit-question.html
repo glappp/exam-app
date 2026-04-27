@@ -382,19 +382,19 @@
     const correctRadio = document.querySelector('input[name=correct]:checked');
 
     if (!text)                        { showMsg('กรุณากรอกโจทย์', 'error'); return; }
-    if (!subjectKey)                  { showMsg('กรุณาเลือกวิชา', 'error'); return; }
-    if (!gradeKey)                    { showMsg('กรุณาเลือกชั้นเรียน', 'error'); return; }
     if (isMC && !correctRadio)        { showMsg('กรุณาเลือกคำตอบที่ถูกต้อง', 'error'); return; }
 
+    const existingAttrs = currentQuestion?.attributes || {};
     const formData = new FormData();
     formData.append('questionText', text);
     formData.append('attributesJson', JSON.stringify({
-      subject: subjectKey,
-      examGrade: gradeKey,
-      year: year || null,
+      ...existingAttrs,
+      subject:   subjectKey  || existingAttrs.subject   || null,
+      examGrade: gradeKey    || existingAttrs.examGrade || null,
+      year:      year        || existingAttrs.year      || null,
       topic: getChecked('topic'),
       skill: getChecked('skill'),
-      trap: getChecked('trap'),
+      trap:  getChecked('trap'),
       difficulty,
     }));
     if (code) formData.append('code', code);

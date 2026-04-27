@@ -19,7 +19,7 @@ const BASE = {
   updatedBy: 'seed',
   aiGenerated: false,
   needsReview: false,
-  attributes: { source: SOURCE },
+  attributes: { source: SOURCE, subject: 'math', examGrade: 'p6' },
 };
 
 function N(textTh, shortAnswer, subtopic = '') {

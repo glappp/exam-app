@@ -90,13 +90,14 @@ app.put('/questions/:id', upload.fields([
   { name: 'choiceImage3', maxCount: 1 }
 ]), async (req, res) => {
   try {
-    const { questionText, answer, attributesJson, code } = req.body;
+    const { questionText, answer, attributesJson, code, shortAnswerJson } = req.body;
     const files = req.files || {};
     const attributes = attributesJson ? JSON.parse(attributesJson) : undefined;
 
     const data = {};
     if (questionText !== undefined) { data.textTh = questionText; data.textEn = questionText; }
     if (answer !== undefined) data.answer = answer || null;
+    if (shortAnswerJson !== undefined) data.shortAnswer = JSON.parse(shortAnswerJson);
     if (attributes !== undefined) {
       data.attributes = attributes;
       data.difficulty = String(attributes.difficulty ?? 1);

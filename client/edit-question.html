@@ -227,11 +227,20 @@
         </div>
       </div>
 
-      <!-- ตัวเลือก -->
-      <div class="card">
-        <div class="card-title">ตัวเลือก</div>
-        <div class="choice-list" id="choice-list"></div>
-      </div>
+      <!-- ตัวเลือก / คำตอบ -->
+      ${q.type === 'mc'
+        ? `<div class="card">
+             <div class="card-title">ตัวเลือก</div>
+             <div class="choice-list" id="choice-list"></div>
+           </div>`
+        : `<div class="card">
+             <div class="card-title">คำตอบ (เติมคำ)</div>
+             <div class="form-group">
+               <label>คำตอบที่ยอมรับ <span style="font-size:12px;color:#888">(ถ้ามีหลายคำตอบ คั่นด้วยจุลภาค เช่น 42, 42.0)</span></label>
+               <input type="text" id="f-short-answer" value="${(Array.isArray(q.shortAnswer) ? q.shortAnswer : []).join(', ')}" placeholder="เช่น 42">
+             </div>
+           </div>`
+      }
 
       <!-- Attributes -->
       <div class="card">
@@ -271,7 +280,7 @@
     renderChips('skill', allDict.filter(i => i.type === 'skill'), attrs.skill || []);
     renderChips('trap',  allDict.filter(i => i.type === 'trap'),  attrs.trap  || []);
 
-    renderChoices(choices, q.answer);
+    if (q.type === 'mc') renderChoices(choices, q.answer);
   }
 
   function populateSubjects(selectedKey) {
@@ -369,16 +378,16 @@
     const difficulty = parseInt(document.getElementById('f-difficulty').value);
     const year       = document.getElementById('f-year').value.trim();
     const code       = document.getElementById('f-code').value.trim();
+    const isMC = currentQuestion?.type === 'mc';
     const correctRadio = document.querySelector('input[name=correct]:checked');
 
-    if (!text)         { showMsg('กรุณากรอกโจทย์', 'error'); return; }
-    if (!subjectKey)   { showMsg('กรุณาเลือกวิชา', 'error'); return; }
-    if (!gradeKey)     { showMsg('กรุณาเลือกชั้นเรียน', 'error'); return; }
-    if (!correctRadio) { showMsg('กรุณาเลือกคำตอบที่ถูกต้อง', 'error'); return; }
+    if (!text)                        { showMsg('กรุณากรอกโจทย์', 'error'); return; }
+    if (!subjectKey)                  { showMsg('กรุณาเลือกวิชา', 'error'); return; }
+    if (!gradeKey)                    { showMsg('กรุณาเลือกชั้นเรียน', 'error'); return; }
+    if (isMC && !correctRadio)        { showMsg('กรุณาเลือกคำตอบที่ถูกต้อง', 'error'); return; }
 
     const formData = new FormData();
     formData.append('questionText', text);
-    formData.append('answer', correctRadio.value);
     formData.append('attributesJson', JSON.stringify({
       subject: subjectKey,
       examGrade: gradeKey,
@@ -390,12 +399,18 @@
     }));
     if (code) formData.append('code', code);
 
-    // choice texts + images
-    CHOICES.forEach((_, i) => {
-      formData.append(`choice${i}`, document.getElementById(`choice-text-${i}`).value.trim());
-      const imgFile = document.getElementById(`choice-img-${i}`)?.files[0];
-      if (imgFile) formData.append(`choiceImage${i}`, imgFile);
-    });
+    if (isMC) {
+      formData.append('answer', correctRadio.value);
+      CHOICES.forEach((_, i) => {
+        formData.append(`choice${i}`, document.getElementById(`choice-text-${i}`).value.trim());
+        const imgFile = document.getElementById(`choice-img-${i}`)?.files[0];
+        if (imgFile) formData.append(`choiceImage${i}`, imgFile);
+      });
+    } else {
+      const raw = document.getElementById('f-short-answer')?.value.trim() || '';
+      const answers = raw.split(',').map(s => s.trim()).filter(Boolean);
+      formData.append('shortAnswerJson', JSON.stringify(answers));
+    }
 
     // question image
     const qImgFile = document.getElementById('f-image')?.files[0];

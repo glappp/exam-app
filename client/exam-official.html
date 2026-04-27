@@ -301,7 +301,7 @@
   function renderQuestionBody(q) {
     const lang = typeof currentLang !== 'undefined' ? currentLang : 'th';
     const text = lang === 'th' ? (q.textTh || q.text || '') : (q.textEn || q.text || '');
-    if (q.content && Array.isArray(q.content)) {
+    if (q.content && Array.isArray(q.content) && !q.image) {
       const hasTextBlock = q.content.some(b => b.type === 'text');
       const prefix = (!hasTextBlock && text)
         ? `<div class="qb-text">${text.replace(/\n/g, '<br>')}</div>`

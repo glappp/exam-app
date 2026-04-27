@@ -150,6 +150,7 @@
     const q = questions[currentIndex];
     document.getElementById('question-container').innerHTML = `
       <div class="card">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:10px">ข้อที่ ${currentIndex + 1} / ${questions.length}</div>
         <div class="qb-wrap">${renderQuestionBody(q)}</div>
         <div class="answer-section">
           ${q.choices?.length ? q.choices.map((c, i) => `

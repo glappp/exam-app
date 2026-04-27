@@ -299,8 +299,14 @@
     return '';
   }
   function renderQuestionBody(q) {
+    const lang = typeof currentLang !== 'undefined' ? currentLang : 'th';
+    const text = lang === 'th' ? (q.textTh || q.text || '') : (q.textEn || q.text || '');
     if (q.content && Array.isArray(q.content)) {
-      return q.content.map(block => {
+      const hasTextBlock = q.content.some(b => b.type === 'text');
+      const prefix = (!hasTextBlock && text)
+        ? `<div class="qb-text">${text.replace(/\n/g, '<br>')}</div>`
+        : '';
+      return prefix + q.content.map(block => {
         if (block.type === 'hint') {
           const inner = (block.content || []).map(_renderBlock).join('');
           return `<details class="qb-hint"><summary>${block.label || 'ความรู้เพิ่มเติม'}</summary><div class="qb-hint-body">${inner}</div></details>`;
@@ -308,8 +314,6 @@
         return _renderBlock(block);
       }).join('');
     }
-    const lang = typeof currentLang !== 'undefined' ? currentLang : 'th';
-    const text = lang === 'th' ? (q.textTh || q.text || '') : (q.textEn || q.text || '');
     let html = `<div class="qb-text">${text.replace(/\n/g, '<br>')}</div>`;
     if (q.image) {
       const src = /^https?:\/\//.test(q.image) || q.image.startsWith('/') ? q.image : `/uploads/${q.image}`;
@@ -332,6 +336,13 @@
            <input class="form-group input" type="number" id="short-answer"
              value="${answers[currentIndex] ?? ''}" placeholder="คำตอบ"
              style="max-width:180px;font-size:18px;font-weight:700;text-align:center">
+         </div>`
+      : q.type === 'short_answer'
+      ? `<div style="margin-top:8px">
+           <label style="font-size:14px;color:var(--muted);display:block;margin-bottom:6px">กรอกคำตอบ</label>
+           <input class="form-group input" type="text" id="short-answer"
+             value="${answers[currentIndex] ?? ''}" placeholder="คำตอบ"
+             style="max-width:220px;font-size:18px;font-weight:700;text-align:center">
          </div>`
       : (q.choices || []).map((c, i) => {
           const letter = LETTERS[i];

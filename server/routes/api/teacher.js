@@ -103,17 +103,14 @@ router.get('/class-overview', requireTeacher, async (req, res) => {
   }
 });
 
-// GET /api/teacher/classroom-scores?academicYear=2568&term=1 — ClassroomScoreUpload ของโรงเรียน
+// GET /api/teacher/classroom-scores — ClassroomScoreUpload ของโรงเรียน (ทั้งหมด ไม่ filter ปี/ภาค)
 router.get('/classroom-scores', requireTeacher, async (req, res) => {
   try {
-    const { academicYear, term } = req.query;
     const schoolName = await resolveSchoolFilter(req);
     if (schoolName === null) return res.json({ uploads: [] });
 
     const where = {};
     if (schoolName) where.school = schoolName;
-    if (academicYear) where.academicYear = academicYear;
-    if (term) where.term = term;
 
     const uploads = await prisma.classroomScoreUpload.findMany({
       where, orderBy: { createdAt: 'desc' },

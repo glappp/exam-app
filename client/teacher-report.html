@@ -79,22 +79,7 @@
 
   <!-- Tab: คะแนนที่อัปโหลด -->
   <div class="tab-panel" id="tab-scores">
-    <div class="filter-bar">
-      <div>
-        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ปีการศึกษา</label>
-        <input type="text" id="sc-year" style="width:90px">
-      </div>
-      <div>
-        <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ภาคเรียน</label>
-        <select id="sc-term" style="width:100px">
-          <option value="">ทั้งหมด</option>
-          <option value="1">ภาคเรียน 1</option>
-          <option value="2">ภาคเรียน 2</option>
-        </select>
-      </div>
-      <button class="btn btn-primary" onclick="loadScores()">โหลด</button>
-    </div>
-    <div id="scores-content"><p style="color:var(--muted);text-align:center;padding:40px">ระบุปีการศึกษาแล้วกด โหลด</p></div>
+    <div id="scores-content"><p style="color:var(--muted);text-align:center;padding:40px">กำลังโหลด...</p></div>
   </div>
 </div>
 
@@ -117,7 +102,6 @@
 
     const year = String(new Date().getFullYear() + 543);
     document.getElementById('f-year').value = year;
-    document.getElementById('sc-year').value = year;
 
     const rf = await fetch(`/api/teacher/filters?academicYear=${year}`, { credentials: 'include' });
     if (rf.ok) {
@@ -135,6 +119,7 @@
       }
     }
     loadExam();
+    loadScores();
   }
 
   async function loadExam() {
@@ -199,26 +184,20 @@
   }
 
   async function loadScores() {
-    const year = document.getElementById('sc-year').value.trim();
-    const term = document.getElementById('sc-term').value;
-    const el   = document.getElementById('scores-content');
+    const el = document.getElementById('scores-content');
     el.innerHTML = '<p style="text-align:center;padding:32px;color:var(--muted)">กำลังโหลด...</p>';
-    const params = new URLSearchParams({ ...(year && {academicYear:year}), ...(term && {term}) });
-    const r = await fetch(`/api/teacher/classroom-scores?${params}`, { credentials: 'include' });
+    const r = await fetch('/api/teacher/classroom-scores', { credentials: 'include' });
     if (!r.ok) { el.innerHTML = '<p class="msg msg-error">โหลดข้อมูลล้มเหลว</p>'; return; }
     const { uploads } = await r.json();
     if (!uploads.length) { el.innerHTML = '<div class="empty-msg">ยังไม่มีข้อมูลคะแนนที่อัปโหลด</div>'; return; }
 
     const cards = uploads.map(u => {
       const stats = u.stats ? JSON.parse(u.stats) : null;
+      const meta = [u.grade, new Date(u.createdAt).toLocaleDateString('th-TH')].filter(Boolean).join(' • ');
       return `<div class="score-card">
         <div>
           <div class="subject">${u.subject === 'multi' ? '📊 หลายวิชา' : u.subject}</div>
-          <div style="font-size:12px;color:#666;margin-top:2px">
-            <span class="grade-badge">${u.grade}</span>
-            ปี ${u.academicYear} ภาคเรียน ${u.term} •
-            ${new Date(u.createdAt).toLocaleDateString('th-TH')}
-          </div>
+          <div style="font-size:12px;color:#666;margin-top:2px">${meta}</div>
         </div>
         ${stats ? `<div class="stats-row">
           <span>เฉลี่ย ${stats.mean ?? '—'}</span>

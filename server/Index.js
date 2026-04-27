@@ -227,6 +227,10 @@ app.post('/api/login', async (req, res) => {
   req.session.firstName = user.firstName || null;
   req.session.schoolId = user.schoolId || null;
 
+  if (!user.firstLoginAt) {
+    await prisma.user.update({ where: { id: user.id }, data: { firstLoginAt: new Date() } });
+  }
+
   res.json({ user: { id: user.id, username: user.username, role: user.role, firstName: user.firstName } });
 });
 

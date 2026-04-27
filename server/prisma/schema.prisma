@@ -30,6 +30,7 @@ model User {
   schoolId          Int?
   school            School?            @relation(fields: [schoolId], references: [id])
   studentProfiles   StudentProfile[]
+  firstLoginAt      DateTime?
   createdAt         DateTime           @default(now())
 
   pointTransactions PointTransaction[]
@@ -214,10 +215,10 @@ model CurriculumSection {
 model ClassroomScoreUpload {
   id           Int      @id @default(autoincrement())
   uploadedById Int
-  academicYear String
-  term         String   @default("1")  // "1" | "2"
+  academicYear String?
+  term         String?
   school       String   @default("")
-  grade        String   @default("")
+  grade        String?
   subject      String   // ชื่อวิชา หรือ "multi"
   scores       String   // JSON: [{ studentCode, name, score, fullScore, percentile, userId, grade }]
   stats        String?  // JSON: { mean, sd, count, passCount }

@@ -100,7 +100,6 @@ router.post('/score-entry', requireTeacher, async (req, res) => {
     const upload = await prisma.classroomScoreUpload.create({
       data: {
         uploadedById: req.session.userId,
-        academicYear: academicYear || String(new Date().getFullYear() + 543),
         subject: subject || 'ไม่ระบุวิชา',
         scores: JSON.stringify(withPct),
         stats: JSON.stringify(stats)
@@ -166,9 +165,7 @@ router.post('/matrix-entry', requireTeacher, async (req, res) => {
     const upload = await prisma.classroomScoreUpload.create({
       data: {
         uploadedById: req.session.userId,
-        academicYear: academicYear || String(new Date().getFullYear() + 543),
         school: school || teacherSchool,
-        grade: grade || '',
         subject: 'multi',
         scores: JSON.stringify(rowsWithPct),
         stats: JSON.stringify(statsPerSubject)
@@ -403,8 +400,8 @@ router.get('/template', requireTeacher, (req, res) => {
 // POST /api/classroom/upload — upload CSV คะแนน
 router.post('/upload', requireTeacher, express.text({ type: 'text/csv', limit: '1mb' }), async (req, res) => {
   try {
-    const { subject, academicYear } = req.query;
-    if (!subject || !academicYear) return res.status(400).json({ error: 'ต้องระบุ subject และ academicYear' });
+    const { subject } = req.query;
+    if (!subject) return res.status(400).json({ error: 'ต้องระบุ subject' });
 
     const lines = req.body.replace(/\r/g, '').split('\n').filter(l => l.trim());
     if (lines.length < 2) return res.status(400).json({ error: 'ไฟล์ไม่มีข้อมูล' });
@@ -443,7 +440,6 @@ router.post('/upload', requireTeacher, express.text({ type: 'text/csv', limit: '
     const upload = await prisma.classroomScoreUpload.create({
       data: {
         uploadedById: req.session.userId,
-        academicYear,
         subject,
         scores: JSON.stringify(withPercentile),
         stats: JSON.stringify({ mean: Math.round(mean * 10) / 10, sd: Math.round(sd * 10) / 10, count: rows.length, passCount })

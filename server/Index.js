@@ -108,7 +108,7 @@ app.put('/questions/:id', upload.fields([
       // อัปเดต image blocks ใน content ให้ชี้ไปรูปใหม่ด้วย
       const existing = await prisma.question.findUnique({ where: { id: req.params.id }, select: { content: true } });
       if (Array.isArray(existing?.content)) {
-        const newUrl = useR2 ? `${process.env.R2_PUBLIC_URL}/${newFilename}` : `/uploads/${newFilename}`;
+        const newUrl = `/uploads/${newFilename}`;
         data.content = existing.content.map(b => b.type === 'image' ? { ...b, url: newUrl } : b);
       }
     }

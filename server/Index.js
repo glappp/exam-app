@@ -16,6 +16,7 @@ const path = require('path');
 const fs = require('fs');
 const { PrismaClient } = require('@prisma/client');
 const session = require('express-session');
+const pgSession = require('connect-pg-simple')(session);
 const bcrypt = require('bcryptjs');
 console.log('🚀 Starting server...');
 console.log('   NODE_ENV:', process.env.NODE_ENV);
@@ -38,6 +39,9 @@ app.set('trust proxy', 1);
 app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 app.use(session({
+  store: process.env.DATABASE_URL
+    ? new pgSession({ conString: process.env.DATABASE_URL, createTableIfMissing: true })
+    : undefined,
   secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
   resave: false,
   saveUninitialized: false,

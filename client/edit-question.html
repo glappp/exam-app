@@ -134,6 +134,7 @@
 <script>
   const CHOICES = ['A', 'B', 'C', 'D'];
   let allDict = [];
+  let allExamSets = [];
   let questionId = null;
   let currentQuestion = null;
 
@@ -145,9 +146,10 @@
       return;
     }
 
-    const [dictRes, qRes] = await Promise.all([
+    const [dictRes, qRes, setsRes] = await Promise.all([
       fetch('/api/attribute-dict'),
-      fetch(`/questions/${questionId}`)
+      fetch(`/questions/${questionId}`),
+      fetch('/api/exam-sets')
     ]);
 
     if (!qRes.ok) {
@@ -155,8 +157,9 @@
       return;
     }
 
-    allDict = await dictRes.json();
+    allDict     = await dictRes.json();
     currentQuestion = await qRes.json();
+    allExamSets = setsRes.ok ? (await setsRes.json()).filter(s => s.questionSource) : [];
 
     renderForm();
   }
@@ -166,6 +169,10 @@
     const attrs = q.attributes || {};
     const choices = Array.isArray(q.choices) ? q.choices : [];
 
+    const imgUrl = q.image
+      ? (/^https?:\/\//.test(q.image) ? q.image : `/uploads/${q.image}`)
+      : (q.content?.find(b => b.type === 'image')?.url || null);
+
     document.getElementById('main-content').innerHTML = `
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
         <span style="font-size:14px;color:#555">ID:</span>
@@ -173,40 +180,48 @@
         ${q.code ? `<span class="id-badge">${q.code}</span>` : ''}
       </div>
 
-      <!-- ข้อมูลพื้นฐาน -->
+      <!-- 1. ชุดข้อสอบ -->
       <div class="card">
-        <div class="card-title">ข้อมูลพื้นฐาน</div>
-        <div class="form-row-3">
-          <div class="form-group">
-            <label>วิชา <span class="required">*</span></label>
-            <select id="f-subject" onchange="onSubjectChange()"></select>
+        <div class="card-title">ชุดข้อสอบ</div>
+        <div class="form-row" style="margin-bottom:12px">
+          <div class="form-group" style="margin-bottom:0">
+            <label>ประเภท</label>
+            <select id="f-examtype" onchange="filterExamSets()">
+              <option value="">— เลือกประเภท —</option>
+              <option value="official">ข้อสอบจริง / แข่งขัน</option>
+              <option value="practice">ฝึกซ้อม</option>
+            </select>
           </div>
-          <div class="form-group">
-            <label>ชั้นเรียน <span class="required">*</span></label>
-            <select id="f-grade" onchange="onGradeChange()"></select>
-          </div>
-          <div class="form-group">
-            <label>ความยาก <span class="required">*</span></label>
-            <select id="f-difficulty">
-              <option value="1">1 — ง่าย</option>
-              <option value="2">2 — ปานกลาง</option>
-              <option value="3">3 — ยาก</option>
+          <div class="form-group" style="margin-bottom:0">
+            <label>ชุดข้อสอบ</label>
+            <select id="f-source">
+              <option value="">— เลือกชุดข้อสอบ —</option>
             </select>
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>ปีที่ออกข้อสอบ (ค.ศ.)</label>
-            <input type="number" id="f-year" value="${attrs.year || ''}" placeholder="เช่น 2024" min="2000" max="2099">
+            <label>ชั้นเรียน</label>
+            <select id="f-grade" onchange="onGradeChange()"></select>
           </div>
           <div class="form-group">
-            <label>รหัสข้อสอบ (code)</label>
+            <label>ปีที่ออก (ค.ศ.)</label>
+            <input type="number" id="f-year" value="${attrs.year || ''}" placeholder="เช่น 2024" min="2000" max="2099">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>เลขข้อ</label>
+            <input type="number" id="f-questionno" value="${attrs.questionNo || ''}" placeholder="เช่น 1, 12, 30" min="1">
+          </div>
+          <div class="form-group">
+            <label>รหัสข้อ (code)</label>
             <input type="text" id="f-code" value="${q.code || ''}" placeholder="เช่น p6-pcc-2022-o-q001">
           </div>
         </div>
       </div>
 
-      <!-- โจทย์ -->
+      <!-- 2. โจทย์ -->
       <div class="card">
         <div class="card-title">โจทย์</div>
         <div class="form-group">
@@ -214,20 +229,15 @@
           <textarea id="f-text" rows="3">${q.textTh || ''}</textarea>
         </div>
         <div class="form-group">
-          <label>ภาพประกอบโจทย์</label>
-          ${(() => {
-            const imgUrl = q.image
-              ? (/^https?:\/\//.test(q.image) ? q.image : `/uploads/${q.image}`)
-              : (q.content?.find(b => b.type === 'image')?.url || null);
-            return imgUrl ? `<img src="${imgUrl}" class="choice-img-current" style="max-height:100px;margin-bottom:8px">` : '';
-          })()}
+          <label>ภาพประกอบ</label>
+          ${imgUrl ? `<img src="${imgUrl}" class="choice-img-current" style="max-height:100px;margin-bottom:8px">` : ''}
           <input type="file" id="f-image" accept="image/*" onchange="previewImg(this, 'q-img-preview')">
           <img id="q-img-preview" style="display:none;max-height:120px;margin-top:8px;border-radius:6px">
           <div class="file-hint">เลือกไฟล์ใหม่เพื่อแทนที่รูปเดิม</div>
         </div>
       </div>
 
-      <!-- ตัวเลือก / คำตอบ -->
+      <!-- 3. ตัวเลือก / คำตอบ -->
       ${q.type === 'mc'
         ? `<div class="card">
              <div class="card-title">ตัวเลือก</div>
@@ -242,24 +252,41 @@
            </div>`
       }
 
-      <!-- Attributes -->
+      <!-- 4. Attributes -->
       <div class="card">
-        <div class="card-title">Attributes</div>
+        <div class="card-title">ข้อมูลเพิ่มเติม</div>
+        <div class="form-row" style="margin-bottom:16px">
+          <div class="form-group" style="margin-bottom:0">
+            <label>วิชา</label>
+            <select id="f-subject"></select>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label>ความยาก</label>
+            <select id="f-difficulty">
+              <option value="1">1 — ง่าย</option>
+              <option value="2">2 — ปานกลาง</option>
+              <option value="3">3 — ยาก</option>
+            </select>
+          </div>
+        </div>
         <div class="attr-group">
-          <div class="attr-group-label">Topic</div>
+          <div class="attr-group-label">หัวข้อ (Topic)</div>
           <div class="checkbox-grid" id="chips-topic"><span class="no-attr">กำลังโหลด...</span></div>
         </div>
-        <div class="attr-group" style="margin-top:14px">
-          <div class="attr-group-label">Skill</div>
-          <div class="checkbox-grid" id="chips-skill"><span class="no-attr">กำลังโหลด...</span></div>
-        </div>
-        <div class="attr-group" style="margin-top:14px">
-          <div class="attr-group-label">Trap</div>
-          <div class="checkbox-grid" id="chips-trap"><span class="no-attr">กำลังโหลด...</span></div>
-        </div>
+        <details style="margin-top:14px">
+          <summary style="font-size:12px;font-weight:600;color:#888;cursor:pointer;user-select:none;text-transform:uppercase;letter-spacing:.5px">Skill &amp; Trap (คลิกเพื่อแสดง)</summary>
+          <div class="attr-group" style="margin-top:10px">
+            <div class="attr-group-label">Skill</div>
+            <div class="checkbox-grid" id="chips-skill"><span class="no-attr">กำลังโหลด...</span></div>
+          </div>
+          <div class="attr-group" style="margin-top:14px">
+            <div class="attr-group-label">Trap</div>
+            <div class="checkbox-grid" id="chips-trap"><span class="no-attr">กำลังโหลด...</span></div>
+          </div>
+        </details>
       </div>
 
-      <!-- Actions -->
+      <!-- 5. Actions -->
       <div class="card">
         <div class="actions">
           <button class="btn btn-primary" id="btn-save" onclick="saveQuestion()">บันทึกการแก้ไข</button>
@@ -272,6 +299,7 @@
     // populate dropdowns + chips
     populateSubjects(attrs.subject);
     populateGrades(attrs.examGrade);
+    populateExamSets(q.source, attrs);
     document.getElementById('f-difficulty').value = String(attrs.difficulty ?? 2);
 
     const gradeOpt = document.getElementById('f-grade').selectedOptions[0];
@@ -281,6 +309,39 @@
     renderChips('trap',  allDict.filter(i => i.type === 'trap'),  attrs.trap  || []);
 
     if (q.type === 'mc') renderChoices(choices, q.answer);
+  }
+
+  function populateExamSets(currentSource, attrs) {
+    const typeSel   = document.getElementById('f-examtype');
+    const sourceSel = document.getElementById('f-source');
+
+    // ตรวจว่า source ปัจจุบันเป็นประเภทไหน
+    const currentMeta = allExamSets.find(s => s.questionSource === currentSource);
+    const currentType = currentMeta ? (currentMeta.isOfficial ? 'official' : 'practice') : '';
+    typeSel.value = currentType;
+
+    renderSourceOptions(currentType, currentSource);
+  }
+
+  function filterExamSets() {
+    const type = document.getElementById('f-examtype').value;
+    renderSourceOptions(type, null);
+    // auto-fill grade ถ้ามีแค่ชั้นเดียวในประเภทนั้น
+  }
+
+  function renderSourceOptions(type, selectedSource) {
+    const sourceSel = document.getElementById('f-source');
+    const filtered = type
+      ? allExamSets.filter(s => type === 'official' ? s.isOfficial : !s.isOfficial)
+      : allExamSets;
+
+    sourceSel.innerHTML = '<option value="">— เลือกชุดข้อสอบ —</option>';
+    filtered.forEach(s => {
+      const label = s.label || s.questionSource || s.id;
+      const val   = s.questionSource || '';
+      const sel   = val === selectedSource ? 'selected' : '';
+      sourceSel.innerHTML += `<option value="${val}" data-grade="${s.grade}" ${sel}>${label}</option>`;
+    });
   }
 
   function populateSubjects(selectedKey) {
@@ -378,6 +439,8 @@
     const difficulty = parseInt(document.getElementById('f-difficulty').value);
     const year       = document.getElementById('f-year').value.trim();
     const code       = document.getElementById('f-code').value.trim();
+    const source     = document.getElementById('f-source').value;
+    const questionNo = document.getElementById('f-questionno').value.trim();
     const isMC = currentQuestion?.type === 'mc';
     const correctRadio = document.querySelector('input[name=correct]:checked');
 
@@ -389,15 +452,17 @@
     formData.append('questionText', text);
     formData.append('attributesJson', JSON.stringify({
       ...existingAttrs,
-      subject:   subjectKey  || existingAttrs.subject   || null,
-      examGrade: gradeKey    || existingAttrs.examGrade || null,
-      year:      year        || existingAttrs.year      || null,
+      subject:    subjectKey  || existingAttrs.subject    || null,
+      examGrade:  gradeKey    || existingAttrs.examGrade  || null,
+      year:       year        || existingAttrs.year       || null,
+      questionNo: questionNo  || existingAttrs.questionNo || null,
       topic: getChecked('topic'),
       skill: getChecked('skill'),
       trap:  getChecked('trap'),
       difficulty,
     }));
-    if (code) formData.append('code', code);
+    if (source) formData.append('source', source);
+    if (code)   formData.append('code', code);
 
     if (isMC) {
       formData.append('answer', correctRadio.value);

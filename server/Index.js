@@ -112,7 +112,7 @@ app.put('/questions/:id', attachOverwriteKey, upload.fields([
   { name: 'choiceImage3', maxCount: 1 }
 ]), async (req, res) => {
   try {
-    const { questionText, answer, attributesJson, code, shortAnswerJson } = req.body;
+    const { questionText, answer, attributesJson, code, source, shortAnswerJson } = req.body;
     const files = req.files || {};
     const attributes = attributesJson ? JSON.parse(attributesJson) : undefined;
 
@@ -122,6 +122,7 @@ app.put('/questions/:id', attachOverwriteKey, upload.fields([
     if (shortAnswerJson !== undefined) data.shortAnswer = JSON.parse(shortAnswerJson);
     if (attributes !== undefined) data.attributes = attributes;
     if (code !== undefined) data.code = code || null;
+    if (source !== undefined) data.source = source || null;
     // ถ้า overwrite key เดิม → URL ไม่เปลี่ยน ไม่ต้องอัปเดต DB
     // ถ้าเป็น key ใหม่ (ไม่มีรูปเดิม) → บันทึก filename ใหม่
     if (files.questionImage?.[0] && !req.overwriteImageKey) {

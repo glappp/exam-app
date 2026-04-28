@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node Index.js",
-    "build": "node node_modules/.bin/prisma generate && node node_modules/.bin/prisma migrate deploy",
+    "build": "node node_modules/.bin/prisma generate && node scripts/resolve-failed-migrations.js && node node_modules/.bin/prisma migrate deploy",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

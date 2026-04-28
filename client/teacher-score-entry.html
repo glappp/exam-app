@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>บันทึกคะแนน — SchoolPL</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .meta-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+    @media(max-width:480px){ .meta-grid { grid-template-columns:1fr; } }
+
+    .paste-area {
+      width:100%; min-height:180px; font-family:monospace; font-size:13px;
+      border:2px dashed var(--border); border-radius:8px; padding:12px;
+      resize:vertical; box-sizing:border-box; background:#fafafa;
+      transition:border-color .15s;
+    }
+    .paste-area:focus { border-color:var(--blue); outline:none; background:#fff; }
+
+    .hint-box { background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:12px 14px; font-size:12px; color:#1e40af; margin-bottom:16px; line-height:1.7; }
+    .hint-box code { background:#dbeafe; padding:1px 5px; border-radius:3px; font-family:monospace; }
+
+    .preview-table { width:100%; border-collapse:collapse; font-size:13px; margin-top:12px; }
+    .preview-table th { background:#f1f5f9; padding:8px 10px; text-align:left; font-weight:600; color:#555; border-bottom:2px solid #e2e8f0; }
+    .preview-table td { padding:7px 10px; border-bottom:1px solid #f0f0f0; }
+    .preview-table tr:hover td { background:#fafafa; }
+
+    .stat-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+    .stat-chip { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:6px; padding:6px 12px; font-size:12px; color:#166534; }
+
+    .period-btn { padding:8px 16px; border:1.5px solid var(--border); border-radius:7px; background:#fff; font-size:13px; font-weight:600; cursor:pointer; color:var(--muted); transition:.15s; }
+    .period-btn.active { background:var(--navy); color:#fff; border-color:var(--navy); }
+
+    .success-banner { background:#f0fdf4; border:1.5px solid #86efac; border-radius:8px; padding:14px 18px; color:#15803d; font-weight:600; font-size:14px; display:none; margin-top:16px; }
+  </style>
+</head>
+<body>
+<div class="topbar">
+  <span class="topbar-title">บันทึกคะแนน</span>
+  <div class="topbar-nav">
+    <a href="teacher-report.html">รายงาน</a>
+    <a href="dashboard.html">หน้าหลัก</a>
+    <a href="#" onclick="logout()">ออกจากระบบ</a>
+  </div>
+</div>
+
+<div class="page">
+  <div class="card">
+    <div class="card-title">ข้อมูลการบันทึก</div>
+
+    <div class="meta-grid">
+      <div class="form-group">
+        <label>ชั้น</label>
+        <select id="m-grade">
+          <option value="">— เลือกชั้น —</option>
+          <option>ป.1</option><option>ป.2</option><option>ป.3</option>
+          <option>ป.4</option><option>ป.5</option><option>ป.6</option>
+          <option>ม.1</option><option>ม.2</option><option>ม.3</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>ห้อง</label>
+        <input type="text" id="m-classroom" placeholder="เช่น 1, 2, ก, ข">
+      </div>
+      <div class="form-group">
+        <label>ปีการศึกษา</label>
+        <input type="text" id="m-year" placeholder="เช่น 2568" style="width:100%">
+      </div>
+      <div class="form-group">
+        <label>ภาคเรียน</label>
+        <select id="m-term">
+          <option value="1">ภาคเรียนที่ 1</option>
+          <option value="2">ภาคเรียนที่ 2</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>ช่วงการประเมิน</label>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <button class="period-btn active" id="btn-midterm" onclick="setPeriod('midterm')">🔵 กลางภาค</button>
+        <button class="period-btn" id="btn-final" onclick="setPeriod('final')">🟢 ปลายภาค</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="card-title">วางข้อมูลจาก Google Sheet</div>
+
+    <div class="hint-box">
+      📋 <strong>วิธีใช้:</strong> เปิด Google Sheet → เลือก <strong>ทุกคอลัมน์</strong> ตั้งแต่ชื่อจนถึงคะแนนเต็ม → <code>Ctrl+C</code> → วางด้านล่าง<br>
+      แถวแรกต้องเป็น <strong>หัวตาราง</strong> เช่น <code>ชื่อ | คณิต | วิทย์ | ไทย | คะแนนเต็ม</code><br>
+      คอลัมน์ที่ชื่อมีคำว่า "เต็ม" หรือ "full" จะถูกใช้เป็นคะแนนเต็มอัตโนมัติ
+    </div>
+
+    <textarea class="paste-area" id="paste-area" placeholder="วางข้อมูลที่นี่ (Ctrl+V)..."></textarea>
+
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-primary" onclick="preview()">👁 ดูตัวอย่าง</button>
+      <button class="btn" onclick="clearAll()">ล้าง</button>
+    </div>
+
+    <div id="preview-area" style="display:none;margin-top:16px">
+      <div style="font-size:13px;font-weight:600;color:#374151;margin-bottom:8px">ตัวอย่างข้อมูล (<span id="row-count">0</span> คน, <span id="subj-count">0</span> วิชา)</div>
+      <div style="overflow-x:auto">
+        <table class="preview-table" id="preview-table"></table>
+      </div>
+      <div class="stat-chips" id="stat-chips"></div>
+      <button class="btn btn-primary btn-full" style="margin-top:16px;background:#16a34a" onclick="save()">💾 บันทึกข้อมูล</button>
+    </div>
+
+    <div class="success-banner" id="success-banner">
+      ✅ บันทึกสำเร็จ! <span id="success-detail"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+  let currentPeriod = 'midterm';
+  let parsedRows = [];
+  let parsedSubjects = [];
+
+  function setPeriod(p) {
+    currentPeriod = p;
+    document.getElementById('btn-midterm').classList.toggle('active', p === 'midterm');
+    document.getElementById('btn-final').classList.toggle('active', p === 'final');
+  }
+
+  function preview() {
+    const text = document.getElementById('paste-area').value.trim();
+    if (!text) { alert('กรุณาวางข้อมูลก่อน'); return; }
+
+    const lines = text.replace(/\r/g, '').trim().split('\n').filter(l => l.trim());
+    if (lines.length < 2) { alert('ข้อมูลต้องมีอย่างน้อย 2 แถว (หัวตาราง + ข้อมูล)'); return; }
+
+    const headers = lines[0].split('\t').map(h => h.trim());
+    const fullScoreIdx = headers.findIndex(h => /เต็ม|full/i.test(h));
+    parsedSubjects = headers.filter((h, i) => i !== 0 && i !== fullScoreIdx && h);
+
+    parsedRows = lines.slice(1).map(line => {
+      const cols = line.split('\t').map(c => c.trim());
+      const name = cols[0] || '';
+      const fullScore = fullScoreIdx >= 0 ? (parseFloat(cols[fullScoreIdx]) || 100) : 100;
+      const scores = {};
+      parsedSubjects.forEach(subj => {
+        const idx = headers.indexOf(subj);
+        const v = parseFloat(cols[idx]);
+        scores[subj] = isNaN(v) ? '' : v;
+      });
+      return { name, scores, fullScore };
+    }).filter(r => r.name);
+
+    if (!parsedRows.length) { alert('ไม่พบข้อมูลนักเรียน'); return; }
+
+    // render table
+    const thead = `<tr><th>ชื่อ</th>${parsedSubjects.map(s => `<th>${s}</th>`).join('')}<th>คะแนนเต็ม</th></tr>`;
+    const tbody = parsedRows.slice(0, 10).map(r =>
+      `<tr><td>${r.name}</td>${parsedSubjects.map(s => `<td>${r.scores[s] !== '' ? r.scores[s] : '<span style="color:#ccc">—</span>'}</td>`).join('')}<td>${r.fullScore}</td></tr>`
+    ).join('');
+    const more = parsedRows.length > 10 ? `<tr><td colspan="${parsedSubjects.length + 2}" style="text-align:center;color:#aaa;font-size:12px">... และอีก ${parsedRows.length - 10} คน</td></tr>` : '';
+    document.getElementById('preview-table').innerHTML = `<thead>${thead}</thead><tbody>${tbody}${more}</tbody>`;
+
+    // stats per subject
+    const chips = parsedSubjects.map(subj => {
+      const vals = parsedRows.map(r => r.scores[subj]).filter(v => v !== '' && !isNaN(v));
+      if (!vals.length) return '';
+      const mean = (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1);
+      return `<div class="stat-chip"><strong>${subj}</strong> เฉลี่ย ${mean} (${vals.length} คน)</div>`;
+    }).join('');
+    document.getElementById('stat-chips').innerHTML = chips;
+
+    document.getElementById('row-count').textContent = parsedRows.length;
+    document.getElementById('subj-count').textContent = parsedSubjects.length;
+    document.getElementById('preview-area').style.display = 'block';
+    document.getElementById('success-banner').style.display = 'none';
+  }
+
+  async function save() {
+    const grade     = document.getElementById('m-grade').value;
+    const classroom = document.getElementById('m-classroom').value.trim();
+    const year      = document.getElementById('m-year').value.trim();
+    const term      = document.getElementById('m-term').value;
+
+    if (!grade)     { alert('กรุณาเลือกชั้น'); return; }
+    if (!classroom) { alert('กรุณากรอกห้อง'); return; }
+    if (!year)      { alert('กรุณากรอกปีการศึกษา'); return; }
+
+    const pastedText = document.getElementById('paste-area').value;
+    const btn = document.querySelector('button[onclick="save()"]');
+    btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+
+    try {
+      const res = await fetch('/api/classroom/paste-entry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ grade, classroom, academicYear: year, term, examPeriod: currentPeriod, pastedText })
+      });
+      const data = await res.json();
+      if (!res.ok) { alert('เกิดข้อผิดพลาด: ' + data.error); return; }
+
+      const periodLabel = currentPeriod === 'midterm' ? 'กลางภาค' : 'ปลายภาค';
+      document.getElementById('success-detail').textContent =
+        `${grade} ห้อง ${classroom} ปี ${year} ภาค ${term} (${periodLabel}) — ${data.rowCount} คน, ${data.subjects.length} วิชา`;
+      document.getElementById('success-banner').style.display = 'block';
+      document.getElementById('preview-area').style.display = 'none';
+      document.getElementById('paste-area').value = '';
+      parsedRows = []; parsedSubjects = [];
+    } catch(e) {
+      alert('เกิดข้อผิดพลาด: ' + e.message);
+    } finally {
+      btn.disabled = false; btn.textContent = '💾 บันทึกข้อมูล';
+    }
+  }
+
+  function clearAll() {
+    document.getElementById('paste-area').value = '';
+    document.getElementById('preview-area').style.display = 'none';
+    document.getElementById('success-banner').style.display = 'none';
+    parsedRows = []; parsedSubjects = [];
+  }
+
+  function logout() { fetch('/api/logout', { method:'POST', credentials:'include' }); location.href='login.html'; }
+
+  (async () => {
+    const r = await fetch('/api/me', { credentials: 'include' });
+    if (!r.ok) { location.href = 'login.html'; return; }
+    const me = await r.json();
+    if (!['admin','school_admin','teacher'].includes(me.role)) { location.href = 'dashboard.html'; return; }
+    document.getElementById('m-year').value = String(new Date().getFullYear() + 543);
+  })();
+</script>
+</body>
+</html>

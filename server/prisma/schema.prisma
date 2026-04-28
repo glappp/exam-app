@@ -220,10 +220,14 @@ model ClassroomScoreUpload {
   examPeriod   String?  // "midterm" | "final"
   school       String   @default("")
   grade        String?
-  subject      String   // ชื่อวิชา หรือ "multi"
-  scores       String   // JSON: [{ studentCode, name, score, fullScore, percentile, userId, grade }]
-  stats        String?  // JSON: { mean, sd, count, passCount }
+  classroom    String?
+  subject      String   @default("multi")
+  scores       String   @default("[]") // JSON: [{ name, scores:{วิชา:คะแนน}, fullScore }]
+  stats        String?  // JSON: [{ subject, mean, sd, count, passCount }]
   createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([school, grade, classroom, academicYear, term, examPeriod], name: "upload_period_unique")
 }
 
 // ─── Announcement ─────────────────────────────────────────────────────────────

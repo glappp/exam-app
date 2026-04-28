@@ -54,9 +54,12 @@
     <span id="banner-location">—</span>
   </div>
 
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('exam')">ภาพรวมการสอบ</button>
-    <button class="tab-btn" onclick="switchTab('scores')">คะแนนที่อัปโหลด</button>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+    <div class="tabs" style="margin-bottom:0">
+      <button class="tab-btn active" onclick="switchTab('exam')">ภาพรวมการสอบ</button>
+      <button class="tab-btn" onclick="switchTab('scores')">คะแนนที่อัปโหลด</button>
+    </div>
+    <a href="teacher-score-entry.html" class="btn btn-primary" style="font-size:13px;padding:8px 16px">+ บันทึกคะแนน</a>
   </div>
 
   <!-- Tab: ภาพรวมการสอบ -->

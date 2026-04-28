@@ -3,13 +3,41 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+// GET /api/exam-set/random?grade=p6&venue=ipst
+// สุ่มข้อสอบจากทุก source ที่ตรงกับ venue+grade
 router.get('/random', async (req, res) => {
   try {
-    const questions = await prisma.question.findMany({
-      take: 20
-    });
+    const { grade, venue, examType } = req.query;
+    // รองรับทั้ง venue (ใหม่) และ examType (เก่า)
+    const venueKey = venue || examType;
 
-    res.json(questions);
+    const where = {};
+    if (grade) {
+      // filter grade จาก attributes.examGrade
+      // Prisma JSON filter: attributes->examGrade = grade
+    }
+    if (venueKey) {
+      // source ขึ้นต้นด้วย venueKey (เช่น "ipst" matches "ipst-p6-2558")
+      where.source = { startsWith: venueKey };
+    }
+
+    let questions = await prisma.question.findMany({ where });
+
+    // filter grade ใน JS (เพราะ attributes เป็น JSON)
+    if (grade) {
+      questions = questions.filter(q => {
+        const g = q.attributes?.examGrade || '';
+        return g === grade;
+      });
+    }
+
+    if (!questions.length) {
+      return res.status(404).json({ error: 'ไม่พบข้อสอบในชุดที่เลือก' });
+    }
+
+    // สุ่มและเลือก 30 ข้อ (หรือทั้งหมดถ้าน้อยกว่า)
+    const shuffled = questions.sort(() => Math.random() - 0.5).slice(0, 30);
+    res.json(shuffled);
   } catch (error) {
     console.error("❌ ERROR ใน /api/exam-set/random:", error.message);
     res.status(500).json({ error: error.message });

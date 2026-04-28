@@ -57,12 +57,19 @@
         <div class="form-row">
           <div class="form-group">
             <label>ระดับชั้น</label>
-            <select id="grade-official"></select>
+            <select id="grade-official" onchange="onGradeChange('official')"></select>
           </div>
           <div class="form-group">
             <label>สนามสอบ</label>
-            <select id="examType-official"></select>
+            <select id="venue-official" onchange="onVenueChange('official')"></select>
           </div>
+        </div>
+        <div class="form-row" style="margin-top:10px">
+          <div class="form-group">
+            <label>ปีที่สอบ</label>
+            <select id="year-official"></select>
+          </div>
+          <div class="form-group"></div>
         </div>
         <div style="margin-top:12px;padding:10px 14px;background:#fefce8;border:1px solid #fde047;border-radius:8px;font-size:12px;color:#713f12;line-height:1.6">
           ⚠️ <strong>หมายเหตุ:</strong> บางสนามสอบไม่เปิดเผยข้อสอบที่ใช้จริง ข้อมูลในระบบอาจรวบรวมมาจากสื่ออินเทอร์เน็ตและความทรงจำของผู้เข้าสอบ จึงอาจมีความคลาดเคลื่อนจากข้อสอบจริง
@@ -73,11 +80,11 @@
         <div class="form-row">
           <div class="form-group">
             <label>ระดับชั้น</label>
-            <select id="grade-practice"></select>
+            <select id="grade-practice" onchange="onGradeChange('practice')"></select>
           </div>
           <div class="form-group">
             <label>สนามสอบ</label>
-            <select id="examType-practice"></select>
+            <select id="venue-practice"></select>
           </div>
         </div>
       </div>
@@ -110,43 +117,78 @@
       document.getElementById(`opts-${mode}`).classList.add('visible');
     }
 
-    async function fetchOptions(mode) {
-      const res = await fetch(`/api/exam-options?mode=${mode}`);
-      if (!res.ok) return;
-      const data = await res.json();
-      const suffix = mode === 'official' ? '-official' : '-practice';
-
-      const gradeEl    = document.getElementById('grade'    + suffix);
-      const examTypeEl = document.getElementById('examType' + suffix);
-      gradeEl.innerHTML = '';
-      examTypeEl.innerHTML = '';
-
-      data.grades.forEach(g => {
-        gradeEl.innerHTML += `<option value="${g}">${gradeLabel(g)}</option>`;
-      });
-      (data.examSets || []).forEach(e => {
-        examTypeEl.innerHTML += `<option value="${e.source}">${e.label}</option>`;
-      });
-
-    }
+    let optionsData = { official: null, practice: null };
 
     function gradeLabel(g) {
       return { p4:'ป.4', p5:'ป.5', p6:'ป.6', m1:'ม.1', m2:'ม.2', m3:'ม.3' }[g] || g;
     }
-    function examLabel(e) {
-      return { chulabhorn:'จุฬาภรณ์', suankularb:'สวนกุหลาบ', muengnont:'เมืองนนท์' }[e] || e;
+
+    async function fetchOptions(mode) {
+      const res = await fetch(`/api/exam-options?mode=${mode}`);
+      if (!res.ok) return;
+      optionsData[mode] = await res.json();
+      const data = optionsData[mode];
+      const suffix = `-${mode}`;
+
+      const gradeEl = document.getElementById('grade' + suffix);
+      gradeEl.innerHTML = '';
+      data.grades.forEach(g => {
+        gradeEl.innerHTML += `<option value="${g}">${gradeLabel(g)}</option>`;
+      });
+      onGradeChange(mode); // ป้อน venue ตาม grade แรก
+    }
+
+    function onGradeChange(mode) {
+      const data = optionsData[mode];
+      if (!data) return;
+      const grade   = document.getElementById(`grade-${mode}`).value;
+      const venueEl = document.getElementById(`venue-${mode}`);
+      venueEl.innerHTML = '<option value="">— เลือกสนาม —</option>';
+
+      const matching = (data.venues || []).filter(v =>
+        v.grades.some(g => g.grade === grade)
+      );
+      matching.forEach(v => {
+        venueEl.innerHTML += `<option value="${v.key}">${v.label}</option>`;
+      });
+      if (matching.length === 1) venueEl.value = matching[0].key;
+      onVenueChange(mode);
+    }
+
+    function onVenueChange(mode) {
+      if (mode !== 'official') return;
+      const data    = optionsData[mode];
+      if (!data) return;
+      const grade   = document.getElementById('grade-official').value;
+      const venue   = document.getElementById('venue-official').value;
+      const yearEl  = document.getElementById('year-official');
+      yearEl.innerHTML = '<option value="">— เลือกปี —</option>';
+
+      const venueData = (data.venues || []).find(v => v.key === venue);
+      if (!venueData) return;
+      const gradeData = venueData.grades.find(g => g.grade === grade);
+      (gradeData?.years || []).forEach(y => {
+        yearEl.innerHTML += `<option value="${y}">${y}</option>`;
+      });
     }
 
     function startExam() {
-      const suffix = currentMode === 'official' ? '-official' : '-practice';
-      const grade    = document.getElementById('grade'    + suffix).value;
-      const examType = document.getElementById('examType' + suffix).value;
-      const timed    = document.getElementById('timed').checked ? '1' : '0';
+      const timed = document.getElementById('timed').checked ? '1' : '0';
 
       if (currentMode === 'official') {
-        location.href = `exam-official.html?grade=${grade}&examType=${examType}&timed=${timed}`;
+        const grade = document.getElementById('grade-official').value;
+        const venue = document.getElementById('venue-official').value;
+        const year  = document.getElementById('year-official').value;
+        if (!venue) { alert('กรุณาเลือกสนามสอบ'); return; }
+        if (!year)  { alert('กรุณาเลือกปีที่สอบ'); return; }
+        // สร้าง source จาก venue+grade+year เช่น "ipst-p6-2558"
+        const source = `${venue}-${grade}-${year}`;
+        location.href = `exam-official.html?grade=${grade}&examType=${source}&timed=${timed}`;
       } else {
-        location.href = `test-competitive.html?grade=${grade}&examType=${examType}&timed=${timed}`;
+        const grade = document.getElementById('grade-practice').value;
+        const venue = document.getElementById('venue-practice').value;
+        if (!venue) { alert('กรุณาเลือกสนามสอบ'); return; }
+        location.href = `test-competitive.html?grade=${grade}&venue=${venue}&timed=${timed}`;
       }
     }
 

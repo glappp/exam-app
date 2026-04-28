@@ -226,8 +226,6 @@ model ClassroomScoreUpload {
   stats        String?  // JSON: [{ subject, mean, sd, count, passCount }]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
-  @@unique([school, grade, classroom, academicYear, term, examPeriod], name: "upload_period_unique")
 }
 
 // ─── Announcement ─────────────────────────────────────────────────────────────

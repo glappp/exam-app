@@ -15,16 +15,21 @@ function parseVenue(source) {
 // ชื่อวิชาที่ต้องตัดออกจาก label
 const SUBJECT_WORDS = /\s*(คณิตศาสตร์|วิทยาศาสตร์|ภาษาไทย|ภาษาอังกฤษ|สังคมศึกษา)/g;
 
-// สร้าง label เฉพาะชื่อองค์กร: ใช้ venueName จาก DB ถ้ามี ไม่งั้นคำนวณจาก label
+// ตัดชื่อวิชา + ชั้น + ปี + วงเล็บออก เหลือแค่ชื่อองค์กร
+function cleanVenueName(raw) {
+  if (!raw) return '';
+  return raw
+    .replace(SUBJECT_WORDS, '')                   // ตัดชื่อวิชา
+    .replace(/\s+(ป\.\d+|ม\.\d+)\b.*$/i, '')     // ตัดตั้งแต่ ป.X เป็นต้นไป
+    .trim();
+}
+
+// ใช้ venueName จาก DB เป็นจุดเริ่มต้น แต่ clean เสมอ (ป้องกัน backfill ผิด)
 function venueLabel(venueKey, sets) {
   const sample = sets.find(s => parseVenue(s.questionSource) === venueKey);
   if (!sample) return venueKey.toUpperCase();
-  if (sample.venueName) return sample.venueName;
-  if (!sample.label) return venueKey.toUpperCase();
-  return sample.label
-    .replace(SUBJECT_WORDS, '')                       // ตัดชื่อวิชา เช่น คณิตศาสตร์
-    .replace(/\s+(ป\.\d+|ม\.\d+)\b.*$/i, '')         // ตัดทุกอย่างตั้งแต่ ป.X เป็นต้นไป
-    .trim();
+  const raw = sample.venueName || sample.label;
+  return cleanVenueName(raw) || venueKey.toUpperCase();
 }
 
 const SUBJECT_LABELS = {

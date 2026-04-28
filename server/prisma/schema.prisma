@@ -178,6 +178,7 @@ model Question {
 
 model ExamSetMetadata {
   id              String   @id @default(cuid())
+  subject         String   @default("math") // "math" | "science" | "thai" | "english"
   grade           String   // "p4" | "p5" | "p6" | "m1" ...
   year            String?
   label           String?  // เช่น "จุฬาภรณ์ ป.6 ปี 2565"

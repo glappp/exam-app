@@ -6,6 +6,22 @@
   <title>เลือกการสอบ — SchoolPL</title>
   <link rel="stylesheet" href="style.css">
   <style>
+    .subject-cards { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    .subject-card {
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 20px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      background: #fff;
+      font-weight: 600;
+      font-size: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .subject-card:hover:not(.disabled) { border-color: var(--blue); }
+    .subject-card.active { border-color: var(--blue); background: #eff6ff; color: var(--blue); }
+    .subject-card.disabled { opacity: .4; cursor: not-allowed; }
+
     .mode-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
     @media (max-width: 480px) { .mode-cards { grid-template-columns: 1fr; } }
 
@@ -25,6 +41,8 @@
 
     .options-panel { display: none; }
     .options-panel.visible { display: block; }
+
+    .section-label { font-size: 12px; font-weight: 700; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; margin-bottom: 10px; }
   </style>
 </head>
 <body>
@@ -39,8 +57,16 @@
 
   <div class="page">
     <div class="card">
-      <div class="card-title">โหมดการสอบ</div>
-      <div class="mode-cards">
+
+      <!-- ① วิชา -->
+      <div class="section-label">วิชา</div>
+      <div class="subject-cards" id="subject-cards">
+        <!-- render by JS -->
+      </div>
+
+      <!-- ② โหมด -->
+      <div class="section-label" id="mode-label">โหมดการสอบ</div>
+      <div class="mode-cards" id="mode-cards">
         <div class="mode-card active" id="card-official" onclick="selectMode('official')">
           <span class="icon">📄</span>
           <div class="label">ข้อสอบจริง</div>
@@ -53,6 +79,7 @@
         </div>
       </div>
 
+      <!-- ③ ตัวเลือกตามโหมด -->
       <div class="options-panel visible" id="opts-official">
         <div class="form-row">
           <div class="form-group">
@@ -99,12 +126,23 @@
   </div>
 
   <script>
-    const _urlType = new URLSearchParams(location.search).get('type');
-    let currentMode = _urlType === 'practice' ? 'practice' : 'official';
+    const SUBJECT_ICONS = { math:'🔢', science:'🔬', thai:'📖', english:'🌐' };
+    const ALL_SUBJECTS  = [
+      { key:'math',    label:'คณิตศาสตร์' },
+      { key:'science', label:'วิทยาศาสตร์' },
+      { key:'thai',    label:'ภาษาไทย' },
+      { key:'english', label:'ภาษาอังกฤษ' },
+    ];
+
+    const _urlParams = new URLSearchParams(location.search);
+    const _urlType   = _urlParams.get('type');
+    let currentMode    = _urlType === 'practice' ? 'practice' : 'official';
+    let currentSubject = _urlParams.get('subject') || 'math';
 
     // ถ้าระบุ type มาใน URL → ซ่อน mode cards และล็อก mode
     if (_urlType === 'official' || _urlType === 'practice') {
-      document.querySelector('.mode-cards').style.display = 'none';
+      document.getElementById('mode-cards').style.display = 'none';
+      document.getElementById('mode-label').style.display = 'none';
       document.querySelectorAll('.options-panel').forEach(p => p.classList.remove('visible'));
       document.getElementById(`opts-${currentMode}`).classList.add('visible');
     }
@@ -117,6 +155,39 @@
       document.getElementById(`opts-${mode}`).classList.add('visible');
     }
 
+    // ─── Subject ──────────────────────────────────────────────────────────────
+    let availableSubjectKeys = [];
+
+    function renderSubjectCards(subjects) {
+      availableSubjectKeys = subjects.map(s => s.key);
+      const container = document.getElementById('subject-cards');
+      container.innerHTML = '';
+
+      ALL_SUBJECTS.forEach(s => {
+        const hasData = availableSubjectKeys.includes(s.key);
+        const active  = s.key === currentSubject ? 'active' : '';
+        const disabled = hasData ? '' : 'disabled';
+        const icon = SUBJECT_ICONS[s.key] || '📚';
+        container.innerHTML += `
+          <div class="subject-card ${active} ${disabled}"
+               onclick="${hasData ? `selectSubject('${s.key}')` : ''}">
+            <span>${icon}</span>${s.label}${!hasData ? ' <span style="font-size:11px;font-weight:400">(เร็วๆนี้)</span>' : ''}
+          </div>`;
+      });
+    }
+
+    function selectSubject(key) {
+      if (!availableSubjectKeys.includes(key)) return;
+      currentSubject = key;
+      document.querySelectorAll('.subject-card').forEach(c => {
+        c.classList.toggle('active', c.textContent.trim().startsWith(SUBJECT_ICONS[key]));
+      });
+      // โหลด options ใหม่ตามวิชาที่เลือก
+      fetchOptions('official');
+      fetchOptions('practice');
+    }
+
+    // ─── Options ──────────────────────────────────────────────────────────────
     let optionsData = { official: null, practice: null };
 
     function gradeLabel(g) {
@@ -124,18 +195,21 @@
     }
 
     async function fetchOptions(mode) {
-      const res = await fetch(`/api/exam-options?mode=${mode}`);
+      const res = await fetch(`/api/exam-options?mode=${mode}&subject=${currentSubject}`);
       if (!res.ok) return;
-      optionsData[mode] = await res.json();
-      const data = optionsData[mode];
-      const suffix = `-${mode}`;
+      const data = await res.json();
+      optionsData[mode] = data;
 
+      // render subject cards ครั้งแรก (ใช้ข้อมูลจากทั้งสอง mode)
+      if (data.subjects?.length) renderSubjectCards(data.subjects);
+
+      const suffix = `-${mode}`;
       const gradeEl = document.getElementById('grade' + suffix);
       gradeEl.innerHTML = '';
-      data.grades.forEach(g => {
+      (data.grades || []).forEach(g => {
         gradeEl.innerHTML += `<option value="${g}">${gradeLabel(g)}</option>`;
       });
-      onGradeChange(mode); // ป้อน venue ตาม grade แรก
+      onGradeChange(mode);
     }
 
     function onGradeChange(mode) {
@@ -170,6 +244,8 @@
       (gradeData?.years || []).forEach(y => {
         yearEl.innerHTML += `<option value="${y}">${y}</option>`;
       });
+      // auto-select ถ้ามีปีเดียว
+      if ((gradeData?.years || []).length === 1) yearEl.value = gradeData.years[0];
     }
 
     function startExam() {
@@ -181,14 +257,13 @@
         const year  = document.getElementById('year-official').value;
         if (!venue) { alert('กรุณาเลือกสนามสอบ'); return; }
         if (!year)  { alert('กรุณาเลือกปีที่สอบ'); return; }
-        // สร้าง source จาก venue+grade+year เช่น "ipst-p6-2558"
         const source = `${venue}-${grade}-${year}`;
-        location.href = `exam-official.html?grade=${grade}&examType=${source}&timed=${timed}`;
+        location.href = `exam-official.html?grade=${grade}&examType=${source}&timed=${timed}&subject=${currentSubject}`;
       } else {
         const grade = document.getElementById('grade-practice').value;
         const venue = document.getElementById('venue-practice').value;
         if (!venue) { alert('กรุณาเลือกสนามสอบ'); return; }
-        location.href = `test-competitive.html?grade=${grade}&venue=${venue}&timed=${timed}`;
+        location.href = `test-competitive.html?grade=${grade}&venue=${venue}&timed=${timed}&subject=${currentSubject}`;
       }
     }
 

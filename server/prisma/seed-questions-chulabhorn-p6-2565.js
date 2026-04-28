@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 const BASE = {
   examGrade: 'p6',
-  source: 'chulabhorn-2565',
+  source: 'chulabhorn-p6-2565',
   difficulty: 3,
 };
 

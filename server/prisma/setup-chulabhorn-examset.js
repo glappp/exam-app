@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
   // 1) สร้าง ExamSetMetadata
   const existing = await prisma.examSetMetadata.findFirst({
-    where: { questionSource: 'chulabhorn-2565' }
+    where: { questionSource: 'chulabhorn-p6-2565' }
   });
 
   if (!existing) {
@@ -22,7 +22,7 @@ async function main() {
           { section: 3, count: 5,  score: 3 },
         ],
         isOfficial: true,
-        questionSource: 'chulabhorn-2565',
+        questionSource: 'chulabhorn-p6-2565',
         createdBy: 'seed',
         isActive: true,
       }
@@ -34,16 +34,16 @@ async function main() {
 
   // 2) ดึงโจทย์จุฬาภรณ์ (source เก็บอยู่ใน attributes เท่านั้น ยังไม่ได้อยู่ใน field)
   const all = await prisma.question.findMany({ orderBy: { createdAt: 'asc' } });
-  const questions = all.filter(q => q.attributes?.source === 'chulabhorn-2565');
+  const questions = all.filter(q => q.attributes?.source === 'chulabhorn-p6-2565');
   console.log(`พบโจทย์จุฬาภรณ์: ${questions.length} ข้อ`);
 
   // 2b) ย้าย source จาก attributes → Question.source (top-level field)
   for (const q of questions) {
-    if (q.source !== 'chulabhorn-2565') {
-      await prisma.question.update({ where: { id: q.id }, data: { source: 'chulabhorn-2565' } });
+    if (q.source !== 'chulabhorn-p6-2565') {
+      await prisma.question.update({ where: { id: q.id }, data: { source: 'chulabhorn-p6-2565' } });
     }
   }
-  console.log('✅ set Question.source = chulabhorn-2565');
+  console.log('✅ set Question.source = chulabhorn-p6-2565');
 
   // map questionNo ที่ถูกต้อง (27 ข้อ รวม 21.1/21.2/21.3)
   // ตอนที่ 1: ข้อ 1-10 (score=1), ตอนที่ 2: ข้อ 11-20 (score=2), ตอนที่ 3: ข้อ 22-25 (score=3)
@@ -85,7 +85,7 @@ async function main() {
 
   // แสดงตัวอย่าง
   const samples = await prisma.question.findMany({
-    where: { source: 'chulabhorn-2565' },
+    where: { source: 'chulabhorn-p6-2565' },
     select: { textTh: true, attributes: true },
     take: 5,
     orderBy: { createdAt: 'asc' }

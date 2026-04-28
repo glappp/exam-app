@@ -181,7 +181,8 @@ model ExamSetMetadata {
   subject         String   @default("math") // "math" | "science" | "thai" | "english"
   grade           String   // "p4" | "p5" | "p6" | "m1" ...
   year            String?
-  label           String?  // เช่น "จุฬาภรณ์ ป.6 ปี 2565"
+  label           String?  // เช่น "สสวท ป.6 ปี 2558 (สอบคัดเลือกรอบที่ 1)"
+  venueName       String?  // ชื่อสนามสั้น เช่น "สสวท", "จุฬาภรณ์"
   timeLimitSec    Int
   blueprint       Json     // [{ difficulty: 1|2|3, count: Int, topicTags?: String[] }]
   isOfficial      Boolean  // true = mock (ข้อสอบจริง), false = timed (จำลอง)

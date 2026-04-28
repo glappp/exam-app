@@ -15,10 +15,12 @@ function parseVenue(source) {
 // ชื่อวิชาที่ต้องตัดออกจาก label
 const SUBJECT_WORDS = /\s*(คณิตศาสตร์|วิทยาศาสตร์|ภาษาไทย|ภาษาอังกฤษ|สังคมศึกษา)/g;
 
-// สร้าง label เฉพาะชื่อองค์กร เช่น "สสวท ป.6 ปี 2558 (สอบคัดเลือกรอบที่ 1)" → "สสวท"
+// สร้าง label เฉพาะชื่อองค์กร: ใช้ venueName จาก DB ถ้ามี ไม่งั้นคำนวณจาก label
 function venueLabel(venueKey, sets) {
   const sample = sets.find(s => parseVenue(s.questionSource) === venueKey);
-  if (!sample?.label) return venueKey.toUpperCase();
+  if (!sample) return venueKey.toUpperCase();
+  if (sample.venueName) return sample.venueName;
+  if (!sample.label) return venueKey.toUpperCase();
   return sample.label
     .replace(SUBJECT_WORDS, '')                       // ตัดชื่อวิชา เช่น คณิตศาสตร์
     .replace(/\s+(ป\.\d+|ม\.\d+)\b.*$/i, '')         // ตัดทุกอย่างตั้งแต่ ป.X เป็นต้นไป

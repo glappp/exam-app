@@ -92,7 +92,15 @@
   </div>
 
   <script>
-    let currentMode = 'official';
+    const _urlType = new URLSearchParams(location.search).get('type');
+    let currentMode = _urlType === 'practice' ? 'practice' : 'official';
+
+    // ถ้าระบุ type มาใน URL → ซ่อน mode cards และล็อก mode
+    if (_urlType === 'official' || _urlType === 'practice') {
+      document.querySelector('.mode-cards').style.display = 'none';
+      document.querySelectorAll('.options-panel').forEach(p => p.classList.remove('visible'));
+      document.getElementById(`opts-${currentMode}`).classList.add('visible');
+    }
 
     function selectMode(mode) {
       currentMode = mode;

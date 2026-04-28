@@ -72,7 +72,8 @@
   const urlParams  = new URLSearchParams(location.search);
   const mode       = urlParams.get('mode') || 'competitive';
   const grade      = urlParams.get('grade');
-  const examType   = urlParams.get('examType');
+  const examType   = urlParams.get('examType'); // legacy
+  const venue      = urlParams.get('venue') || examType; // venue ใหม่ หรือ fallback examType เดิม
   const timed      = urlParams.get('timed') === '1';
 
   let questions = [];
@@ -89,8 +90,8 @@
 
   async function fetchQuestions() {
     const params = new URLSearchParams({ mode });
-    if (grade)    params.set('grade', grade);
-    if (examType) params.set('examType', examType);
+    if (grade) params.set('grade', grade);
+    if (venue) params.set('venue', venue);
     const res = await fetch(`/api/exam-set/random?${params}`, { credentials: 'include' });
     if (!res.ok) {
       document.getElementById('question-container').innerHTML =

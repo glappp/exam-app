@@ -181,6 +181,107 @@ router.post('/matrix-entry', requireTeacher, async (req, res) => {
   }
 });
 
+// POST /api/classroom/paste-entry — รับข้อมูล paste จาก Google Sheet (tab-separated)
+// body: { school, grade, classroom, academicYear, term, examPeriod, pastedText }
+// pastedText format (header row + data rows, tab-separated):
+//   ชื่อ  [TAB]  วิชา1  [TAB]  วิชา2  [TAB]  คะแนนเต็ม
+//   สมชาย [TAB]  85     [TAB]  72     [TAB]  100
+router.post('/paste-entry', requireTeacher, async (req, res) => {
+  try {
+    const { school, grade, classroom, academicYear, term, examPeriod, pastedText } = req.body;
+    if (!pastedText?.trim()) return res.status(400).json({ error: 'ไม่มีข้อมูล' });
+
+    const schoolName = school || req.session.school || '';
+
+    // Parse tab-separated
+    const lines = pastedText.replace(/\r/g, '').trim().split('\n').filter(l => l.trim());
+    if (lines.length < 2) return res.status(400).json({ error: 'ข้อมูลต้องมีอย่างน้อย 2 แถว (header + ข้อมูล)' });
+
+    const headers = lines[0].split('\t').map(h => h.trim());
+    const nameCol = 0; // คอลัมน์แรกเสมอ
+    // หาคอลัมน์ fullScore (คอลัมน์สุดท้ายที่ชื่อมี "เต็ม" หรือ "full" หรือถ้าไม่มีใช้คอลัมน์สุดท้าย)
+    const fullScoreIdx = headers.findIndex(h => /เต็ม|full/i.test(h));
+    const subjectCols = headers
+      .map((h, i) => ({ h, i }))
+      .filter(({ i }) => i !== nameCol && i !== fullScoreIdx);
+
+    if (subjectCols.length === 0) return res.status(400).json({ error: 'ไม่พบคอลัมน์วิชา' });
+
+    const rows = lines.slice(1).map(line => {
+      const cols = line.split('\t').map(c => c.trim());
+      const name = cols[nameCol] || '';
+      const fullScore = fullScoreIdx >= 0 ? (parseFloat(cols[fullScoreIdx]) || 100) : 100;
+      const scores = {};
+      subjectCols.forEach(({ h, i }) => {
+        const v = parseFloat(cols[i]);
+        scores[h] = isNaN(v) ? null : v;
+      });
+      return { name, scores, fullScore };
+    }).filter(r => r.name);
+
+    if (!rows.length) return res.status(400).json({ error: 'ไม่พบข้อมูลนักเรียน' });
+
+    // คำนวณ stats ต่อวิชา
+    const subjects = subjectCols.map(({ h }) => h);
+    const statsArr = subjects.map(subj => {
+      const vals = rows.map(r => r.scores[subj]).filter(v => v !== null && !isNaN(v));
+      if (!vals.length) return { subject: subj, count: 0 };
+      const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+      const sd   = Math.sqrt(vals.map(v => (v - mean) ** 2).reduce((a, b) => a + b, 0) / vals.length);
+      const fullScore = rows[0]?.fullScore || 100;
+      return {
+        subject: subj,
+        mean: Math.round(mean * 10) / 10,
+        sd:   Math.round(sd   * 10) / 10,
+        min:  Math.min(...vals),
+        max:  Math.max(...vals),
+        count: vals.length,
+        passCount: vals.filter(v => v / fullScore >= 0.5).length
+      };
+    });
+
+    // Upsert ด้วย unique key
+    const upsertWhere = {
+      upload_period_unique: {
+        school: schoolName,
+        grade: grade || '',
+        classroom: classroom || '',
+        academicYear: academicYear || '',
+        term: term || '',
+        examPeriod: examPeriod || ''
+      }
+    };
+
+    const record = await prisma.classroomScoreUpload.upsert({
+      where: upsertWhere,
+      update: {
+        uploadedById: req.session.userId,
+        subject: subjects.length === 1 ? subjects[0] : 'multi',
+        scores: JSON.stringify(rows),
+        stats:  JSON.stringify(statsArr),
+        updatedAt: new Date()
+      },
+      create: {
+        uploadedById: req.session.userId,
+        school: schoolName,
+        grade: grade || '',
+        classroom: classroom || '',
+        academicYear: academicYear || '',
+        term: term || '',
+        examPeriod: examPeriod || '',
+        subject: subjects.length === 1 ? subjects[0] : 'multi',
+        scores: JSON.stringify(rows),
+        stats:  JSON.stringify(statsArr)
+      }
+    });
+
+    res.json({ success: true, uploadId: record.id, stats: statsArr, rowCount: rows.length, subjects });
+  } catch (err) {
+    console.error('❌ paste-entry:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // GET /api/classroom/history — ประวัติ (ครูเห็นของตัวเอง, admin เห็นทั้งหมดของโรงเรียนเดียวกัน)
 router.get('/history', requireTeacher, async (req, res) => {
   try {

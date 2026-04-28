@@ -240,40 +240,46 @@ router.post('/paste-entry', requireTeacher, async (req, res) => {
       };
     });
 
-    // Upsert ด้วย unique key
-    const upsertWhere = {
-      upload_period_unique: {
+    // หา record เดิมด้วย findFirst แล้ว create/update
+    const existing = await prisma.classroomScoreUpload.findFirst({
+      where: {
         school: schoolName,
-        grade: grade || '',
-        classroom: classroom || '',
-        academicYear: academicYear || '',
-        term: term || '',
-        examPeriod: examPeriod || ''
-      }
-    };
-
-    const record = await prisma.classroomScoreUpload.upsert({
-      where: upsertWhere,
-      update: {
-        uploadedById: req.session.userId,
-        subject: subjects.length === 1 ? subjects[0] : 'multi',
-        scores: JSON.stringify(rows),
-        stats:  JSON.stringify(statsArr),
-        updatedAt: new Date()
-      },
-      create: {
-        uploadedById: req.session.userId,
-        school: schoolName,
-        grade: grade || '',
-        classroom: classroom || '',
-        academicYear: academicYear || '',
-        term: term || '',
-        examPeriod: examPeriod || '',
-        subject: subjects.length === 1 ? subjects[0] : 'multi',
-        scores: JSON.stringify(rows),
-        stats:  JSON.stringify(statsArr)
+        grade: grade || null,
+        classroom: classroom || null,
+        academicYear: academicYear || null,
+        term: term || null,
+        examPeriod: examPeriod || null
       }
     });
+
+    let record;
+    if (existing) {
+      record = await prisma.classroomScoreUpload.update({
+        where: { id: existing.id },
+        data: {
+          uploadedById: req.session.userId,
+          subject: subjects.length === 1 ? subjects[0] : 'multi',
+          scores: JSON.stringify(rows),
+          stats:  JSON.stringify(statsArr),
+          updatedAt: new Date()
+        }
+      });
+    } else {
+      record = await prisma.classroomScoreUpload.create({
+        data: {
+          uploadedById: req.session.userId,
+          school: schoolName,
+          grade: grade || null,
+          classroom: classroom || null,
+          academicYear: academicYear || null,
+          term: term || null,
+          examPeriod: examPeriod || null,
+          subject: subjects.length === 1 ? subjects[0] : 'multi',
+          scores: JSON.stringify(rows),
+          stats:  JSON.stringify(statsArr)
+        }
+      });
+    }
 
     res.json({ success: true, uploadId: record.id, stats: statsArr, rowCount: rows.length, subjects });
   } catch (err) {

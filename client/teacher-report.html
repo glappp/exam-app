@@ -26,9 +26,15 @@
     .tag-pill { display:inline-block; background:#fff7ed; border:1px solid #fed7aa; border-radius:99px; padding:2px 8px; font-size:11px; color:#9a3412; margin:2px 2px 0 0; }
     .alert-row td { background:#fff5f5; }
     .section-title { font-size:13px; font-weight:700; color:#444; margin:20px 0 10px; text-transform:uppercase; letter-spacing:.5px; }
-    .score-card { background:#f8fafc; border-radius:8px; padding:12px; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center; font-size:13px; }
-    .score-card .subject { font-weight:600; color:var(--navy); }
-    .score-card .stats-row { display:flex; gap:16px; font-size:12px; color:#666; }
+    .score-card { background:#f8fafc; border-radius:8px; padding:14px; margin-bottom:10px; font-size:13px; }
+    .score-card .subject { font-weight:700; color:var(--navy); font-size:14px; margin-bottom:4px; }
+    .period-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:10px; }
+    .period-box { background:#fff; border-radius:6px; padding:10px 12px; border:1px solid #e5e7eb; }
+    .period-box .period-label { font-size:11px; font-weight:700; color:#6b7280; margin-bottom:5px; }
+    .period-box .period-mean { font-size:16px; font-weight:800; color:var(--navy); }
+    .period-box .period-sub { font-size:11px; color:#9ca3af; margin-top:2px; }
+    .period-box.missing .period-mean { color:#d1d5db; }
+    .period-total { margin-top:8px; text-align:right; font-size:12px; color:#374151; }
     .grade-badge { display:inline-block; padding:3px 8px; border-radius:5px; font-size:11px; font-weight:700; background:#f1f5f9; color:var(--navy); }
   </style>
 </head>
@@ -191,19 +197,40 @@
     const { uploads } = await r.json();
     if (!uploads.length) { el.innerHTML = '<div class="empty-msg">ยังไม่มีข้อมูลคะแนนที่อัปโหลด</div>'; return; }
 
-    const cards = uploads.map(u => {
-      const stats = u.stats ? JSON.parse(u.stats) : null;
-      const meta = [u.grade, new Date(u.createdAt).toLocaleDateString('th-TH')].filter(Boolean).join(' • ');
+    // จัดกลุ่มตาม subject + academicYear + term
+    const groups = {};
+    uploads.forEach(u => {
+      const key = `${u.subject}|${u.academicYear||''}|${u.term||''}`;
+      if (!groups[key]) groups[key] = { subject: u.subject, academicYear: u.academicYear, term: u.term, midterm: null, final: null };
+      if (u.examPeriod === 'final') groups[key].final = u;
+      else groups[key].midterm = u; // midterm หรือ ยังไม่ระบุ → ใส่ช่องกลางภาค
+    });
+
+    const periodBox = (u, label) => {
+      const s = u?.stats ? JSON.parse(u.stats) : null;
+      const hasStat = s && (s.mean != null);
+      return `<div class="period-box${hasStat ? '' : ' missing'}">
+        <div class="period-label">${label}</div>
+        <div class="period-mean">${hasStat ? s.mean : '0'}</div>
+        <div class="period-sub">${hasStat ? `SD ${s.sd} • ${s.count} คน` : 'ยังไม่มีข้อมูล'}</div>
+      </div>`;
+    };
+
+    const cards = Object.values(groups).map(g => {
+      const midS = g.midterm?.stats ? JSON.parse(g.midterm.stats) : null;
+      const finS = g.final?.stats   ? JSON.parse(g.final.stats)   : null;
+      const midMean = midS?.mean ?? 0;
+      const finMean = finS?.mean ?? 0;
+      const total   = (midMean + finMean).toFixed(1);
+      const meta = [g.grade, g.academicYear ? `ปี ${g.academicYear}` : null, g.term ? `ภาคเรียน ${g.term}` : null].filter(Boolean).join(' • ');
       return `<div class="score-card">
-        <div>
-          <div class="subject">${u.subject === 'multi' ? '📊 หลายวิชา' : u.subject}</div>
-          <div style="font-size:12px;color:#666;margin-top:2px">${meta}</div>
+        <div class="subject">${g.subject === 'multi' ? '📊 หลายวิชา' : g.subject}</div>
+        ${meta ? `<div style="font-size:12px;color:#6b7280">${meta}</div>` : ''}
+        <div class="period-grid">
+          ${periodBox(g.midterm, '🔵 กลางภาค')}
+          ${periodBox(g.final,   '🟢 ปลายภาค')}
         </div>
-        ${stats ? `<div class="stats-row">
-          <span>เฉลี่ย ${stats.mean ?? '—'}</span>
-          <span>SD ${stats.sd ?? '—'}</span>
-          <span>${stats.count ?? '—'} คน</span>
-        </div>` : ''}
+        <div class="period-total">คะแนนรวมเฉลี่ย: <strong>${total}</strong></div>
       </div>`;
     }).join('');
 

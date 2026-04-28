@@ -114,7 +114,7 @@ router.get('/classroom-scores', requireTeacher, async (req, res) => {
 
     const uploads = await prisma.classroomScoreUpload.findMany({
       where, orderBy: { createdAt: 'desc' },
-      select: { id: true, academicYear: true, term: true, school: true, grade: true, subject: true, stats: true, createdAt: true }
+      select: { id: true, academicYear: true, term: true, examPeriod: true, school: true, grade: true, subject: true, stats: true, createdAt: true }
     });
 
     res.json({ uploads });

@@ -43,6 +43,28 @@
     .zoomable:hover { opacity:.85; }
     @keyframes lb-in { from { opacity:0; } to { opacity:1; } }
 
+    /* ── Briefing ─────────────────────────────────────────────── */
+    .briefing-stat {
+      text-align: center; padding: 16px 28px; background: #f8fafc;
+      border-radius: 14px; flex: 1;
+    }
+    .briefing-stat .val { font-size: 54px; font-weight: 900; line-height: 1; }
+    .briefing-stat .lbl { font-size: 13px; color: var(--muted); margin-top: 6px; }
+
+    /* ── Countdown ────────────────────────────────────────────── */
+    @keyframes cd-pop {
+      0%   { transform: scale(.15); opacity: 0; }
+      22%  { transform: scale(1.12); opacity: 1; }
+      68%  { transform: scale(1);   opacity: 1; }
+      100% { transform: scale(1.9); opacity: 0; }
+    }
+    @keyframes cd-go {
+      0%   { transform: scale(.3);  opacity: 0; }
+      28%  { transform: scale(1.08); opacity: 1; }
+      72%  { transform: scale(1);   opacity: 1; }
+      100% { transform: scale(1.25); opacity: 0; }
+    }
+
     .question-text { font-size: 15px; line-height: 1.7; margin-bottom: 12px; }
 
     .answer-section label {
@@ -117,8 +139,30 @@
   <img id="lightbox-img" src="" alt="" onclick="event.stopPropagation()">
 </div>
 
+<!-- Countdown Overlay -->
+<div id="countdown-overlay" style="display:none;position:fixed;inset:0;background:rgba(10,15,30,.96);z-index:9500;align-items:center;justify-content:center">
+  <div style="text-align:center;user-select:none">
+    <div id="cd-label" style="font-size:13px;color:rgba(255,255,255,.4);letter-spacing:.12em;text-transform:uppercase;margin-bottom:16px">เตรียมพร้อม</div>
+    <div id="cd-num" style="font-size:160px;font-weight:900;color:#fff;line-height:.9;min-width:220px;display:inline-block"></div>
+  </div>
+</div>
+
 <div class="page">
   <div id="loading" style="text-align:center;padding:40px;color:var(--muted)">กำลังโหลดข้อสอบ...</div>
+
+  <!-- Briefing Panel -->
+  <div id="briefing-panel" style="display:none">
+    <div class="card" style="text-align:center;max-width:480px;margin:0 auto;padding:32px 24px">
+      <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px">พร้อมสอบแล้ว</div>
+      <div id="brief-title" style="font-size:19px;font-weight:800;color:#111;margin-bottom:24px;line-height:1.4"></div>
+      <div id="brief-stats" style="display:flex;gap:12px;justify-content:center;margin-bottom:20px"></div>
+      <div id="brief-note" style="font-size:13px;color:var(--muted);background:#f9fafb;padding:12px 16px;border-radius:8px;margin-bottom:24px;line-height:1.8"></div>
+      <button class="btn btn-primary" style="font-size:16px;padding:14px 40px;width:100%" onclick="onStartClick()">
+        🚀 เริ่มสอบ
+      </button>
+    </div>
+  </div>
+
   <div id="exam-body" style="display:none">
     <div class="dot-nav" id="dot-nav"></div>
     <div id="question-container"></div>
@@ -178,17 +222,80 @@
       if (!questions.length) throw new Error('ไม่พบข้อสอบในชุดนี้');
 
       answers = new Array(questions.length).fill(null);
-      examStartTime = Date.now();
 
       document.getElementById('loading').style.display = 'none';
-      document.getElementById('exam-body').style.display = 'block';
-
-      if (timed && timeLimitSec) startTimer();
-      renderDots();
-      renderQuestion();
+      showBriefing();
     } catch (e) {
       document.getElementById('loading').innerHTML = `<div class="card"><p style="color:#b91c1c">${e.message}</p></div>`;
     }
+  }
+
+  // ─── Briefing & Countdown ────────────────────────────────────────────────────
+  function showBriefing() {
+    const mins = timeLimitSec ? Math.round(timeLimitSec / 60) : null;
+    document.getElementById('brief-title').textContent = examMeta?.label || 'ข้อสอบจริง';
+
+    const stats = [
+      { val: questions.length, lbl: 'ข้อ',  color: '#2563eb' },
+      ...(timed && mins ? [{ val: mins, lbl: 'นาที', color: '#d97706' }] : [])
+    ];
+    document.getElementById('brief-stats').innerHTML = stats.map(s =>
+      `<div class="briefing-stat"><div class="val" style="color:${s.color}">${s.val}</div><div class="lbl">${s.lbl}</div></div>`
+    ).join('');
+
+    document.getElementById('brief-note').innerHTML = (timed && mins)
+      ? `⏱ จับเวลา <strong>${mins} นาที</strong> &nbsp;·&nbsp; <strong>${questions.length} ข้อ</strong><br>ระบบส่งคำตอบอัตโนมัติเมื่อหมดเวลา`
+      : `✏️ ไม่จับเวลา &nbsp;·&nbsp; <strong>${questions.length} ข้อ</strong><br>ตอบให้ครบทุกข้อ แล้วกดปุ่มส่งคำตอบ`;
+
+    document.getElementById('briefing-panel').style.display = 'block';
+  }
+
+  function onStartClick() {
+    document.getElementById('briefing-panel').style.display = 'none';
+    if (timed && timeLimitSec) {
+      runCountdown(() => {
+        examStartTime = Date.now();
+        document.getElementById('exam-body').style.display = 'block';
+        startTimer();
+        renderDots();
+        renderQuestion();
+      });
+    } else {
+      examStartTime = Date.now();
+      document.getElementById('exam-body').style.display = 'block';
+      renderDots();
+      renderQuestion();
+    }
+  }
+
+  function runCountdown(onDone) {
+    const overlay = document.getElementById('countdown-overlay');
+    const numEl   = document.getElementById('cd-num');
+    const lblEl   = document.getElementById('cd-label');
+    overlay.style.display = 'flex';
+
+    const STEPS = [
+      { text: '3',      color: '#fff',    size: '160px', anim: 'cd-pop .85s ease forwards', dur: 850 },
+      { text: '2',      color: '#fbbf24', size: '160px', anim: 'cd-pop .85s ease forwards', dur: 850 },
+      { text: '1',      color: '#f87171', size: '160px', anim: 'cd-pop .85s ease forwards', dur: 850 },
+      { text: 'เริ่ม!', color: '#4ade80', size: '88px',  anim: 'cd-go .8s ease forwards',  dur: 800 },
+    ];
+
+    let i = 0;
+    function next() {
+      if (i >= STEPS.length) { overlay.style.display = 'none'; onDone(); return; }
+      const s = STEPS[i];
+      numEl.style.animation = 'none';
+      numEl.offsetWidth; // reflow เพื่อ restart animation
+      numEl.style.color    = s.color;
+      numEl.style.fontSize = s.size;
+      numEl.textContent    = s.text;
+      numEl.style.animation = s.anim;
+      if (i === STEPS.length - 1) lblEl.style.opacity = '0';
+      i++;
+      setTimeout(next, s.dur);
+    }
+    next();
   }
 
   // ─── Timer ───────────────────────────────────────────────────────────────────

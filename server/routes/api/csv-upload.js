@@ -82,7 +82,7 @@ router.get('/students', requireTeacher, async (req, res) => {
 // POST /api/classroom/score-entry — กรอกคะแนน manual + คำนวณสถิติ + บันทึก
 router.post('/score-entry', requireTeacher, async (req, res) => {
   try {
-    const { subject, academicYear, fullScore, rows } = req.body;
+    const { subject, academicYear, examPeriod, fullScore, rows } = req.body;
     // rows: [{userId, studentCode, name, score}]
     if (!Array.isArray(rows) || rows.length === 0)
       return res.status(400).json({ error: 'ไม่มีข้อมูลคะแนน' });
@@ -101,6 +101,7 @@ router.post('/score-entry', requireTeacher, async (req, res) => {
       data: {
         uploadedById: req.session.userId,
         subject: subject || 'ไม่ระบุวิชา',
+        examPeriod: examPeriod || null,
         scores: JSON.stringify(withPct),
         stats: JSON.stringify(stats)
       }
@@ -117,7 +118,7 @@ router.post('/score-entry', requireTeacher, async (req, res) => {
 // body: { academicYear, school, grade, subjects:[{name,fullScore}], rows:[{userId,studentCode,name,classroom,subjectScores:{วิชา:คะแนน}}] }
 router.post('/matrix-entry', requireTeacher, async (req, res) => {
   try {
-    const { academicYear, school, grade, subjects, rows } = req.body;
+    const { academicYear, school, grade, examPeriod, subjects, rows } = req.body;
     if (!Array.isArray(subjects) || subjects.length === 0)
       return res.status(400).json({ error: 'กรุณาเพิ่มวิชาอย่างน้อย 1 วิชา' });
     if (!Array.isArray(rows) || rows.length === 0)
@@ -167,6 +168,7 @@ router.post('/matrix-entry', requireTeacher, async (req, res) => {
         uploadedById: req.session.userId,
         school: school || teacherSchool,
         subject: 'multi',
+        examPeriod: examPeriod || null,
         scores: JSON.stringify(rowsWithPct),
         stats: JSON.stringify(statsPerSubject)
       }
@@ -400,7 +402,7 @@ router.get('/template', requireTeacher, (req, res) => {
 // POST /api/classroom/upload — upload CSV คะแนน
 router.post('/upload', requireTeacher, express.text({ type: 'text/csv', limit: '1mb' }), async (req, res) => {
   try {
-    const { subject } = req.query;
+    const { subject, examPeriod } = req.query;
     if (!subject) return res.status(400).json({ error: 'ต้องระบุ subject' });
 
     const lines = req.body.replace(/\r/g, '').split('\n').filter(l => l.trim());
@@ -441,6 +443,7 @@ router.post('/upload', requireTeacher, express.text({ type: 'text/csv', limit: '
       data: {
         uploadedById: req.session.userId,
         subject,
+        examPeriod: examPeriod || null,
         scores: JSON.stringify(withPercentile),
         stats: JSON.stringify({ mean: Math.round(mean * 10) / 10, sd: Math.round(sd * 10) / 10, count: rows.length, passCount })
       }

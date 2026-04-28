@@ -217,6 +217,7 @@ model ClassroomScoreUpload {
   uploadedById Int
   academicYear String?
   term         String?
+  examPeriod   String?  // "midterm" | "final"
   school       String   @default("")
   grade        String?
   subject      String   // ชื่อวิชา หรือ "multi"

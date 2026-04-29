@@ -5,6 +5,9 @@ const prisma = new PrismaClient();
 
 // POST /api/feedback — รับ feedback จาก widget
 router.post('/', async (req, res) => {
+  if (!req.session?.userId) {
+    return res.status(401).json({ error: 'กรุณาเข้าสู่ระบบก่อน' });
+  }
   const { name, message, page } = req.body;
   if (!message || !message.trim()) {
     return res.status(400).json({ error: 'กรุณาใส่ข้อความ' });

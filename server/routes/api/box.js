@@ -40,18 +40,16 @@ const SILVER_TABLE = [
 /*
   Gold Box — รางวัลพิเศษจากการแข่งขัน / weekly challenge
   (ไม่มี Gold Box ซ้ำ — ป้องกัน chain reaction)
-    35% → XP (50–150 XP)
-    20% → Parent Points (15–40 pts)
-    30% → Ticket ×2
-    10% → Digital Reward (จาก Reward table ที่ active)
-     5% → Physical Reward
+    40% → XP (50–150 XP)
+    34% → Ticket ×2
+    25% → Parent Points (15–40 pts)
+     1% → ของรางวัล (admin ตั้งเองใน Reward table)
 */
 const GOLD_TABLE = [
-  { weight: 35, type: 'xp',           min: 50,  max: 150 },
-  { weight: 20, type: 'parent_points', min: 15,  max: 40  },
-  { weight: 30, type: 'ticket',        amount: 2 },
-  { weight: 10, type: 'digital'                            },
-  { weight:  5, type: 'physical'                           },
+  { weight: 40, type: 'xp',           min: 50,  max: 150 },
+  { weight: 34, type: 'ticket',        amount: 2 },
+  { weight: 25, type: 'parent_points', min: 15,  max: 40  },
+  { weight:  1, type: 'reward'                             },
 ]
 
 // ── Probability engine ────────────────────────────────────────────────────────
@@ -133,10 +131,10 @@ router.post('/open', requireLogin, async (req, res) => {
       rewardResult.amount = rolled.amount
       await grantBox(userId, 'gold', rolled.amount)
 
-    } else if (rolled.type === 'digital' || rolled.type === 'physical') {
-      // ดึง reward จาก Reward table (ที่ยังมีของเหลือ)
+    } else if (rolled.type === 'reward') {
+      // ดึง reward ใดก็ได้จาก Reward table ที่ active และยังมีของเหลือ
       const candidates = await prisma.reward.findMany({
-        where: { type: rolled.type, isActive: true },
+        where: { isActive: true },
         orderBy: { createdAt: 'asc' },
       })
       const reward = candidates.find(r => r.claimedQty < r.quantity) || null
@@ -165,7 +163,7 @@ router.post('/open', requireLogin, async (req, res) => {
       }
     }
 
-    // บันทึก BoxLog
+    // บันทึก BoxLog (ถ้า fallback เป็น ticket ให้บันทึก type จริง)
     await prisma.boxLog.create({
       data: {
         userId,

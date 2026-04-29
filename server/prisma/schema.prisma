@@ -41,18 +41,20 @@ model User {
 // ─── Student ──────────────────────────────────────────────────────────────────
 
 model StudentProfile {
-  id            Int               @id @default(autoincrement())
-  userId        Int
-  user          User              @relation(fields: [userId], references: [id])
-  academicYear  String            // เช่น "2567"
-  school        String
-  district      String
-  province      String
-  grade         String            // เช่น "ป.4"
-  classroom     String?
-  studentCode   String?
-  status        String            @default("active") // "active" | "archived"
-  createdAt     DateTime          @default(now())
+  id              Int               @id @default(autoincrement())
+  userId          Int
+  user            User              @relation(fields: [userId], references: [id])
+  academicYear    String            // เช่น "2567"
+  school          String
+  district        String
+  province        String
+  grade           String            // เช่น "ป.4" (legacy / manual override)
+  enrollmentYear  String?           // ปีการศึกษาที่เริ่มชั้น enrollmentGrade เช่น "2567"
+  enrollmentGrade String?           // "p1"|"p2"|"p3"|"p4"|"p5"|"p6"
+  classroom       String?
+  studentCode     String?
+  status          String            @default("active") // "active" | "archived"
+  createdAt       DateTime          @default(now())
 
   examResults     ExamResult[]
   examAnswers     ExamAnswer[]
@@ -257,11 +259,16 @@ model AnnouncementRead {
 // ─── Gamification ─────────────────────────────────────────────────────────────
 
 model CharacterState {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @unique
-  level     Int      @default(1)
-  totalXp   Int      @default(0)
-  updatedAt DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  userId        Int      @unique
+  level         Int      @default(1)
+  totalXp       Int      @default(0)   // XP สะสมตลอดกาล (แสดงผล)
+  activityXp    Int      @default(0)   // XP จาก daily/weekly/mission — reset ทุกปีการศึกษา
+  permanentXp   Int      @default(0)   // XP จาก subtopic/topic pass — ไม่ reset
+  currentStreak Int      @default(0)   // วันต่อเนื่องปัจจุบัน
+  longestStreak Int      @default(0)
+  lastActiveDate String?               // "YYYY-MM-DD" (ICT)
+  updatedAt     DateTime @updatedAt
 }
 
 model PointTransaction {
@@ -379,4 +386,118 @@ model AttributeDictionary {
   minGrade Int?        // สำหรับ subtopic/skill/trap: ชั้นต่ำสุดที่ใช้ได้
 
   @@map("attribute_dictionary")
+}
+
+// ─── Mission System ───────────────────────────────────────────────────────────
+
+model MissionDailyLog {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  date         String   // "YYYY-MM-DD" (ICT)
+  correctCount Int      @default(0)  // จำนวนข้อที่ถูก (max 5)
+  xpEarned     Int      @default(0)
+  ticketEarned Int      @default(0)
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+
+  @@unique([userId, date])
+}
+
+model QuickQuizLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  date      String   // "YYYY-MM-DD" (ICT)
+  setsCount Int      @default(0)  // กี่ชุดที่ทำแล้ว (max 3 ชุดได้ XP)
+  xpEarned  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
+}
+
+model WeeklyChallengeResult {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  weekKey   String   // "2026-W18"
+  attempts  Int      @default(0)
+  bestScore Int      @default(0)  // จำนวนข้อถูกสูงสุด (max 10)
+  xpEarned  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, weekKey])
+}
+
+// ─── Leaderboard ──────────────────────────────────────────────────────────────
+
+model WeeklyLeaderboard {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  weekKey     String   // "2026-W18"
+  league      String   // "A"|"B"|"C"
+  activity    String   // "grand_prix"|"daily_mission"
+  score       Int      // คะแนนที่ส่งเข้า leaderboard
+  ticketsUsed Int      @default(1)
+  createdAt   DateTime @default(now())
+
+  @@index([weekKey, league])
+}
+
+// ─── Box System ───────────────────────────────────────────────────────────────
+
+model BoxLog {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  boxType      String   // "silver"|"gold"
+  rewardType   String   // "xp"|"parent_points"|"ticket"|"gold_box"|"digital"|"physical"
+  rewardAmount Int?     // จำนวน XP / points / tickets
+  rewardId     Int?     // อ้างอิง Reward ถ้าเป็น digital/physical
+  createdAt    DateTime @default(now())
+}
+
+model Reward {
+  id          Int           @id @default(autoincrement())
+  name        String
+  description String?
+  type        String        // "digital"|"physical"
+  code        String?       // สำหรับ digital reward (บัตรเติมเกม ฯลฯ)
+  quantity    Int           @default(1)
+  claimedQty  Int           @default(0)
+  isActive    Boolean       @default(true)
+  weekKey     String?       // ถ้าเป็น weekly prize: "2026-W18"
+  league      String?       // "A"|"B"|"C"|null = ทุก league
+  rank        Int?          // 1|2|3 = top rank ที่ได้รางวัลนี้
+  createdBy   String
+  createdAt   DateTime      @default(now())
+  claims      RewardClaim[]
+}
+
+model RewardClaim {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  rewardId    Int
+  reward      Reward   @relation(fields: [rewardId], references: [id])
+  claimRef    String   @unique  // "PRIZE-2026-0042"
+  status      String   @default("pending")  // "pending"|"claimed"
+  claimedAt   DateTime?
+  claimedBy   String?  // admin username ที่ mark claimed
+  createdAt   DateTime @default(now())
+}
+
+// ─── Parent Points ────────────────────────────────────────────────────────────
+
+model ParentPointBalance {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @unique
+  balance     Int      @default(0)
+  totalEarned Int      @default(0)
+  updatedAt   DateTime @updatedAt
+}
+
+model ParentPointLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  amount    Int      // บวก = ได้, ลบ = หัก/แลกรางวัล
+  note      String?  // เหตุผล เช่น "ทำ daily mission ครบ" | "ดูการ์ตูน 30 นาที"
+  source    String   // "auto_login"|"auto_mission"|"auto_subtopic"|"auto_weekly"|"parent_manual"
+  date      String   // "YYYY-MM-DD"
+  createdAt DateTime @default(now())
 }

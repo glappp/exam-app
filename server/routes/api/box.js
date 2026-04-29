@@ -39,20 +39,19 @@ const SILVER_TABLE = [
 
 /*
   Gold Box — รางวัลพิเศษจากการแข่งขัน / weekly challenge
+  (ไม่มี Gold Box ซ้ำ — ป้องกัน chain reaction)
     35% → XP (50–150 XP)
     20% → Parent Points (15–40 pts)
-    25% → Ticket ×2
+    30% → Ticket ×2
     10% → Digital Reward (จาก Reward table ที่ active)
      5% → Physical Reward
-     5% → Gold Box ×1 (bonus)
 */
 const GOLD_TABLE = [
   { weight: 35, type: 'xp',           min: 50,  max: 150 },
   { weight: 20, type: 'parent_points', min: 15,  max: 40  },
-  { weight: 25, type: 'ticket',        amount: 2 },
+  { weight: 30, type: 'ticket',        amount: 2 },
   { weight: 10, type: 'digital'                            },
   { weight:  5, type: 'physical'                           },
-  { weight:  5, type: 'gold_box',      amount: 1 },
 ]
 
 // ── Probability engine ────────────────────────────────────────────────────────

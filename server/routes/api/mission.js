@@ -25,6 +25,8 @@ const {
   awardXP, awardTicket, awardParentPoints, awardDailyLogin,
 } = require('../../utils/xp-service')
 
+const { grantBox } = require('./box')
+
 // ── Auth helper ───────────────────────────────────────────────────────────────
 function requireLogin(req, res, next) {
   if (!req.session?.userId) return res.status(401).json({ error: 'กรุณาเข้าสู่ระบบ' })
@@ -329,6 +331,9 @@ router.post('/daily/submit', requireLogin, async (req, res) => {
     update: { correctCount: correct, xpEarned: totalXp, ticketEarned, completedAt: new Date() },
   })
 
+  // แจก Silver Box 1 ใบทุกครั้งที่ทำ Daily Mission ครบ
+  await grantBox(userId, 'silver', 1)
+
   await awardDailyLogin(prisma, userId)
 
   // ── Leaderboard submit (optional) ────────────────────────────────────────
@@ -353,7 +358,8 @@ router.post('/daily/submit', requireLogin, async (req, res) => {
   res.json({
     correct, total: 5, xpEarned: totalXp, ticketEarned, parentPts, detail,
     leaderboardRank,
-    message: `ถูก ${correct}/5 ข้อ | +${totalXp} XP | +${ticketEarned} Ticket`,
+    silverBoxEarned: 1,
+    message: `ถูก ${correct}/5 ข้อ | +${totalXp} XP | +${ticketEarned} Ticket | +1 🎁`,
   })
 })
 
@@ -454,9 +460,13 @@ router.post('/weekly/submit', requireLogin, async (req, res) => {
 
   // Award
   if (xpEarned > 0) await awardXP(prisma, userId, xpEarned, 'activity')
-  if (correct >= 8) {
+  let goldBoxEarned = 0
+  if (correct >= 8 && prevXpEarned === 0) {
+    // ผ่านครั้งแรกของสัปดาห์ → ticket + parent points + gold box
     await awardTicket(prisma, userId, TICKET.WEEKLY_PASS, 'earn_mission', `Weekly Challenge ผ่าน สัปดาห์ ${weekKey}`)
     await awardParentPoints(prisma, userId, PARENT_PTS.WEEKLY_PASS, 'auto_weekly', `Weekly Challenge ผ่าน`)
+    await grantBox(userId, 'gold', 1)
+    goldBoxEarned = 1
   }
 
   // บันทึก
@@ -469,9 +479,10 @@ router.post('/weekly/submit', requireLogin, async (req, res) => {
   res.json({
     correct, total: 10, xpEarned, attempts, bestScore,
     passed: correct >= 8,
+    goldBoxEarned,
     detail,
-    message: correct === 10 ? '🏆 Perfect! +200 XP' :
-             correct >= 8   ? `✅ ผ่าน! +${xpEarned} XP` :
+    message: correct === 10 ? '🏆 Perfect! +200 XP +1 🥇 Box' :
+             correct >= 8   ? `✅ ผ่าน! +${xpEarned} XP${goldBoxEarned ? ' +1 🥇 Box' : ''}` :
              `❌ ไม่ผ่าน (${correct}/10) — ต้องถูก 8 ข้อขึ้น`,
   })
 })

@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>กล่องรางวัล</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+    /* ── Topbar ── */
+    .topbar {
+      background: #1e3a5f; color: #fff;
+      padding: 0 24px; height: 52px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar-title { font-weight: 700; font-size: 16px; }
+    .topbar-right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+    .topbar-right a { color: #93c5fd; text-decoration: none; }
+    .topbar-right a:hover { color: #fff; }
+
+    .container { max-width: 680px; margin: 0 auto; padding: 32px 16px 80px; }
+
+    /* ── Hero ── */
+    .hero { text-align: center; margin-bottom: 32px; }
+    .hero h1 { font-size: 26px; font-weight: 800; }
+    .hero p { color: #94a3b8; font-size: 14px; margin-top: 6px; }
+
+    /* ── Inventory ── */
+    .inventory { display: flex; gap: 16px; margin-bottom: 32px; }
+    .box-card {
+      flex: 1; background: #1e293b; border-radius: 16px; padding: 20px 16px;
+      text-align: center; border: 2px solid #334155;
+      transition: border-color .2s, transform .15s;
+      cursor: pointer;
+    }
+    .box-card:hover:not(.empty) { transform: translateY(-3px); }
+    .box-card.silver { border-color: #94a3b8; }
+    .box-card.silver:hover:not(.empty) { border-color: #e2e8f0; box-shadow: 0 0 20px rgba(148,163,184,.3); }
+    .box-card.gold   { border-color: #f59e0b; }
+    .box-card.gold:hover:not(.empty)   { border-color: #fbbf24; box-shadow: 0 0 20px rgba(251,191,36,.3); }
+    .box-card.empty  { opacity: .45; cursor: default; }
+
+    .box-emoji { font-size: 52px; margin-bottom: 10px; display: block; }
+    .box-name  { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .box-count { font-size: 28px; font-weight: 900; }
+    .box-count.silver { color: #cbd5e1; }
+    .box-count.gold   { color: #fbbf24; }
+    .box-sub   { font-size: 11px; color: #64748b; margin-top: 4px; }
+
+    /* ── Reward type hints ── */
+    .reward-hints { margin-bottom: 28px; }
+    .hint-title { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 10px; }
+    .hint-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .hint-row {
+      background: #1e293b; border-radius: 8px; padding: 8px 12px;
+      display: flex; align-items: center; gap: 10px; font-size: 12px;
+    }
+    .hint-icon { font-size: 18px; width: 24px; text-align: center; }
+    .hint-info .hint-type { font-weight: 600; color: #e2e8f0; }
+    .hint-info .hint-chance { color: #64748b; }
+
+    /* ── History ── */
+    .section-title { font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
+    .history-list { display: flex; flex-direction: column; gap: 6px; }
+    .history-row {
+      background: #1e293b; border-radius: 10px; padding: 10px 14px;
+      display: flex; align-items: center; gap: 12px; font-size: 13px;
+    }
+    .h-box-icon { font-size: 20px; }
+    .h-reward { flex: 1; }
+    .h-reward-type { font-weight: 600; }
+    .h-reward-amount { color: #94a3b8; font-size: 12px; }
+    .h-time { font-size: 11px; color: #475569; }
+
+    /* ── Opening modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.85); z-index: 100;
+      align-items: center; justify-content: center; flex-direction: column;
+    }
+    .modal-overlay.show { display: flex; }
+
+    /* ── Box shake animation ── */
+    @keyframes shake {
+      0%,100% { transform: rotate(0deg) scale(1); }
+      10%      { transform: rotate(-8deg) scale(1.05); }
+      20%      { transform: rotate(8deg) scale(1.1); }
+      30%      { transform: rotate(-6deg) scale(1.12); }
+      40%      { transform: rotate(6deg) scale(1.15); }
+      50%      { transform: rotate(-4deg) scale(1.17); }
+      60%      { transform: rotate(4deg) scale(1.15); }
+      70%      { transform: rotate(-2deg) scale(1.1); }
+      80%      { transform: rotate(2deg) scale(1.05); }
+      90%      { transform: rotate(0deg) scale(1.0); }
+    }
+    @keyframes burst {
+      0%   { transform: scale(0.5); opacity: 0; }
+      60%  { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(1.0); opacity: 1; }
+    }
+    @keyframes float-up {
+      0%   { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(-60px); opacity: 0; }
+    }
+
+    .opening-box {
+      font-size: 100px; cursor: pointer; user-select: none;
+      transition: transform .1s;
+    }
+    .opening-box.shaking { animation: shake 0.8s ease; }
+
+    .open-hint { color: #94a3b8; font-size: 14px; margin-top: 16px; }
+
+    /* ── Reward reveal ── */
+    .reward-reveal {
+      display: none; flex-direction: column; align-items: center; gap: 12px;
+      animation: burst 0.5s ease forwards;
+    }
+    .reward-reveal.show { display: flex; }
+    .reward-big-icon { font-size: 72px; }
+    .reward-title { font-size: 22px; font-weight: 800; text-align: center; }
+    .reward-amount { font-size: 36px; font-weight: 900; }
+    .reward-amount.xp { color: #60a5fa; }
+    .reward-amount.parent_points { color: #34d399; }
+    .reward-amount.ticket { color: #fbbf24; }
+    .reward-amount.gold_box { color: #f59e0b; }
+    .reward-amount.digital { color: #a78bfa; }
+    .reward-amount.physical { color: #f87171; }
+    .reward-desc { font-size: 13px; color: #94a3b8; text-align: center; max-width: 280px; }
+
+    .confetti-container { position: fixed; inset: 0; pointer-events: none; overflow: hidden; }
+    .confetti-piece {
+      position: absolute; width: 10px; height: 10px; border-radius: 2px;
+      animation: float-up 1.5s ease forwards;
+    }
+
+    .btn-close-reward {
+      margin-top: 20px; background: #3b82f6; color: #fff; border: none;
+      border-radius: 10px; padding: 12px 32px; font-size: 15px; font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-close-reward:hover { background: #2563eb; }
+
+    @media (max-width: 480px) {
+      .inventory { flex-direction: column; }
+      .hint-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">🎁 กล่องรางวัล</div>
+  <div class="topbar-right">
+    <span id="topbar-user">...</span>
+    <a href="/dashboard.html">← หน้าหลัก</a>
+  </div>
+</div>
+
+<div class="container">
+  <div class="hero">
+    <h1>🎁 กล่องรางวัล</h1>
+    <p>เปิดกล่องเพื่อรับรางวัลสุ่ม · กล่องเงินจาก Daily Mission · กล่องทองจาก Weekly</p>
+  </div>
+
+  <!-- กล่องที่มี -->
+  <div class="inventory">
+    <div class="box-card silver" id="silver-card" onclick="clickBox('silver')">
+      <span class="box-emoji">🪙</span>
+      <div class="box-name">กล่องเงิน</div>
+      <div class="box-count silver" id="silver-count">0</div>
+      <div class="box-sub">XP · Parent Points · Ticket · (3% Gold Box)</div>
+    </div>
+    <div class="box-card gold" id="gold-card" onclick="clickBox('gold')">
+      <span class="box-emoji">🥇</span>
+      <div class="box-name">กล่องทอง</div>
+      <div class="box-count gold" id="gold-count">0</div>
+      <div class="box-sub">XP · Ticket · ของรางวัลพิเศษ</div>
+    </div>
+  </div>
+
+  <!-- ตารางโอกาส -->
+  <div class="reward-hints">
+    <div class="hint-title">🎲 โอกาสรับรางวัล</div>
+    <div class="hint-grid">
+      <div>
+        <div class="hint-row"><span class="hint-icon">🪙</span>
+          <div class="hint-info"><div class="hint-type">กล่องเงิน</div></div></div>
+        <div class="hint-row" style="margin-top:4px"><span class="hint-icon">⭐</span>
+          <div class="hint-info"><div class="hint-type">XP 15–40</div><div class="hint-chance">60%</div></div></div>
+        <div class="hint-row" style="margin-top:4px"><span class="hint-icon">💚</span>
+          <div class="hint-info"><div class="hint-type">Parent Points 5–15</div><div class="hint-chance">25%</div></div></div>
+        <div class="hint-row" style="margin-top:4px"><span class="hint-icon">🎟️</span>
+          <div class="hint-info"><div class="hint-type">Ticket ×1</div><div class="hint-chance">12%</div></div></div>
+        <div class="hint-row" style="margin-top:4px"><span class="hint-icon">🥇</span>
+          <div class="hint-info"><div class="hint-type">Gold Box ×1</div><div class="hint-chance">3%</div></div></div>
+      </div>
+      <div>
+        <div class="hint-row"><span class="hint-icon">🥇</span>
+          <div class="hint-info"><div class="hint-type">กล่องทอง</div></div></div>
+        <div class="hint-row" style="margin-top:4px"><span class="hint-icon">⭐</span>
+          <div class="hint-info"><div class="hint-type">XP 50–150</div><div class="hint-chance">35%</div></div></div>
+        <div class="hint-row" style="margin-top:4px"><span class="hint-icon">🎟️</span>
+          <div class="hint-info"><div class="hint-type">Ticket ×2</div><div class="hint-chance">25%</div></div></div>
+        <div class="hint-row" style="margin-top:4px"><span class="hint-icon">💚</span>
+          <div class="hint-info"><div class="hint-type">Parent Points 15–40</div><div class="hint-chance">20%</div></div></div>
+        <div class="hint-row" style="margin-top:4px"><span class="hint-icon">🎮</span>
+          <div class="hint-info"><div class="hint-type">Digital Reward</div><div class="hint-chance">10%</div></div></div>
+        <div class="hint-row" style="margin-top:4px"><span class="hint-icon">🎁</span>
+          <div class="hint-info"><div class="hint-type">ของรางวัล / Gold Box</div><div class="hint-chance">10%</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ประวัติ -->
+  <div class="section-title">ประวัติเปิดกล่อง</div>
+  <div class="history-list" id="history-list">
+    <div style="color:#475569;font-size:13px;text-align:center;padding:20px">กำลังโหลด...</div>
+  </div>
+</div>
+
+<!-- Opening modal -->
+<div class="modal-overlay" id="open-modal">
+  <div class="confetti-container" id="confetti-container"></div>
+
+  <!-- Phase 1: กล่องรอเปิด -->
+  <div id="phase-box">
+    <div class="opening-box" id="opening-box" onclick="openBox()">🪙</div>
+    <div class="open-hint" id="open-hint">แตะกล่องเพื่อเปิด!</div>
+  </div>
+
+  <!-- Phase 2: รางวัล -->
+  <div class="reward-reveal" id="phase-reward">
+    <div class="reward-big-icon" id="reward-icon">⭐</div>
+    <div class="reward-title" id="reward-title">XP</div>
+    <div class="reward-amount" id="reward-amount">+50</div>
+    <div class="reward-desc" id="reward-desc"></div>
+    <button class="btn-close-reward" onclick="closeModal()">รับรางวัล ✓</button>
+  </div>
+</div>
+
+<script>
+// ─── State ────────────────────────────────────────────────────────────────────
+let inventory = { silver: 0, gold: 0 }
+let pendingBoxType = null
+let opening = false
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+async function init() {
+  const me = await fetch('/api/me').then(r => r.json()).catch(() => ({}))
+  if (!me.loggedIn) { location.href = '/index.html'; return }
+  document.getElementById('topbar-user').textContent = `👤 ${me.firstName || 'นักเรียน'}`
+
+  await loadInventory()
+  loadHistory()
+}
+
+async function loadInventory() {
+  const data = await fetch('/api/box/inventory', { credentials: 'include' }).then(r => r.json()).catch(() => ({ silver: 0, gold: 0 }))
+  inventory = { silver: data.silver ?? 0, gold: data.gold ?? 0 }
+  renderInventory()
+}
+
+function renderInventory() {
+  document.getElementById('silver-count').textContent = inventory.silver
+  document.getElementById('gold-count').textContent   = inventory.gold
+
+  const silverCard = document.getElementById('silver-card')
+  const goldCard   = document.getElementById('gold-card')
+  silverCard.classList.toggle('empty', inventory.silver < 1)
+  goldCard.classList.toggle('empty',   inventory.gold   < 1)
+}
+
+// ─── Click box card ───────────────────────────────────────────────────────────
+function clickBox(type) {
+  if (inventory[type] < 1) return
+  pendingBoxType = type
+  opening = false
+
+  const modal = document.getElementById('open-modal')
+  const boxEl = document.getElementById('opening-box')
+  boxEl.textContent = type === 'silver' ? '🪙' : '🥇'
+  boxEl.classList.remove('shaking')
+
+  document.getElementById('phase-box').style.display = ''
+  document.getElementById('phase-reward').classList.remove('show')
+  document.getElementById('confetti-container').innerHTML = ''
+  modal.classList.add('show')
+}
+
+// ─── Open box (click animation) ───────────────────────────────────────────────
+async function openBox() {
+  if (opening) return
+  opening = true
+
+  const boxEl = document.getElementById('opening-box')
+  boxEl.classList.add('shaking')
+
+  // call API
+  const res = await fetch('/api/box/open', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ boxType: pendingBoxType }),
+  }).then(r => r.json()).catch(err => ({ error: err.message }))
+
+  if (res.error) {
+    alert(res.error)
+    closeModal()
+    return
+  }
+
+  // อัปเดต inventory
+  inventory = { silver: res.inventory.silver, gold: res.inventory.gold }
+  renderInventory()
+
+  // รอ animation shake เสร็จ (0.8s)
+  setTimeout(() => showReward(res.reward), 900)
+}
+
+// ─── Show reward ──────────────────────────────────────────────────────────────
+const REWARD_MAP = {
+  xp:            { icon: '⭐', label: 'XP',            color: 'xp',           fmt: a => `+${a} XP` },
+  parent_points: { icon: '💚', label: 'Parent Points', color: 'parent_points', fmt: a => `+${a} pts` },
+  ticket:        { icon: '🎟️', label: 'Ticket',        color: 'ticket',        fmt: a => `×${a}` },
+  gold_box:      { icon: '🥇', label: 'Gold Box!',     color: 'gold_box',      fmt: a => `×${a}` },
+  digital:       { icon: '🎮', label: 'ของรางวัลดิจิทัล', color: 'digital',   fmt: _ => '' },
+  physical:      { icon: '🎁', label: 'ของรางวัลพิเศษ!', color: 'physical',  fmt: _ => '' },
+}
+
+function showReward(reward) {
+  document.getElementById('phase-box').style.display = 'none'
+
+  const map = REWARD_MAP[reward.type] || { icon: '🎁', label: reward.type, color: 'ticket', fmt: a => a || '' }
+  document.getElementById('reward-icon').textContent   = map.icon
+  document.getElementById('reward-title').textContent  = map.label
+  const amountEl = document.getElementById('reward-amount')
+  amountEl.textContent  = map.fmt(reward.amount)
+  amountEl.className    = `reward-amount ${map.color}`
+
+  const descEl = document.getElementById('reward-desc')
+  if (reward.rewardName) {
+    descEl.textContent = reward.rewardName + (reward.rewardDesc ? ` — ${reward.rewardDesc}` : '')
+  } else if (reward.fallback) {
+    descEl.textContent = 'ของรางวัลหมด — ได้รับ Ticket แทน'
+  } else {
+    descEl.textContent = ''
+  }
+
+  document.getElementById('phase-reward').classList.add('show')
+
+  // Confetti!
+  spawnConfetti(reward.type)
+
+  // reload history
+  loadHistory()
+}
+
+// ─── Confetti ─────────────────────────────────────────────────────────────────
+function spawnConfetti(type) {
+  const colors = {
+    xp: ['#60a5fa','#3b82f6','#93c5fd'],
+    parent_points: ['#34d399','#10b981','#6ee7b7'],
+    ticket: ['#fbbf24','#f59e0b','#fde68a'],
+    gold_box: ['#fbbf24','#d97706','#fef3c7'],
+    digital: ['#a78bfa','#7c3aed','#ddd6fe'],
+    physical: ['#f87171','#ef4444','#fecaca'],
+  }
+  const palette = colors[type] || ['#3b82f6','#fbbf24','#34d399']
+  const container = document.getElementById('confetti-container')
+  for (let i = 0; i < 24; i++) {
+    const el = document.createElement('div')
+    el.className = 'confetti-piece'
+    el.style.left   = Math.random() * 100 + 'vw'
+    el.style.top    = (50 + Math.random() * 30) + 'vh'
+    el.style.background = palette[Math.floor(Math.random() * palette.length)]
+    el.style.transform = `rotate(${Math.random()*360}deg)`
+    el.style.animationDelay = (Math.random() * 0.5) + 's'
+    el.style.animationDuration = (1 + Math.random() * 1) + 's'
+    container.appendChild(el)
+  }
+}
+
+// ─── Close modal ──────────────────────────────────────────────────────────────
+function closeModal() {
+  document.getElementById('open-modal').classList.remove('show')
+  document.getElementById('confetti-container').innerHTML = ''
+  opening = false
+}
+
+// ─── History ──────────────────────────────────────────────────────────────────
+async function loadHistory() {
+  const data = await fetch('/api/box/history', { credentials: 'include' }).then(r => r.json()).catch(() => ({ history: [] }))
+  const list = document.getElementById('history-list')
+
+  if (!data.history?.length) {
+    list.innerHTML = '<div style="color:#475569;font-size:13px;text-align:center;padding:20px">ยังไม่มีประวัติ — ทำ Daily Mission เพื่อรับกล่องเงิน!</div>'
+    return
+  }
+
+  const map = REWARD_MAP
+  list.innerHTML = data.history.map(log => {
+    const r = map[log.rewardType] || { icon: '🎁', label: log.rewardType }
+    const amount = log.rewardAmount ? ` ×${log.rewardAmount}` : ''
+    const boxIcon = log.boxType === 'gold' ? '🥇' : '🪙'
+    const timeStr = new Date(log.createdAt).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })
+    return `
+      <div class="history-row">
+        <div class="h-box-icon">${boxIcon}</div>
+        <div class="h-reward">
+          <div class="h-reward-type">${r.icon} ${r.label}${amount}</div>
+          <div class="h-reward-amount">${log.boxType === 'gold' ? 'กล่องทอง' : 'กล่องเงิน'}</div>
+        </div>
+        <div class="h-time">${timeStr}</div>
+      </div>`
+  }).join('')
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+init()
+</script>
+</body>
+</html>

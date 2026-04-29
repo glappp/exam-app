@@ -175,6 +175,7 @@ app.use('/api/questions', require('./routes/api/question-report'));
 app.use('/api/feedback',  require('./routes/api/feedback'));
 app.use('/api/mission',      require('./routes/api/mission'));
 app.use('/api/leaderboard',  require('./routes/api/leaderboard'));
+app.use('/api/box',          require('./routes/api/box'));
 
 // GET /api/schools?province=X&district=Y — public, no auth
 app.get('/api/schools', async (req, res) => {

@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ภารกิจประจำวัน</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f4ff; min-height: 100vh; }
+
+  /* ── Header ── */
+  .top-bar {
+    background: #1e3a8a; color: #fff;
+    padding: 14px 20px; display: flex; align-items: center; gap: 12px;
+  }
+  .top-bar a { color: #93c5fd; text-decoration: none; font-size: 14px; }
+  .top-bar h1 { font-size: 18px; flex: 1; }
+  .ticket-badge {
+    background: #fbbf24; color: #1e3a8a; padding: 4px 12px;
+    border-radius: 99px; font-size: 13px; font-weight: 700;
+  }
+
+  /* ── Cards ── */
+  .container { max-width: 540px; margin: 0 auto; padding: 20px 16px; }
+  .mission-card {
+    background: #fff; border-radius: 16px; padding: 20px;
+    margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,.08);
+    border-left: 5px solid #e5e7eb; transition: border-color .2s;
+  }
+  .mission-card.done   { border-left-color: #22c55e; }
+  .mission-card.active { border-left-color: #3b82f6; }
+  .mission-card.locked { opacity: .6; }
+
+  .card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .card-icon   { font-size: 28px; }
+  .card-title  { font-size: 16px; font-weight: 700; color: #1e3a8a; }
+  .card-sub    { font-size: 12px; color: #6b7280; margin-top: 2px; }
+
+  .card-stats  { display: flex; gap: 16px; margin-bottom: 14px; }
+  .stat { flex: 1; text-align: center; background: #f8fafc; border-radius: 8px; padding: 8px; }
+  .stat-val { font-size: 20px; font-weight: 800; color: #1e3a8a; }
+  .stat-label { font-size: 11px; color: #6b7280; margin-top: 2px; }
+
+  .btn-start {
+    width: 100%; padding: 12px; border: none; border-radius: 10px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    background: #3b82f6; color: #fff; transition: background .15s;
+  }
+  .btn-start:hover:not(:disabled) { background: #2563eb; }
+  .btn-start:disabled { background: #9ca3af; cursor: default; }
+  .btn-start.done     { background: #22c55e; }
+
+  /* ── Quiz Overlay ── */
+  #quiz-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,.55); z-index: 9000;
+    align-items: center; justify-content: center;
+  }
+  #quiz-overlay.open { display: flex; }
+
+  #quiz-box {
+    background: #fff; border-radius: 20px; width: 94%; max-width: 560px;
+    max-height: 90vh; overflow-y: auto;
+    padding: 24px; box-shadow: 0 24px 60px rgba(0,0,0,.25);
+    animation: slide-up .2s ease;
+  }
+  @keyframes slide-up {
+    from { opacity:0; transform: translateY(20px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+
+  .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .quiz-title  { font-size: 15px; font-weight: 700; color: #1e3a8a; }
+  .quiz-progress { font-size: 13px; color: #6b7280; }
+  .btn-close   { background: none; border: none; font-size: 22px; cursor: pointer; color: #6b7280; }
+
+  /* Timer bar */
+  .timer-wrap { margin-bottom: 12px; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+  .timer-bar  { height: 100%; background: #3b82f6; transition: width .1s linear; border-radius: 3px; }
+  .timer-bar.warn { background: #f59e0b; }
+  .timer-bar.danger { background: #ef4444; }
+
+  /* Question */
+  .q-text { font-size: 15px; line-height: 1.6; color: #111; margin-bottom: 14px; }
+  .q-img  { width: 100%; max-height: 200px; object-fit: contain; border-radius: 8px; margin-bottom: 12px; }
+
+  .choices { display: flex; flex-direction: column; gap: 8px; }
+  .choice-btn {
+    width: 100%; padding: 11px 14px; text-align: left; border-radius: 10px;
+    border: 1.5px solid #e5e7eb; background: #f9fafb;
+    font-size: 14px; cursor: pointer; transition: all .15s; color: #111;
+  }
+  .choice-btn:hover:not(:disabled) { background: #eff6ff; border-color: #3b82f6; }
+  .choice-btn.correct  { background: #dcfce7; border-color: #22c55e; color: #166534; font-weight: 700; }
+  .choice-btn.wrong    { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+  .choice-btn.reveal   { background: #dcfce7; border-color: #22c55e; }
+
+  .feedback-box { margin-top: 10px; padding: 10px 14px; border-radius: 8px; font-size: 13px; }
+  .feedback-box.correct { background: #dcfce7; color: #166534; }
+  .feedback-box.wrong   { background: #fee2e2; color: #991b1b; }
+
+  .btn-next {
+    margin-top: 14px; width: 100%; padding: 12px;
+    background: #3b82f6; color: #fff; border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 700; cursor: pointer; display: none;
+  }
+  .btn-next:hover { background: #2563eb; }
+
+  /* Summary */
+  .summary { text-align: center; padding: 16px 0 8px; }
+  .summary-score { font-size: 48px; font-weight: 900; color: #1e3a8a; }
+  .summary-label { font-size: 14px; color: #6b7280; margin-bottom: 16px; }
+  .summary-rewards { display: flex; gap: 12px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+  .reward-chip {
+    background: #eff6ff; border: 1.5px solid #bfdbfe;
+    border-radius: 99px; padding: 6px 16px; font-size: 13px; font-weight: 700; color: #1e40af;
+  }
+  .btn-done {
+    padding: 11px 32px; background: #22c55e; color: #fff;
+    border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+
+  /* Weekly — all at once */
+  .weekly-timer { font-size: 13px; color: #6b7280; text-align: center; margin-bottom: 14px; }
+  .weekly-timer span { font-size: 18px; font-weight: 800; color: #1e3a8a; }
+  .q-block { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #e5e7eb; }
+  .q-num  { font-size: 12px; font-weight: 700; color: #6b7280; margin-bottom: 6px; }
+  .btn-submit-weekly {
+    width: 100%; padding: 13px; background: #1e3a8a; color: #fff;
+    border: none; border-radius: 10px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 8px;
+  }
+  .btn-submit-weekly:hover { background: #1e40af; }
+  .w-result.correct { color: #166534; font-weight: 700; }
+  .w-result.wrong   { color: #991b1b; }
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a href="/dashboard.html">← กลับ</a>
+  <h1>🎯 ภารกิจ</h1>
+  <div class="ticket-badge">🎟️ <span id="ticket-count">-</span> Ticket</div>
+</div>
+
+<div class="container">
+
+  <!-- Quick Quiz Card -->
+  <div class="mission-card" id="card-qq">
+    <div class="card-header">
+      <div class="card-icon">⚡</div>
+      <div>
+        <div class="card-title">Quick Quiz</div>
+        <div class="card-sub">ทบทวนสิ่งที่เรียนมา · 5 ข้อ · ไม่จำกัดเวลา</div>
+      </div>
+    </div>
+    <div class="card-stats">
+      <div class="stat"><div class="stat-val" id="qq-sets">-</div><div class="stat-label">ชุดวันนี้ (max 3)</div></div>
+      <div class="stat"><div class="stat-val" id="qq-xp">-</div><div class="stat-label">XP วันนี้</div></div>
+      <div class="stat"><div class="stat-val" id="qq-sub">-</div><div class="stat-label">Subtopic ผ่านแล้ว</div></div>
+    </div>
+    <button class="btn-start" id="btn-qq">⚡ เริ่ม Quick Quiz</button>
+  </div>
+
+  <!-- Daily Mission Card -->
+  <div class="mission-card" id="card-daily">
+    <div class="card-header">
+      <div class="card-icon">📅</div>
+      <div>
+        <div class="card-title">Daily Mission</div>
+        <div class="card-sub">ภารกิจประจำวัน · 5 ข้อ · จับเวลาข้อละ 1 นาที</div>
+      </div>
+    </div>
+    <div class="card-stats">
+      <div class="stat"><div class="stat-val" id="daily-correct">-</div><div class="stat-label">ถูก / 5 ข้อ</div></div>
+      <div class="stat"><div class="stat-val" id="daily-xp">-</div><div class="stat-label">XP ได้รับ</div></div>
+      <div class="stat"><div class="stat-val" id="daily-ticket">-</div><div class="stat-label">Ticket</div></div>
+    </div>
+    <button class="btn-start" id="btn-daily">📅 เริ่ม Daily Mission</button>
+  </div>
+
+  <!-- Weekly Challenge Card -->
+  <div class="mission-card" id="card-weekly">
+    <div class="card-header">
+      <div class="card-icon">🏆</div>
+      <div>
+        <div class="card-title">Weekly Challenge</div>
+        <div class="card-sub">ข้อสอบสัปดาห์นี้ · 10 ข้อ · 20 นาที</div>
+      </div>
+    </div>
+    <div class="card-stats">
+      <div class="stat"><div class="stat-val" id="w-best">-</div><div class="stat-label">คะแนนสูงสุด / 10</div></div>
+      <div class="stat"><div class="stat-val" id="w-xp">-</div><div class="stat-label">XP ที่ได้</div></div>
+      <div class="stat"><div class="stat-val" id="w-att">-</div><div class="stat-label">ครั้งที่ทำ</div></div>
+    </div>
+    <button class="btn-start" id="btn-weekly">🏆 เริ่ม Weekly Challenge</button>
+  </div>
+
+</div>
+
+<!-- Quiz Overlay -->
+<div id="quiz-overlay">
+  <div id="quiz-box">
+    <div class="quiz-header">
+      <div class="quiz-title" id="quiz-title">Quiz</div>
+      <div class="quiz-progress" id="quiz-prog"></div>
+      <button class="btn-close" id="btn-close-quiz">✕</button>
+    </div>
+    <div id="quiz-body"></div>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentMode = null  // 'qq' | 'daily' | 'weekly'
+let questions   = []
+let answerKey   = []
+let qIndex      = 0
+let results     = []
+let timerInterval = null
+let timeSec     = 0
+let weeklyAnswers = {}
+let weeklyTimeLeft = 0
+let weeklyTimer = null
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function init() {
+  const st = await fetch('/api/mission/status').then(r => r.json())
+
+  document.getElementById('ticket-count').textContent = st.ticketBalance
+
+  // Quick Quiz
+  const qq = st.quickQuiz
+  document.getElementById('qq-sets').textContent = `${qq.setsToday}/3`
+  document.getElementById('qq-xp').textContent   = qq.xpToday
+  document.getElementById('qq-sub').textContent  = qq.subtopicCount
+  const btnQQ = document.getElementById('btn-qq')
+  const cardQQ = document.getElementById('card-qq')
+  if (!qq.unlocked) {
+    btnQQ.disabled = true
+    btnQQ.textContent = `🔒 ต้องผ่าน ${5 - qq.subtopicCount} subtopic อีก`
+    cardQQ.classList.add('locked')
+  } else if (qq.setsToday >= 3) {
+    btnQQ.textContent = '✅ ทำครบ 3 ชุดแล้ว (ทำต่อได้แต่ไม่ได้ XP)'
+    cardQQ.classList.add('done')
+  }
+
+  // Daily
+  const d = st.daily
+  document.getElementById('daily-correct').textContent = d.done ? `${d.correctCount}/5` : '-'
+  document.getElementById('daily-xp').textContent      = d.xpEarned
+  document.getElementById('daily-ticket').textContent  = d.done ? '+1 🎟️' : '-'
+  const btnD = document.getElementById('btn-daily')
+  const cardD = document.getElementById('card-daily')
+  if (d.done) {
+    btnD.disabled = true
+    btnD.textContent = '✅ ทำวันนี้แล้ว'
+    btnD.classList.add('done')
+    cardD.classList.add('done')
+  }
+
+  // Weekly
+  const w = st.weekly
+  document.getElementById('w-best').textContent = w.attempts > 0 ? `${w.bestScore}/10` : '-'
+  document.getElementById('w-xp').textContent   = w.xpEarned
+  document.getElementById('w-att').textContent  = w.attempts
+  const btnW = document.getElementById('btn-weekly')
+  const cardW = document.getElementById('card-weekly')
+  if (w.bestScore >= 8) {
+    cardW.classList.add('done')
+    btnW.textContent = '✅ ผ่านแล้ว (ทำซ้ำได้)'
+  }
+}
+
+// ── Quick Quiz ────────────────────────────────────────────────────────────────
+document.getElementById('btn-qq').addEventListener('click', async () => {
+  const data = await fetch('/api/mission/quick-quiz').then(r => r.json()).catch(e => ({ error: e.message }))
+  if (data.error) { alert(data.error); return }
+
+  currentMode = 'qq'
+  questions   = data.questions
+  answerKey   = data.answers   // [{ id, answer, shortAnswer }]
+  qIndex      = 0
+  results     = []
+  openQuiz('⚡ Quick Quiz', `ชุดที่ ${data.setNumber}`)
+  showQQQuestion()
+})
+
+function showQQQuestion() {
+  if (qIndex >= questions.length) { showQQSummary(); return }
+  const q = questions[qIndex]
+  document.getElementById('quiz-prog').textContent = `${qIndex + 1} / ${questions.length}`
+  document.getElementById('quiz-body').innerHTML = buildQuestionHTML(q, false)
+  document.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.addEventListener('click', () => onQQAnswer(btn.dataset.val, q))
+  })
+}
+
+function onQQAnswer(selected, q) {
+  const key = answerKey.find(a => a.id === q.id)
+  const correct = checkAnswer(selected, key)
+  results.push({ questionId: q.id, correct })
+  revealChoices(selected, key?.answer || key?.shortAnswer?.[0])
+
+  document.getElementById('quiz-body').insertAdjacentHTML('beforeend',
+    `<div class="feedback-box ${correct ? 'correct' : 'wrong'}">
+      ${correct ? '✅ ถูกต้อง!' : '❌ ผิด — คำตอบที่ถูก: <strong>${key?.answer || key?.shortAnswer?.[0] || '-'}</strong>'}
+    </div>`)
+
+  const btn = document.createElement('button')
+  btn.className = 'btn-next'
+  btn.textContent = qIndex < questions.length - 1 ? 'ข้อต่อไป →' : 'ดูผล'
+  btn.style.display = 'block'
+  btn.addEventListener('click', () => { qIndex++; showQQQuestion() })
+  document.getElementById('quiz-body').appendChild(btn)
+}
+
+async function showQQSummary() {
+  const data = await fetch('/api/mission/quick-quiz/submit', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', body: JSON.stringify({ results })
+  }).then(r => r.json())
+
+  showSummary(data.correct, 5, data.xpEarned, 0,
+    data.earnXp ? null : 'ทำเกิน 3 ชุดแล้ว ไม่ได้ XP')
+}
+
+// ── Daily Mission ─────────────────────────────────────────────────────────────
+document.getElementById('btn-daily').addEventListener('click', async () => {
+  const data = await fetch('/api/mission/daily').then(r => r.json()).catch(e => ({ error: e.message }))
+  if (data.error) { alert(data.error); return }
+
+  currentMode = 'daily'
+  questions   = data.questions
+  answerKey   = data.answerKey
+  qIndex      = 0
+  results     = []
+  openQuiz('📅 Daily Mission', '5 ข้อ จับเวลา')
+  showDailyQuestion()
+})
+
+function showDailyQuestion() {
+  if (qIndex >= questions.length) { submitDaily(); return }
+  const q = questions[qIndex]
+  document.getElementById('quiz-prog').textContent = `${qIndex + 1} / ${questions.length}`
+  document.getElementById('quiz-body').innerHTML =
+    `<div class="timer-wrap"><div class="timer-bar" id="tbar" style="width:100%"></div></div>` +
+    buildQuestionHTML(q, false)
+
+  timeSec = 0
+  startTimer(60)
+
+  document.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.addEventListener('click', () => onDailyAnswer(btn.dataset.val, q))
+  })
+}
+
+function startTimer(limitSec) {
+  clearInterval(timerInterval)
+  timeSec = 0
+  const bar = document.getElementById('tbar')
+  timerInterval = setInterval(() => {
+    timeSec++
+    if (!bar) { clearInterval(timerInterval); return }
+    const pct = Math.max(0, (1 - timeSec / limitSec) * 100)
+    bar.style.width = pct + '%'
+    if (pct < 33) bar.className = 'timer-bar danger'
+    else if (pct < 66) bar.className = 'timer-bar warn'
+    else bar.className = 'timer-bar'
+  }, 1000)
+}
+
+function onDailyAnswer(selected, q) {
+  clearInterval(timerInterval)
+  const recordedTime = timeSec
+  const key  = answerKey.find(a => a.id === q.id)
+  const correct = checkAnswer(selected, key)
+  results.push({ questionId: q.id, selectedAnswer: selected, timeSec: recordedTime, correct })
+  revealChoices(selected, key?.answer || key?.shortAnswer?.[0])
+
+  const xp = correct ? Math.round(10 * Math.max(1, 2 - recordedTime / 60)) : 0
+  document.getElementById('quiz-body').insertAdjacentHTML('beforeend',
+    `<div class="feedback-box ${correct ? 'correct' : 'wrong'}">
+      ${correct ? `✅ ถูกต้อง! <strong>+${xp} XP</strong> (${recordedTime} วิ)` :
+        `❌ ผิด — คำตอบที่ถูก: <strong>${key?.answer || key?.shortAnswer?.[0] || '-'}</strong>`}
+    </div>`)
+
+  const btn = document.createElement('button')
+  btn.className = 'btn-next'
+  btn.textContent = qIndex < questions.length - 1 ? 'ข้อต่อไป →' : 'ส่งคำตอบ'
+  btn.style.display = 'block'
+  btn.addEventListener('click', () => { qIndex++; showDailyQuestion() })
+  document.getElementById('quiz-body').appendChild(btn)
+}
+
+async function submitDaily() {
+  const payload = results.map(r => ({
+    questionId: r.questionId, selectedAnswer: r.selectedAnswer, timeSec: r.timeSec
+  }))
+  const data = await fetch('/api/mission/daily/submit', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', body: JSON.stringify({ answers: payload })
+  }).then(r => r.json())
+
+  showSummary(data.correct, 5, data.xpEarned, data.ticketEarned)
+}
+
+// ── Weekly Challenge ──────────────────────────────────────────────────────────
+document.getElementById('btn-weekly').addEventListener('click', async () => {
+  const data = await fetch('/api/mission/weekly').then(r => r.json()).catch(e => ({ error: e.message }))
+  if (data.error) { alert(data.error); return }
+
+  currentMode    = 'weekly'
+  questions      = data.questions
+  weeklyAnswers  = {}
+  weeklyTimeLeft = data.timeLimitSec
+
+  openQuiz('🏆 Weekly Challenge', `${data.attempts > 0 ? `ครั้งที่ ${data.attempts + 1}` : 'สัปดาห์นี้'}`)
+  renderWeeklyQuestions()
+  startWeeklyTimer()
+})
+
+function renderWeeklyQuestions() {
+  const body = document.getElementById('quiz-body')
+  body.innerHTML = `<div class="weekly-timer">เวลาที่เหลือ: <span id="w-timer">20:00</span></div>` +
+    questions.map((q, i) => `
+      <div class="q-block" id="qb-${i}">
+        <div class="q-num">ข้อ ${i + 1}</div>
+        ${q.image ? `<img class="q-img" src="/uploads/${q.image}">` : ''}
+        <div class="q-text">${q.textTh}</div>
+        <div class="choices" id="choices-${i}">
+          ${Array.isArray(q.choices) ? q.choices.map((c, ci) => `
+            <button class="choice-btn" data-qi="${i}" data-qid="${q.id}" data-val="${'abcd'[ci]}"
+              onclick="weeklySelect(this)">${'ABCD'[ci]}. ${c.textTh || c}</button>
+          `).join('') : `<input type="text" id="short-${i}" placeholder="คำตอบ" style="border:1.5px solid #e5e7eb;border-radius:8px;padding:9px;font-size:14px;width:100%"
+            oninput="weeklyAnswers['${q.id}'] = this.value">`}
+        </div>
+      </div>
+    `).join('') +
+    `<button class="btn-submit-weekly" onclick="submitWeekly()">📤 ส่งคำตอบทั้งหมด</button>`
+}
+
+function weeklySelect(btn) {
+  const qi = btn.dataset.qi
+  document.querySelectorAll(`#choices-${qi} .choice-btn`).forEach(b => b.style.fontWeight = '')
+  btn.style.fontWeight = '700'
+  btn.style.background = '#eff6ff'
+  btn.style.borderColor = '#3b82f6'
+  weeklyAnswers[btn.dataset.qid] = btn.dataset.val
+}
+
+function startWeeklyTimer() {
+  clearInterval(weeklyTimer)
+  weeklyTimer = setInterval(() => {
+    weeklyTimeLeft--
+    const el = document.getElementById('w-timer')
+    if (!el) { clearInterval(weeklyTimer); return }
+    const m = String(Math.floor(weeklyTimeLeft / 60)).padStart(2, '0')
+    const s = String(weeklyTimeLeft % 60).padStart(2, '0')
+    el.textContent = `${m}:${s}`
+    if (weeklyTimeLeft <= 0) { clearInterval(weeklyTimer); submitWeekly() }
+  }, 1000)
+}
+
+async function submitWeekly() {
+  clearInterval(weeklyTimer)
+  const answers = questions.map(q => ({
+    questionId: q.id,
+    selectedAnswer: weeklyAnswers[q.id] || null
+  }))
+
+  const data = await fetch('/api/mission/weekly/submit', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    credentials: 'include', body: JSON.stringify({ answers })
+  }).then(r => r.json())
+
+  // แสดงผล inline
+  data.detail.forEach((d, i) => {
+    const btns = document.querySelectorAll(`#choices-${i} .choice-btn`)
+    btns.forEach(b => {
+      b.disabled = true
+      b.style.fontWeight = ''
+      b.style.background = ''
+      b.style.borderColor = ''
+    })
+    const qb = document.getElementById(`qb-${i}`)
+    qb.insertAdjacentHTML('beforeend',
+      `<div class="feedback-box ${d.correct ? 'correct' : 'wrong'}" style="margin-top:8px">
+        ${d.correct ? '✅ ถูก' : '❌ ผิด'}
+      </div>`)
+  })
+
+  document.querySelector('.btn-submit-weekly')?.remove()
+  document.getElementById('quiz-body').insertAdjacentHTML('beforeend',
+    `<div class="summary" style="margin-top:16px">
+      <div class="summary-score">${data.correct}/10</div>
+      <div class="summary-label">${data.message}</div>
+      ${data.xpEarned > 0 ? `<div class="reward-chip">+${data.xpEarned} XP</div>` : ''}
+      <button class="btn-done" onclick="closeQuiz()" style="margin-top:16px">ปิด</button>
+    </div>`)
+}
+
+// ── Shared Quiz Helpers ───────────────────────────────────────────────────────
+function openQuiz(title, sub) {
+  document.getElementById('quiz-title').textContent = title
+  document.getElementById('quiz-prog').textContent  = sub
+  document.getElementById('quiz-body').innerHTML    = ''
+  document.getElementById('quiz-overlay').classList.add('open')
+}
+
+function closeQuiz() {
+  clearInterval(timerInterval)
+  clearInterval(weeklyTimer)
+  document.getElementById('quiz-overlay').classList.remove('open')
+  init()
+}
+
+document.getElementById('btn-close-quiz').addEventListener('click', () => {
+  if (currentMode === 'daily' && qIndex > 0) {
+    if (!confirm('ออกจาก Daily Mission? ความก้าวหน้าจะหาย')) return
+  }
+  closeQuiz()
+})
+
+function buildQuestionHTML(q, disabled) {
+  const choices = Array.isArray(q.choices)
+    ? q.choices.map((c, i) => `
+        <button class="choice-btn" data-val="${'abcd'[i]}" ${disabled ? 'disabled' : ''}>
+          ${'ABCD'[i]}. ${c.textTh || c}
+        </button>`).join('')
+    : `<input type="text" id="short-input" placeholder="กรอกคำตอบ"
+        style="border:1.5px solid #e5e7eb;border-radius:8px;padding:9px;font-size:14px;width:100%">`
+
+  return `
+    ${q.image ? `<img class="q-img" src="/uploads/${q.image}">` : ''}
+    <div class="q-text">${q.textTh}</div>
+    <div class="choices">${choices}</div>
+  `
+}
+
+function revealChoices(selected, correctAnswer) {
+  document.querySelectorAll('.choice-btn').forEach(btn => {
+    btn.disabled = true
+    if (btn.dataset.val === correctAnswer)  btn.classList.add('correct')
+    else if (btn.dataset.val === selected)  btn.classList.add('wrong')
+  })
+}
+
+function checkAnswer(selected, key) {
+  if (!selected || !key) return false
+  const s = String(selected).trim().toLowerCase()
+  if (key.answer) return s === String(key.answer).trim().toLowerCase()
+  if (Array.isArray(key.shortAnswer)) return key.shortAnswer.some(a => s === String(a).trim().toLowerCase())
+  return false
+}
+
+function showSummary(correct, total, xpEarned, ticketEarned, note) {
+  document.getElementById('quiz-body').innerHTML = `
+    <div class="summary">
+      <div class="summary-score">${correct}/${total}</div>
+      <div class="summary-label">${note || (correct === total ? '🎉 เยี่ยมมาก!' : `ถูก ${correct} ข้อ`)}</div>
+      <div class="summary-rewards">
+        ${xpEarned > 0 ? `<div class="reward-chip">+${xpEarned} XP</div>` : ''}
+        ${ticketEarned > 0 ? `<div class="reward-chip">+${ticketEarned} 🎟️ Ticket</div>` : ''}
+      </div>
+      <button class="btn-done" onclick="closeQuiz()">ปิด</button>
+    </div>
+  `
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+init()
+</script>
+<script src="/feedback-widget.js"></script>
+</body>
+</html>

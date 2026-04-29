@@ -94,7 +94,7 @@ module.exports = function (io) {
 
   function createRoom(hostSocket, playerName, tables) {
     let code;
-    do { code = Math.random().toString(36).slice(2, 8).toUpperCase(); }
+    do { code = String(Math.floor(100000 + Math.random() * 900000)); }
     while (rooms.has(code));
 
     const room = {
@@ -137,6 +137,11 @@ module.exports = function (io) {
     });
   }
 
+  const SPEED_TIME_LIMIT = 20  // วินาทีสำหรับคำนวณ speed bonus
+  function speedMultiplier(timeSec) {
+    return Math.max(0.5, 1 - Math.min(timeSec, SPEED_TIME_LIMIT) / SPEED_TIME_LIMIT * 0.5)
+  }
+
   function sendQuestion(room, player) {
     if (player.frozen && player.frozenTurns > 0) {
       player.frozenTurns--;
@@ -153,6 +158,7 @@ module.exports = function (io) {
     const gap = leaderPos - player.position;
     const q = generateQuestion(room.tables, gap);
     player.currentQ = q;
+    player.qSentAt = Date.now()   // บันทึกเวลาส่งโจทย์
     io.to(player.socketId).emit('question:new', { q, position: player.position });
   }
 
@@ -200,7 +206,7 @@ module.exports = function (io) {
   function triggerSpecialEvent(room) {
     if (room.specialEvent) return; // อยู่ระหว่าง special แล้ว
     const q = generateSpecialQuestion();
-    room.specialEvent = { q, resolved: false };
+    room.specialEvent = { q, resolved: false, sentAt: Date.now() };
     room.specialCooldown = 0;
 
     io.to(room.code).emit('special:event', {
@@ -234,7 +240,7 @@ module.exports = function (io) {
 
     // เข้าห้อง
     socket.on('room:join', ({ code, playerName }) => {
-      const room = rooms.get(code?.toUpperCase());
+      const room = rooms.get(String(code || '').trim());
       if (!room) return socket.emit('room:error', { error: 'ไม่พบห้อง' });
       if (room.state !== 'lobby') return socket.emit('room:error', { error: 'เกมเริ่มแล้ว' });
       if (room.players.length >= 4) return socket.emit('room:error', { error: 'ห้องเต็ม (สูงสุด 4 คน)' });
@@ -255,14 +261,14 @@ module.exports = function (io) {
         totalAnswered: 0,
         currentQ: null
       });
-      socket.join(code.toUpperCase());
+      socket.join(String(code).trim());
       socket.emit('room:joined', { code: room.code, mySocketId: socket.id });
       broadcastRoom(room);
     });
 
     // host เริ่มเกม
     socket.on('game:start', ({ code }) => {
-      const room = rooms.get(code?.toUpperCase());
+      const room = rooms.get(String(code || '').trim());
       if (!room || room.hostId !== socket.id) return;
       if (room.players.length < 2) return socket.emit('room:error', { error: 'ต้องมีผู้เล่น 2 คนขึ้นไป' });
 
@@ -278,7 +284,7 @@ module.exports = function (io) {
 
     // ผู้เล่นตอบคำถาม
     socket.on('answer:submit', ({ code, questionId, choiceIndex }) => {
-      const room = rooms.get(code?.toUpperCase());
+      const room = rooms.get(String(code || '').trim());
       if (!room || room.state !== 'playing') return;
 
       const player = room.players.find(p => p.socketId === socket.id);
@@ -293,7 +299,9 @@ module.exports = function (io) {
 
       if (correct) {
         player.correctCount++;
-        player.score += q.type === 'blue' ? 3 : q.type === 'white' ? 1 : 1;
+        const timeSec = player.qSentAt ? (Date.now() - player.qSentAt) / 1000 : SPEED_TIME_LIMIT
+        const baseScore = q.type === 'blue' ? 20 : 10
+        player.score += Math.ceil(baseScore * speedMultiplier(timeSec))
         applyEffect(room, player, q.type);
 
         broadcastRoom(room);
@@ -333,7 +341,7 @@ module.exports = function (io) {
 
     // ผู้เล่นตอบ special event (แย่งกัน)
     socket.on('special:answer', ({ code, questionId, choiceIndex }) => {
-      const room = rooms.get(code?.toUpperCase());
+      const room = rooms.get(String(code || '').trim());
       if (!room || !room.specialEvent || room.specialEvent.resolved) return;
       if (room.specialEvent.q.id !== questionId) return;
 
@@ -348,6 +356,8 @@ module.exports = function (io) {
       room.specialEvent = null;
 
       if (correct) {
+        const sTimeSec = room.specialEvent?.sentAt ? (Date.now() - room.specialEvent.sentAt) / 1000 : SPEED_TIME_LIMIT
+        player.score += Math.ceil(15 * speedMultiplier(sTimeSec))  // special bonus score
         applyEffect(room, player, q.type);
         broadcastRoom(room);
         io.to(room.code).emit('special:resolved', {

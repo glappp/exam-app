@@ -111,6 +111,14 @@ body{font-family:'Segoe UI',sans-serif;background:#111;color:#fff;min-height:100
 .frozen-msg{text-align:center;padding:20px;color:#60a5fa;font-size:14px;font-weight:600}
 .pos-info{font-size:11px;color:#555}
 
+/* ─── Speed Timer ─────────────────────────────────── */
+.speed-bar-wrap{height:4px;background:#1a1a2e;border-radius:2px;margin:6px 0 8px;overflow:hidden}
+.speed-bar{height:4px;border-radius:2px;transition:width .1s linear,background .3s}
+.speed-fast{background:#4ade80}
+.speed-mid{background:#fbbf24}
+.speed-slow{background:#f87171}
+.speed-label{font-size:10px;text-align:right;margin-top:-4px;margin-bottom:6px;font-weight:700;min-height:14px}
+
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
 
 /* ─── SPECIAL EVENT overlay ──────────────────── */
@@ -269,8 +277,9 @@ body{font-family:'Segoe UI',sans-serif;background:#111;color:#fff;min-height:100
 
   <div id="lobby-join-area" style="display:none">
     <div style="font-size:22px;font-weight:800;margin-bottom:16px;text-align:center">เข้าห้อง</div>
-    <div class="setup-label">รหัสห้อง 6 ตัว</div>
-    <input class="lobby-join-input" id="join-code-input" placeholder="ABC123" maxlength="6">
+    <div class="setup-label">รหัสห้อง 6 หลัก</div>
+    <input class="lobby-join-input" id="join-code-input" placeholder="123456" maxlength="6"
+           inputmode="numeric" pattern="[0-9]*">
     <div class="setup-label" style="margin-top:12px">ชื่อของคุณ</div>
     <input class="name-input" id="join-name-input" placeholder="ชื่อเล่น" style="margin-top:4px">
     <div class="error-msg" id="join-error"></div>
@@ -621,6 +630,7 @@ function startLocalGame(names, count, tables) {
   runCountdown(() => {
     localGame.players.forEach((p,i) => assignQuestion(i));
     renderTrack();
+    startSpeedTimers();
     document.addEventListener('keydown', onKeyDown);
   });
 }
@@ -634,6 +644,7 @@ function assignQuestion(pi) {
   const leader = getLeaderPos();
   const gap = leader - p.pos;
   p.q = makeQuestion(localGame.tables, gap);
+  p.qStartTime = Date.now();
   renderQuestion(pi);
 }
 
@@ -702,10 +713,12 @@ function handleLocalAnswer(pi, choiceIndex) {
   });
 
   if (correct) {
+    const speedMul = getSpeedMul(p.qStartTime);
+    p.qStartTime = null;
     p.correct++;
     flashChoiceBtn(pi, choiceIndex, true);
     playCorrect();
-    applyLocalEffect(pi, q.type);
+    applyLocalEffect(pi, q.type, speedMul);
     specialCooldown++;
     renderTrack();
     if (checkWin()) return;
@@ -721,11 +734,13 @@ function handleLocalAnswer(pi, choiceIndex) {
   }
 }
 
-function applyLocalEffect(pi, type) {
+function applyLocalEffect(pi, type, speedMul=1) {
   const p = localGame.players[pi];
   const posBefore = p.pos;
-  if (type==='white') { p.pos=Math.min(p.pos+1,TRACK_LEN); p.score+=1; }
-  else if (type==='blue') { p.pos=Math.min(p.pos+2,TRACK_LEN); p.score+=2; }
+  const baseScore = type === 'blue' ? 20 : 10
+  const scoreGain = Math.ceil(baseScore * speedMul)
+  if (type==='white') { p.pos=Math.min(p.pos+1,TRACK_LEN); p.score+=scoreGain; }
+  else if (type==='blue') { p.pos=Math.min(p.pos+2,TRACK_LEN); p.score+=scoreGain; }
   else if (type==='red') {
     const leaderPos = getLeaderPos();
     const leader = localGame.players.find((pp,ii)=>ii!==pi && pp.pos===leaderPos);
@@ -733,7 +748,7 @@ function applyLocalEffect(pi, type) {
       leader.frozen=true; leader.frozenTurns=2;
       logEvent('EFFECT_RED', { by: p.name, froze: leader.name, leaderPos });
     }
-    p.pos=Math.min(p.pos+1,TRACK_LEN); p.score+=1;
+    p.pos=Math.min(p.pos+1,TRACK_LEN); p.score+=scoreGain;
   } else if (type==='chaos') {
     const others = localGame.players.filter((_,ii)=>ii!==pi);
     if (others.length>0) {
@@ -741,17 +756,17 @@ function applyLocalEffect(pi, type) {
       if (ahead.length>0) {
         const t = ahead[Math.floor(Math.random()*ahead.length)];
         const tmp=p.pos; p.pos=t.pos; t.pos=tmp;
-        p.score += 2;
+        p.score += scoreGain;
         logEvent('EFFECT_CHAOS_SWAP', { by: p.name, with: t.name, myPos: posBefore+'→'+p.pos, theirPos: p.pos+'→'+t.pos });
       } else {
         p.pos=Math.min(p.pos+2,TRACK_LEN);
-        p.score += 2;
+        p.score += scoreGain;
         logEvent('EFFECT_CHAOS_PLUS2', { by: p.name, from: posBefore, to: p.pos });
       }
     }
   }
   if (type === 'white' || type === 'blue' || type === 'red') {
-    logEvent('EFFECT_MOVE', { by: p.name, qType: type, from: posBefore, to: p.pos });
+    logEvent('EFFECT_MOVE', { by: p.name, qType: type, speedMul: speedMul.toFixed(2), from: posBefore, to: p.pos });
   }
   playMove(type);
 }
@@ -762,6 +777,7 @@ function checkWin() {
   localGame.finished = true;
   localGame.winner = winner;
   document.removeEventListener('keydown', onKeyDown);
+  stopSpeedTimers();
   playWin();
   setTimeout(()=>showResults(localGame.players), 1200);
   return true;
@@ -916,6 +932,8 @@ function buildGameUI(count) {
         <span class="type-banner-desc">เลื่อน +1</span>
       </div>
       <div class="q-text" id="qtext-${i}">...</div>
+      <div class="speed-bar-wrap"><div class="speed-bar speed-fast" id="sbar-${i}" style="width:100%"></div></div>
+      <div class="speed-label" id="slabel-${i}"></div>
       <div class="choices-grid" id="choices-${i}"></div>
     `;
     qa.appendChild(card);
@@ -1151,12 +1169,46 @@ function playAgain() {
   showPanel('panel-setup');
 }
 
+// ─── Speed Timer (global interval) ─────────────────────────
+const SPEED_TIME_LIMIT = 20  // วินาที
+let speedTimerInterval = null
+
+function startSpeedTimers() {
+  clearInterval(speedTimerInterval)
+  speedTimerInterval = setInterval(() => {
+    if (!localGame) return
+    localGame.players.forEach((p, i) => {
+      if (!p.qStartTime || p.frozen) return
+      const elapsed = (Date.now() - p.qStartTime) / 1000
+      const pct = Math.max(0, 100 - (elapsed / SPEED_TIME_LIMIT) * 100)
+      const bar = document.getElementById('sbar-' + i)
+      const lbl = document.getElementById('slabel-' + i)
+      if (!bar) return
+      bar.style.width = pct + '%'
+      if (elapsed <= 5)        { bar.className = 'speed-bar speed-fast'; if(lbl) lbl.textContent = '⚡ เร็วมาก! ×2'; }
+      else if (elapsed <= 10)  { bar.className = 'speed-bar speed-mid';  if(lbl) lbl.textContent = ''; }
+      else                     { bar.className = 'speed-bar speed-slow'; if(lbl) lbl.textContent = ''; }
+    })
+  }, 100)
+}
+
+function stopSpeedTimers() {
+  clearInterval(speedTimerInterval)
+}
+
+function getSpeedMul(startTime) {
+  if (!startTime) return 0.5
+  const t = (Date.now() - startTime) / 1000
+  return Math.max(0.5, 1 - Math.min(t, SPEED_TIME_LIMIT) / SPEED_TIME_LIMIT * 0.5)
+}
+
 // ═══════════════════════════════════════════════════════════
 // ONLINE MODE
 // ═══════════════════════════════════════════════════════════
 let socket = null;
 let onlineGame = null;
 let mySocketId = null;
+let myRoomCode = null;  // เก็บรหัสห้องของทั้ง host และ joiner
 
 function showLobbyOnline(playerName) {
   showPanel('panel-lobby');
@@ -1205,18 +1257,17 @@ function createOnlineRoom(name) {
 }
 
 function submitJoin() {
-  const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+  const code = document.getElementById('join-code-input').value.trim();
   const name = document.getElementById('join-name-input').value.trim() || 'ผู้เล่น';
-  if (!code || code.length < 4) {
-    document.getElementById('join-error').textContent = 'กรุณาใส่รหัสห้อง';
+  if (!code || code.length < 6) {
+    document.getElementById('join-error').textContent = 'กรุณาใส่รหัสห้อง 6 หลัก';
     return;
   }
   socket.emit('room:join', { code, playerName:name });
 }
 
 function hostStartGame() {
-  const code = document.getElementById('lobby-code-display').textContent;
-  socket.emit('game:start', { code });
+  socket.emit('game:start', { code: myRoomCode });
 }
 
 function leaveLobby() {
@@ -1226,6 +1277,7 @@ function leaveLobby() {
 
 function bindOnlineEvents() {
   socket.on('room:created', ({code, room}) => {
+    myRoomCode = code;  // เก็บไว้ใช้ส่งคำตอบ
     showPanel('panel-lobby');
     document.getElementById('lobby-host-area').style.display = '';
     document.getElementById('lobby-code-display').textContent = code;
@@ -1235,6 +1287,7 @@ function bindOnlineEvents() {
 
   socket.on('room:joined', ({code, mySocketId: mid}) => {
     mySocketId = mid;
+    myRoomCode = code;  // เก็บไว้ใช้ส่งคำตอบ (แทน lobby-code-display ที่เป็น '———')
     showPanel('panel-lobby');
     document.getElementById('lobby-join-area').style.display = 'none';
     document.getElementById('lobby-waiting-area').style.display = '';
@@ -1266,8 +1319,13 @@ function bindOnlineEvents() {
     if (!onlineGame) return;
     onlineGame.currentQ = q;
     onlineGame.myPos = position;
+    onlineGame.qReceivedAt = Date.now();
     const myIdx = onlineGame.players.findIndex(p=>p.socketId===socket.id);
-    if (myIdx>=0) renderOnlineQuestion(myIdx, q);
+    if (myIdx>=0) {
+      // อัปเดต qStartTime ใน localGame เพื่อ speed timer
+      if (localGame?.players?.[myIdx]) localGame.players[myIdx].qStartTime = Date.now()
+      renderOnlineQuestion(myIdx, q);
+    }
     renderOnlineTrack();
   });
 
@@ -1314,14 +1372,10 @@ function bindOnlineEvents() {
 function buildOnlineGameUI() {
   if (!onlineGame?.players) return;
   const ps = onlineGame.players;
+  // ต้อง set localGame ก่อน buildGameUI เพื่อให้ track lanes สร้างได้ถูกต้อง
+  localGame = { players: ps.map(p=>({...p, pos:0, frozen:false, q:null, qStartTime:null})), finished:false };
   buildGameUI(ps.length);
-  // replace name/color in cards
-  ps.forEach((p,i)=>{
-    const badge = document.querySelector(`#qcard-${i} .player-badge`);
-    if(badge){ badge.style.background=COLOR_CSS[p.color]+'22'; badge.style.color=COLOR_CSS[p.color]; badge.textContent=`${COLOR_EMOJIS[p.color]} ${esc(p.name)}`; }
-  });
-  // Replace localGame for track rendering
-  localGame = { players: ps.map(p=>({...p, pos:0, frozen:false})), finished:false };
+  startSpeedTimers();
 }
 
 function renderOnlineQuestion(myIdx, q) {
@@ -1351,11 +1405,9 @@ function renderOnlineTrack() {
 }
 
 function submitOnlineAnswer(ci) {
-  if (!socket || !onlineGame?.currentQ) return;
-  const code = document.getElementById('lobby-code-display').textContent ||
-               document.getElementById('join-code-input').value.trim().toUpperCase();
+  if (!socket || !onlineGame?.currentQ || !myRoomCode) return;
   socket.emit('answer:submit', {
-    code,
+    code: myRoomCode,
     questionId: onlineGame.currentQ.id,
     choiceIndex: ci
   });

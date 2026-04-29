@@ -290,20 +290,46 @@ function showQQQuestion() {
   const q = questions[qIndex]
   document.getElementById('quiz-prog').textContent = `${qIndex + 1} / ${questions.length}`
   document.getElementById('quiz-body').innerHTML = buildQuestionHTML(q, false)
-  document.querySelectorAll('.choice-btn').forEach(btn => {
-    btn.addEventListener('click', () => onQQAnswer(btn.dataset.val, q))
-  })
+
+  const hasChoices = Array.isArray(q.choices) && q.choices.length > 0
+  if (hasChoices) {
+    document.querySelectorAll('.choice-btn').forEach(btn => {
+      btn.addEventListener('click', () => onQQAnswer(btn.dataset.val, q))
+    })
+  } else {
+    // short answer: ปุ่มยืนยัน
+    const confirmBtn = document.createElement('button')
+    confirmBtn.className = 'btn-next'
+    confirmBtn.style.display = 'block'
+    confirmBtn.style.marginTop = '10px'
+    confirmBtn.textContent = 'ยืนยันคำตอบ'
+    confirmBtn.addEventListener('click', () => {
+      const val = document.getElementById('short-input')?.value || ''
+      onQQAnswer(val, q)
+    })
+    document.getElementById('quiz-body').appendChild(confirmBtn)
+  }
 }
 
 function onQQAnswer(selected, q) {
   const key = answerKey.find(a => a.id === q.id)
   const correct = checkAnswer(selected, key)
   results.push({ questionId: q.id, correct })
-  revealChoices(selected, key?.answer || key?.shortAnswer?.[0])
 
+  const hasChoices = Array.isArray(q.choices) && q.choices.length > 0
+  if (hasChoices) {
+    revealChoices(selected, key?.answer || key?.shortAnswer?.[0])
+  } else {
+    const inp = document.getElementById('short-input')
+    if (inp) inp.disabled = true
+    // ลบปุ่มยืนยันเก่า
+    document.querySelectorAll('.btn-next').forEach(b => b.remove())
+  }
+
+  const correctAns = key?.answer || (Array.isArray(key?.shortAnswer) ? key.shortAnswer[0] : null) || '-'
   document.getElementById('quiz-body').insertAdjacentHTML('beforeend',
     `<div class="feedback-box ${correct ? 'correct' : 'wrong'}">
-      ${correct ? '✅ ถูกต้อง!' : '❌ ผิด — คำตอบที่ถูก: <strong>${key?.answer || key?.shortAnswer?.[0] || '-'}</strong>'}
+      ${correct ? '✅ ถูกต้อง!' : `❌ ผิด — คำตอบที่ถูก: <strong>${escHtml(String(correctAns))}</strong>`}
     </div>`)
 
   const btn = document.createElement('button')
@@ -349,9 +375,33 @@ function showDailyQuestion() {
   timeSec = 0
   startTimer(60)
 
-  document.querySelectorAll('.choice-btn').forEach(btn => {
-    btn.addEventListener('click', () => onDailyAnswer(btn.dataset.val, q))
-  })
+  const hasChoices = Array.isArray(q.choices) && q.choices.length > 0
+  if (hasChoices) {
+    document.querySelectorAll('.choice-btn').forEach(btn => {
+      btn.addEventListener('click', () => onDailyAnswer(btn.dataset.val, q))
+    })
+  } else {
+    // short answer: ปุ่มยืนยัน (กดเมื่อพิมพ์เสร็จ หรือเมื่อ timer หมด)
+    const confirmBtn = document.createElement('button')
+    confirmBtn.className = 'btn-next'
+    confirmBtn.id = 'daily-confirm-btn'
+    confirmBtn.style.display = 'block'
+    confirmBtn.style.marginTop = '10px'
+    confirmBtn.textContent = 'ยืนยันคำตอบ'
+    confirmBtn.addEventListener('click', () => {
+      const val = document.getElementById('short-input')?.value || ''
+      onDailyAnswer(val, q)
+    })
+    document.getElementById('quiz-body').appendChild(confirmBtn)
+
+    // กด Enter เพื่อยืนยัน
+    setTimeout(() => {
+      const inp = document.getElementById('short-input')
+      if (inp) inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') confirmBtn.click()
+      })
+    }, 50)
+  }
 }
 
 function startTimer(limitSec) {
@@ -360,12 +410,19 @@ function startTimer(limitSec) {
   const bar = document.getElementById('tbar')
   timerInterval = setInterval(() => {
     timeSec++
-    if (!bar) { clearInterval(timerInterval); return }
+    const b = document.getElementById('tbar')
+    if (!b) { clearInterval(timerInterval); return }
     const pct = Math.max(0, (1 - timeSec / limitSec) * 100)
-    bar.style.width = pct + '%'
-    if (pct < 33) bar.className = 'timer-bar danger'
-    else if (pct < 66) bar.className = 'timer-bar warn'
-    else bar.className = 'timer-bar'
+    b.style.width = pct + '%'
+    if (pct < 33) b.className = 'timer-bar danger'
+    else if (pct < 66) b.className = 'timer-bar warn'
+    else b.className = 'timer-bar'
+    // หมดเวลา → บังคับส่ง (สำหรับ short answer)
+    if (timeSec >= limitSec) {
+      clearInterval(timerInterval)
+      const confirmBtn = document.getElementById('daily-confirm-btn')
+      if (confirmBtn) confirmBtn.click()
+    }
   }, 1000)
 }
 
@@ -375,13 +432,23 @@ function onDailyAnswer(selected, q) {
   const key  = answerKey.find(a => a.id === q.id)
   const correct = checkAnswer(selected, key)
   results.push({ questionId: q.id, selectedAnswer: selected, timeSec: recordedTime, correct })
-  revealChoices(selected, key?.answer || key?.shortAnswer?.[0])
 
+  const hasChoices = Array.isArray(q.choices) && q.choices.length > 0
+  if (hasChoices) {
+    revealChoices(selected, key?.answer || key?.shortAnswer?.[0])
+  } else {
+    const inp = document.getElementById('short-input')
+    if (inp) inp.disabled = true
+    document.getElementById('daily-confirm-btn')?.remove()
+  }
+
+  const correctAns = key?.answer || (Array.isArray(key?.shortAnswer) ? key.shortAnswer[0] : null) || '-'
   const xp = correct ? Math.round(10 * Math.max(1, 2 - recordedTime / 60)) : 0
   document.getElementById('quiz-body').insertAdjacentHTML('beforeend',
     `<div class="feedback-box ${correct ? 'correct' : 'wrong'}">
-      ${correct ? `✅ ถูกต้อง! <strong>+${xp} XP</strong> (${recordedTime} วิ)` :
-        `❌ ผิด — คำตอบที่ถูก: <strong>${key?.answer || key?.shortAnswer?.[0] || '-'}</strong>`}
+      ${correct
+        ? `✅ ถูกต้อง! <strong>+${xp} XP</strong> (${recordedTime} วิ)`
+        : `❌ ผิด — คำตอบที่ถูก: <strong>${escHtml(String(correctAns))}</strong>`}
     </div>`)
 
   const btn = document.createElement('button')
@@ -522,19 +589,52 @@ document.getElementById('btn-close-quiz').addEventListener('click', () => {
 })
 
 function buildQuestionHTML(q, disabled) {
-  const choices = Array.isArray(q.choices)
-    ? q.choices.map((c, i) => `
-        <button class="choice-btn" data-val="${'abcd'[i]}" ${disabled ? 'disabled' : ''}>
-          ${'ABCD'[i]}. ${c.textTh || c}
-        </button>`).join('')
-    : `<input type="text" id="short-input" placeholder="กรอกคำตอบ"
-        style="border:1.5px solid #e5e7eb;border-radius:8px;padding:9px;font-size:14px;width:100%">`
+  // ── ดึงข้อความโจทย์ ──
+  let questionText = q.textTh || ''
+  let contentImage = null
 
-  return `
-    ${q.image ? `<img class="q-img" src="/uploads/${q.image}">` : ''}
-    <div class="q-text">${q.textTh}</div>
-    <div class="choices">${choices}</div>
-  `
+  // ถ้า textTh ว่าง ให้ดึงจาก content blocks
+  if (!questionText.trim() && Array.isArray(q.content)) {
+    const textBlock = q.content.find(b => b.type === 'text' && b.value)
+    if (textBlock) questionText = textBlock.value
+    const imgBlock = q.content.find(b => b.type === 'image' && (b.url || b.src))
+    if (imgBlock) contentImage = imgBlock.url || imgBlock.src
+  }
+
+  // แปลง newline เป็น <br>
+  const questionHtml = questionText.replace(/\n/g, '<br>')
+
+  // ── รูปภาพ ──
+  let imgHtml = ''
+  if (q.image) {
+    imgHtml = `<img class="q-img" src="/uploads/${q.image}" loading="lazy">`
+  } else if (contentImage) {
+    imgHtml = `<img class="q-img" src="${contentImage}" loading="lazy">`
+  }
+
+  // ── ตัวเลือก ──
+  const hasChoices = Array.isArray(q.choices) && q.choices.length > 0
+  let choicesHtml
+
+  if (hasChoices) {
+    choicesHtml = `<div class="choices">${
+      q.choices.map((c, i) => {
+        const text = (typeof c === 'object' ? (c.textTh || c.textEn || '') : String(c)) || `ตัวเลือก ${i+1}`
+        return `<button class="choice-btn" data-val="${'abcd'[i]}" ${disabled ? 'disabled' : ''}>
+          ${'ABCD'[i]}. ${text}
+        </button>`
+      }).join('')
+    }</div>`
+  } else {
+    // short_answer / numeric → text input
+    choicesHtml = `<div class="choices">
+      <input type="text" id="short-input" placeholder="กรอกคำตอบ" autocomplete="off"
+        style="border:1.5px solid #e5e7eb;border-radius:8px;padding:10px 12px;font-size:15px;width:100%;margin-top:4px"
+        ${disabled ? 'disabled' : ''}>
+    </div>`
+  }
+
+  return `${imgHtml}<div class="q-text">${questionHtml}</div>${choicesHtml}`
 }
 
 function revealChoices(selected, correctAnswer) {
@@ -551,6 +651,11 @@ function checkAnswer(selected, key) {
   if (key.answer) return s === String(key.answer).trim().toLowerCase()
   if (Array.isArray(key.shortAnswer)) return key.shortAnswer.some(a => s === String(a).trim().toLowerCase())
   return false
+}
+
+function escHtml(str) {
+  return String(str).replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]))
 }
 
 function showSummary(correct, total, xpEarned, ticketEarned, note) {

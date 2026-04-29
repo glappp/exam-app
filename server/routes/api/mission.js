@@ -44,6 +44,15 @@ function fmtQuestion(q) {
   }
 }
 
+// ── Mission playable filter ───────────────────────────────────────────────────
+// กรองเฉพาะข้อที่แสดงในหน้า mission ได้ (มีตัวเลือก + มีโจทย์)
+function isMissionPlayable(q) {
+  const hasChoices = Array.isArray(q.choices) && q.choices.length > 0
+  const hasText    = (q.textTh && q.textTh.trim().length > 0) ||
+    (Array.isArray(q.content) && q.content.some(b => b.type === 'text' && b.value))
+  return hasChoices && hasText
+}
+
 // ── GET /api/mission/status ───────────────────────────────────────────────────
 router.get('/status', requireLogin, async (req, res) => {
   const userId = req.session.userId
@@ -121,15 +130,20 @@ router.get('/quick-quiz', requireLogin, async (req, res) => {
 
   const matched = allQuestions.filter(q => {
     const qSubs = q.attributes?.subtopic || []
-    return qSubs.some(s => subtopicKeys.includes(s))
+    return qSubs.some(s => subtopicKeys.includes(s)) && isMissionPlayable(q)
   })
 
-  if (matched.length < 5) {
+  // fallback: ถ้า subtopic ไม่ตรงเลย ใช้ข้อที่ playable ทั้งหมด
+  const pool = matched.length >= 5
+    ? matched
+    : allQuestions.filter(isMissionPlayable)
+
+  if (pool.length < 5) {
     return res.status(400).json({ error: 'ข้อสอบไม่เพียงพอ กรุณาผ่าน subtopic เพิ่ม' })
   }
 
   // สุ่ม 5 ข้อ (random ทุกครั้ง)
-  const shuffled = matched.sort(() => Math.random() - 0.5).slice(0, 5)
+  const shuffled = pool.sort(() => Math.random() - 0.5).slice(0, 5)
 
   // เช็ค XP set
   const today  = todayICT()
@@ -220,14 +234,25 @@ router.get('/daily', requireLogin, async (req, res) => {
     select: { id: true, textTh: true, type: true, image: true, content: true, choices: true, answer: true, shortAnswer: true, attributes: true, derivedFrom: true },
   })
 
-  // กรอง grade
+  // กรอง: ต้องมีตัวเลือก + มีโจทย์ (isMissionPlayable) + grade ตรง
   const pool = allQuestions.filter(q => {
     const g = q.attributes?.examGrade
-    return !g || gradeRange.includes(g)
+    const gradeOk = !g || gradeRange.includes(g)
+    return gradeOk && isMissionPlayable(q)
   })
 
   if (pool.length < 5) {
-    return res.status(400).json({ error: 'ข้อสอบในระบบไม่เพียงพอ' })
+    // fallback: ถ้า grade filter ทำให้น้อยเกิน ให้ใช้ทั้งหมดที่ playable
+    const fallbackPool = allQuestions.filter(isMissionPlayable)
+    if (fallbackPool.length < 5) {
+      return res.status(400).json({ error: 'ข้อสอบในระบบไม่เพียงพอ' })
+    }
+    const seed = getDailySeed()
+    const rng  = seededRandom(seed)
+    const selected = seededSample(fallbackPool, 5, rng)
+    const questions = selected.map(fmtQuestion)
+    const answerKey = selected.map(q => ({ id: q.id, answer: q.answer, shortAnswer: q.shortAnswer }))
+    return res.json({ questions, answerKey })
   }
 
   // seeded random จากวันที่

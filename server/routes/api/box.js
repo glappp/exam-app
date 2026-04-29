@@ -25,15 +25,16 @@ function requireAdmin(req, res, next) {
 // ── Prize tables ──────────────────────────────────────────────────────────────
 /*
   Silver Box — รางวัลสำหรับนักเรียนที่ทำ daily mission ครบ
-  (Gold Box มาจาก Leaderboard เท่านั้น ไม่ใช่จาก Silver Box)
-    63% → XP (15–40 XP)
+    61% → XP (15–40 XP)
     25% → Parent Points (5–15 pts)
     12% → Ticket ×1
+     2% → Gold Box ×1 (ให้คนไม่เก่งได้ลุ้น)
 */
 const SILVER_TABLE = [
-  { weight: 63, type: 'xp',           min: 15, max: 40 },
+  { weight: 61, type: 'xp',           min: 15, max: 40 },
   { weight: 25, type: 'parent_points', min: 5,  max: 15 },
   { weight: 12, type: 'ticket',        amount: 1 },
+  { weight:  2, type: 'gold_box',      amount: 1 },
 ]
 
 /*
@@ -125,6 +126,10 @@ router.post('/open', requireLogin, async (req, res) => {
       rewardResult.amount = amount
       await awardTicket(prisma, userId, amount, 'earn_box',
         `เปิดกล่อง ${boxType}`)
+
+    } else if (rolled.type === 'gold_box') {
+      rewardResult.amount = rolled.amount
+      await grantBox(userId, 'gold', rolled.amount)
 
     } else if (rolled.type === 'reward') {
       // ดึง reward ใดก็ได้จาก Reward table ที่ active และยังมีของเหลือ

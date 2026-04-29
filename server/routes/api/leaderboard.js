@@ -288,9 +288,16 @@ router.post('/settle', async (req, res) => {
       return getWeekKey(d)
     })()
 
-    const LEAGUES     = ['A', 'B', 'C']
-    const GOLD_PRIZES = { 1: 3, 2: 2, 3: 1 }  // อันดับ 1 = 3 กล่อง, 2 = 2 กล่อง, 3 = 1 กล่อง
-    const settled     = []
+    const LEAGUES = ['A', 'B', 'C']
+    const MIN_PARTICIPANTS = 10  // ต้องมีผู้เข้าร่วมอย่างน้อย 10 คนจึงแจกรางวัล
+    // อันดับ 1 = Gold×2, อันดับ 2 = Gold×1, อันดับ 3 = Silver×1
+    const PRIZES = {
+      1: { boxType: 'gold',   amount: 2 },
+      2: { boxType: 'gold',   amount: 1 },
+      3: { boxType: 'silver', amount: 1 },
+    }
+    const settled  = []
+    const skipped  = []
 
     for (const league of LEAGUES) {
       const entries = await prisma.weeklyLeaderboard.findMany({
@@ -306,16 +313,22 @@ router.post('/settle', async (req, res) => {
       }
       const ranked = [...userBestMap.values()].sort((a, b) => b.score - a.score)
 
+      // ตรวจ minimum participants
+      if (ranked.length < MIN_PARTICIPANTS) {
+        skipped.push({ league, participants: ranked.length, reason: `ต้องการอย่างน้อย ${MIN_PARTICIPANTS} คน` })
+        continue
+      }
+
       for (let i = 0; i < Math.min(3, ranked.length); i++) {
-        const rank    = i + 1
-        const userId  = ranked[i].userId
-        const boxes   = GOLD_PRIZES[rank]
-        await grantBox(userId, 'gold', boxes)
-        settled.push({ league, rank, userId, goldBoxes: boxes, score: ranked[i].score })
+        const rank   = i + 1
+        const userId = ranked[i].userId
+        const prize  = PRIZES[rank]
+        await grantBox(userId, prize.boxType, prize.amount)
+        settled.push({ league, rank, userId, ...prize, score: ranked[i].score })
       }
     }
 
-    res.json({ success: true, weekKey, settled })
+    res.json({ success: true, weekKey, settled, skipped })
 
   } catch (err) {
     console.error('❌ leaderboard/settle error:', err)

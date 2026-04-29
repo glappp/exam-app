@@ -194,7 +194,7 @@
         <div class="hint-row" style="margin-top:4px"><span class="hint-icon">🎟️</span>
           <div class="hint-info"><div class="hint-type">Ticket ×1</div><div class="hint-chance">12%</div></div></div>
         <div class="hint-row" style="margin-top:4px"><span class="hint-icon">🥇</span>
-          <div class="hint-info"><div class="hint-type">Gold Box ×1</div><div class="hint-chance">3%</div></div></div>
+          <div class="hint-info"><div class="hint-type">Gold Box ×1</div><div class="hint-chance">2%</div></div></div>
       </div>
       <div>
         <div class="hint-row"><span class="hint-icon">🥇</span>
@@ -319,11 +319,11 @@ async function openBox() {
 
 // ─── Show reward ──────────────────────────────────────────────────────────────
 const REWARD_MAP = {
-  xp:            { icon: '⭐', label: 'XP',              color: 'xp',           fmt: a => `+${a} XP` },
-  parent_points: { icon: '💚', label: 'Parent Points',   color: 'parent_points', fmt: a => `+${a} pts` },
-  ticket:        { icon: '🎟️', label: 'Ticket',          color: 'ticket',        fmt: a => `×${a}` },
-  gold_box:      { icon: '🥇', label: 'Gold Box!',       color: 'gold_box',      fmt: a => `×${a}` },
-  reward:        { icon: '🎁', label: 'ของรางวัลพิเศษ!', color: 'physical',      fmt: _ => '' },
+  xp:            { icon: '⭐', label: 'XP',               color: 'xp',           fmt: a => `+${a} XP` },
+  parent_points: { icon: '💚', label: 'Parent Points',    color: 'parent_points', fmt: a => `+${a} pts` },
+  ticket:        { icon: '🎟️', label: 'Ticket',           color: 'ticket',        fmt: a => `×${a}` },
+  gold_box:      { icon: '🥇', label: '🎉 Gold Box!',     color: 'gold_box',      fmt: a => `×${a}` },
+  reward:        { icon: '🎁', label: 'ของรางวัลพิเศษ!',  color: 'physical',      fmt: _ => '' },
 }
 
 function showReward(reward) {

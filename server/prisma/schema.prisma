@@ -357,6 +357,17 @@ model TopicPass {
   @@unique([studentProfileId, grade, topicKey])
 }
 
+// ─── Feedback ─────────────────────────────────────────────────────────────────
+
+model Feedback {
+  id        Int      @id @default(autoincrement())
+  name      String?  // ชื่อผู้ส่ง (optional)
+  message   String   // ข้อความ
+  page      String?  // URL หน้าที่ส่ง feedback
+  userId    Int?     // user ที่ login อยู่ (optional)
+  createdAt DateTime @default(now())
+}
+
 // ─── AttributeDictionary ──────────────────────────────────────────────────────
 
 model AttributeDictionary {

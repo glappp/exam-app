@@ -17,6 +17,7 @@ const {
 } = require('../../utils/gamification')
 
 const { awardTicket } = require('../../utils/xp-service')
+const { grantBox }   = require('./box')
 
 // ── In-memory session token store ────────────────────────────────────────────
 // Map<token, { userId, league, activity, expiresAt }>
@@ -267,6 +268,58 @@ router.get('/history', requireLogin, async (req, res) => {
   } catch (err) {
     console.error('❌ leaderboard/history error:', err)
     res.status(500).json({ error: 'เกิดข้อผิดพลาด' })
+  }
+})
+
+// ── POST /api/leaderboard/settle (admin only) ─────────────────────────────────
+// รันสิ้นสัปดาห์ → แจก Gold Box ให้ top 3 ทุก league
+// Body: { week: "2026-W18" }  (optional, default = สัปดาห์ล่าสุดที่ผ่านมา)
+router.post('/settle', async (req, res) => {
+  try {
+    // ตรวจสิทธิ์ admin
+    if (!['admin', 'school_admin', 'teacher'].includes(req.session?.role)) {
+      return res.status(403).json({ error: 'ไม่มีสิทธิ์' })
+    }
+
+    // คำนวณ weekKey ที่จะ settle (default = สัปดาห์ที่แล้ว)
+    const weekKey = req.body?.week || (() => {
+      const d = new Date()
+      d.setDate(d.getDate() - 7)   // สัปดาห์ที่แล้ว
+      return getWeekKey(d)
+    })()
+
+    const LEAGUES     = ['A', 'B', 'C']
+    const GOLD_PRIZES = { 1: 3, 2: 2, 3: 1 }  // อันดับ 1 = 3 กล่อง, 2 = 2 กล่อง, 3 = 1 กล่อง
+    const settled     = []
+
+    for (const league of LEAGUES) {
+      const entries = await prisma.weeklyLeaderboard.findMany({
+        where: { league, weekKey },
+        orderBy: { score: 'desc' },
+      })
+
+      // Group by userId → max score
+      const userBestMap = new Map()
+      for (const e of entries) {
+        const best = userBestMap.get(e.userId)
+        if (!best || e.score > best.score) userBestMap.set(e.userId, e)
+      }
+      const ranked = [...userBestMap.values()].sort((a, b) => b.score - a.score)
+
+      for (let i = 0; i < Math.min(3, ranked.length); i++) {
+        const rank    = i + 1
+        const userId  = ranked[i].userId
+        const boxes   = GOLD_PRIZES[rank]
+        await grantBox(userId, 'gold', boxes)
+        settled.push({ league, rank, userId, goldBoxes: boxes, score: ranked[i].score })
+      }
+    }
+
+    res.json({ success: true, weekKey, settled })
+
+  } catch (err) {
+    console.error('❌ leaderboard/settle error:', err)
+    res.status(500).json({ error: 'settle ไม่สำเร็จ' })
   }
 })
 

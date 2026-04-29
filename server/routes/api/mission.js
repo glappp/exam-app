@@ -460,13 +460,10 @@ router.post('/weekly/submit', requireLogin, async (req, res) => {
 
   // Award
   if (xpEarned > 0) await awardXP(prisma, userId, xpEarned, 'activity')
-  let goldBoxEarned = 0
   if (correct >= 8 && prevXpEarned === 0) {
-    // ผ่านครั้งแรกของสัปดาห์ → ticket + parent points + gold box
+    // ผ่านครั้งแรกของสัปดาห์ → ticket + parent points (Gold Box มาจาก leaderboard เท่านั้น)
     await awardTicket(prisma, userId, TICKET.WEEKLY_PASS, 'earn_mission', `Weekly Challenge ผ่าน สัปดาห์ ${weekKey}`)
     await awardParentPoints(prisma, userId, PARENT_PTS.WEEKLY_PASS, 'auto_weekly', `Weekly Challenge ผ่าน`)
-    await grantBox(userId, 'gold', 1)
-    goldBoxEarned = 1
   }
 
   // บันทึก
@@ -479,10 +476,9 @@ router.post('/weekly/submit', requireLogin, async (req, res) => {
   res.json({
     correct, total: 10, xpEarned, attempts, bestScore,
     passed: correct >= 8,
-    goldBoxEarned,
     detail,
-    message: correct === 10 ? '🏆 Perfect! +200 XP +1 🥇 Box' :
-             correct >= 8   ? `✅ ผ่าน! +${xpEarned} XP${goldBoxEarned ? ' +1 🥇 Box' : ''}` :
+    message: correct === 10 ? '🏆 Perfect! +200 XP' :
+             correct >= 8   ? `✅ ผ่าน! +${xpEarned} XP` :
              `❌ ไม่ผ่าน (${correct}/10) — ต้องถูก 8 ข้อขึ้น`,
   })
 })

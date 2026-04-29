@@ -257,7 +257,7 @@ router.post('/daily/submit', requireLogin, async (req, res) => {
     return res.status(400).json({ error: 'ทำ Daily Mission วันนี้แล้ว' })
   }
 
-  const { answers } = req.body
+  const { answers, leaderboardToken } = req.body
   // answers: [{ questionId, selectedAnswer, timeSec }]
   if (!Array.isArray(answers) || answers.length !== 5) {
     return res.status(400).json({ error: 'ข้อมูลคำตอบไม่ถูกต้อง' })
@@ -306,8 +306,28 @@ router.post('/daily/submit', requireLogin, async (req, res) => {
 
   await awardDailyLogin(prisma, userId)
 
+  // ── Leaderboard submit (optional) ────────────────────────────────────────
+  let leaderboardRank = null
+  if (leaderboardToken) {
+    try {
+      // import token store จาก leaderboard route ไม่ได้ตรงๆ → ใช้ HTTP call ภายใน
+      // ส่ง score = XP ที่ได้ (max 100) × 10 เพื่อให้ตัวเลขสวย
+      const leaderboardScore = totalXp * 10 + correct * 50  // เช่น 100 XP + 5/5 = 1250
+      const submitRes = await fetch(`http://localhost:${process.env.PORT || 3001}/api/leaderboard/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Cookie': req.headers.cookie || '' },
+        body: JSON.stringify({ token: leaderboardToken, score: leaderboardScore }),
+      })
+      const submitData = await submitRes.json()
+      if (submitData.rank) leaderboardRank = submitData.rank
+    } catch (_) {
+      // ถ้า leaderboard submit ล้มเหลว ไม่กระทบ daily mission ปกติ
+    }
+  }
+
   res.json({
     correct, total: 5, xpEarned: totalXp, ticketEarned, parentPts, detail,
+    leaderboardRank,
     message: `ถูก ${correct}/5 ข้อ | +${totalXp} XP | +${ticketEarned} Ticket`,
   })
 })

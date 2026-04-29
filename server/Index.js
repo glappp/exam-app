@@ -173,7 +173,8 @@ app.use('/api/time-trial', require('./routes/api/time-trial'));
 app.use('/api/tickets', require('./routes/api/tickets'));
 app.use('/api/questions', require('./routes/api/question-report'));
 app.use('/api/feedback',  require('./routes/api/feedback'));
-app.use('/api/mission',   require('./routes/api/mission'));
+app.use('/api/mission',      require('./routes/api/mission'));
+app.use('/api/leaderboard',  require('./routes/api/leaderboard'));
 
 // GET /api/schools?province=X&district=Y — public, no auth
 app.get('/api/schools', async (req, res) => {

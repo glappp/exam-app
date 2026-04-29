@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leaderboard — ตารางอันดับ</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+
+    /* ── Topbar ── */
+    .topbar {
+      background: #1e3a5f;
+      color: #fff;
+      padding: 0 24px;
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .topbar-title { font-weight: 600; font-size: 16px; }
+    .topbar-right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+    .topbar-right a { color: #93c5fd; text-decoration: none; }
+    .topbar-right a:hover { color: #fff; }
+
+    /* ── Layout ── */
+    .container { max-width: 800px; margin: 0 auto; padding: 28px 16px 80px; }
+
+    /* ── Hero ── */
+    .hero {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .hero h1 { font-size: 26px; font-weight: 800; letter-spacing: 0.5px; }
+    .hero p { color: #94a3b8; font-size: 14px; margin-top: 6px; }
+    .week-badge {
+      display: inline-block;
+      background: #1e3a5f;
+      border: 1px solid #2563eb;
+      color: #93c5fd;
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 10px;
+    }
+
+    /* ── Ticket bar ── */
+    .ticket-bar {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .ticket-info { display: flex; align-items: center; gap: 10px; }
+    .ticket-icon { font-size: 24px; }
+    .ticket-label { font-size: 13px; color: #94a3b8; }
+    .ticket-count { font-size: 22px; font-weight: 800; color: #fbbf24; }
+    .btn-enter {
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: opacity 0.15s;
+    }
+    .btn-enter:hover { opacity: 0.88; }
+    .btn-enter:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── League tabs ── */
+    .league-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 6px;
+    }
+    .league-tab {
+      flex: 1;
+      text-align: center;
+      padding: 10px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      color: #64748b;
+      transition: all 0.2s;
+      border: 2px solid transparent;
+    }
+    .league-tab:hover { color: #e2e8f0; background: #334155; }
+    .league-tab.active { color: #fff; background: #2563eb; border-color: #3b82f6; }
+    .league-tab .locked-icon { font-size: 11px; margin-left: 4px; }
+
+    /* ── League info ── */
+    .league-info {
+      background: #1e293b;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 13px;
+      color: #94a3b8;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ── Podium (top 3) ── */
+    .podium {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 28px;
+      min-height: 180px;
+    }
+    .podium-slot {
+      flex: 1;
+      max-width: 160px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .podium-name {
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      word-break: break-word;
+    }
+    .podium-score {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .podium-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: 800;
+    }
+    .podium-block {
+      width: 100%;
+      border-radius: 10px 10px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    /* 1st place */
+    .podium-slot.rank-1 .podium-avatar { background: #fef3c7; border: 3px solid #f59e0b; color: #92400e; }
+    .podium-slot.rank-1 .podium-block  { background: linear-gradient(180deg, #fbbf24, #d97706); height: 120px; }
+    /* 2nd place */
+    .podium-slot.rank-2 .podium-avatar { background: #f1f5f9; border: 3px solid #94a3b8; color: #475569; }
+    .podium-slot.rank-2 .podium-block  { background: linear-gradient(180deg, #94a3b8, #64748b); height: 90px; }
+    /* 3rd place */
+    .podium-slot.rank-3 .podium-avatar { background: #fef3c7; border: 3px solid #d97706; color: #92400e; }
+    .podium-slot.rank-3 .podium-block  { background: linear-gradient(180deg, #d97706, #b45309); height: 70px; }
+
+    .podium-empty { color: #475569; font-size: 12px; text-align: center; }
+
+    /* ── Rankings list (4–20) ── */
+    .ranking-list { display: flex; flex-direction: column; gap: 6px; }
+    .rank-row {
+      background: #1e293b;
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .rank-row.me { border: 2px solid #2563eb; background: #1e3a5f; }
+    .rank-num {
+      font-size: 14px;
+      font-weight: 700;
+      color: #64748b;
+      width: 28px;
+      text-align: center;
+    }
+    .rank-avatar-sm {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #334155;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #94a3b8;
+      flex-shrink: 0;
+    }
+    .rank-info { flex: 1; min-width: 0; }
+    .rank-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rank-grade { font-size: 11px; color: #64748b; margin-top: 2px; }
+    .rank-score { font-size: 16px; font-weight: 800; color: #fbbf24; }
+
+    /* ── Empty / loading ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #475569;
+    }
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    .loading { text-align: center; padding: 40px; color: #64748b; font-size: 14px; }
+
+    /* ── My rank banner ── */
+    .my-rank-banner {
+      background: #1e3a5f;
+      border: 1px solid #2563eb;
+      border-radius: 10px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    .my-rank-banner .label { color: #93c5fd; font-size: 12px; }
+    .my-rank-banner .value { font-size: 20px; font-weight: 800; color: #fbbf24; }
+
+    /* ── Enter modal ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 28px 24px;
+      max-width: 420px;
+      width: 90%;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+    .modal p { font-size: 14px; color: #94a3b8; margin-bottom: 20px; line-height: 1.6; }
+    .modal .ticket-cost {
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .modal .ticket-cost .big { font-size: 32px; font-weight: 800; color: #fbbf24; }
+    .modal .ticket-cost .sub { font-size: 12px; color: #64748b; margin-top: 4px; }
+    .modal-btns { display: flex; gap: 10px; }
+    .btn-cancel {
+      flex: 1;
+      background: #334155;
+      color: #e2e8f0;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-cancel:hover { background: #475569; }
+    .btn-confirm {
+      flex: 1;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-confirm:hover { opacity: 0.88; }
+    .btn-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Activity type badge ── */
+    .activity-badge {
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .activity-badge.grand_prix { background: #7c3aed; color: #e9d5ff; }
+    .activity-badge.daily_mission { background: #065f46; color: #6ee7b7; }
+
+    @media (max-width: 500px) {
+      .podium-slot { max-width: 100px; }
+      .podium-name { font-size: 11px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="topbar-title">🏆 ตารางอันดับ</div>
+  <div class="topbar-right">
+    <span id="topbar-user">...</span>
+    <a href="/dashboard.html">← หน้าหลัก</a>
+    <a href="#" id="logout-btn">ออกจากระบบ</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1>🏆 Leaderboard</h1>
+    <p>ตารางคะแนนรายสัปดาห์ — ใช้ตั๋วเพื่อส่งคะแนนเข้าแข่ง</p>
+    <div class="week-badge" id="week-label">กำลังโหลด...</div>
+  </div>
+
+  <!-- Ticket bar -->
+  <div class="ticket-bar">
+    <div class="ticket-info">
+      <div class="ticket-icon">🎟️</div>
+      <div>
+        <div class="ticket-label">ตั๋วของคุณ</div>
+        <div class="ticket-count" id="ticket-count">—</div>
+      </div>
+    </div>
+    <button class="btn-enter" id="btn-enter" disabled>
+      🎯 ส่งคะแนนเข้าแข่ง
+    </button>
+  </div>
+
+  <!-- My rank banner (แสดงถ้ามีคะแนนในสัปดาห์นี้) -->
+  <div class="my-rank-banner" id="my-rank-banner" style="display:none;">
+    <div>
+      <div class="label">อันดับของคุณในสัปดาห์นี้</div>
+      <div class="value" id="my-rank-value">—</div>
+    </div>
+    <div style="margin-left:auto; text-align:right;">
+      <div class="label">คะแนนสูงสุด</div>
+      <div class="value" id="my-score-value" style="color:#34d399;">—</div>
+    </div>
+  </div>
+
+  <!-- League tabs -->
+  <div class="league-tabs">
+    <div class="league-tab" data-league="A" id="tab-A">
+      🦋 League A<br><small>ป.1–ป.2</small>
+    </div>
+    <div class="league-tab" data-league="B" id="tab-B">
+      🦁 League B<br><small>ป.3–ป.4</small>
+    </div>
+    <div class="league-tab" data-league="C" id="tab-C">
+      🦅 League C<br><small>ป.5–ป.6</small>
+    </div>
+  </div>
+
+  <!-- League info -->
+  <div class="league-info" id="league-info">
+    <span>ℹ️</span>
+    <span id="league-info-text">—</span>
+  </div>
+
+  <!-- Rankings content -->
+  <div id="rankings-container">
+    <div class="loading">กำลังโหลด...</div>
+  </div>
+
+</div>
+
+<!-- Enter competition modal -->
+<div class="modal-overlay" id="enter-modal">
+  <div class="modal">
+    <h2>🎯 ส่งคะแนนเข้าแข่ง</h2>
+    <p>คุณกำลังจะใช้ตั๋ว 1 ใบเพื่อเข้าร่วม Leaderboard<br>
+    ตั๋วจะถูกหักทันที และคะแนนที่ดีที่สุดในสัปดาห์นี้จะถูกบันทึก</p>
+    <div class="ticket-cost">
+      <div class="big">🎟️ 1</div>
+      <div class="sub">ตั๋ว 1 ใบ → ส่งคะแนนได้ 1 ครั้ง</div>
+    </div>
+    <div style="margin-bottom:16px; font-size:13px; color:#94a3b8;">
+      <strong style="color:#e2e8f0;">คะแนนที่จะส่ง:</strong>
+      <span id="modal-score">0</span> คะแนน<br>
+      <strong style="color:#e2e8f0;">League:</strong>
+      <span id="modal-league">—</span>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" id="btn-cancel-enter">ยกเลิก</button>
+      <button class="btn-confirm" id="btn-confirm-enter">ยืนยัน ใช้ตั๋ว 🎟️</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── State ───────────────────────────────────────────────────────────────────
+let state = {
+  userId:        null,
+  firstName:     null,
+  myLeague:      'C',
+  myGrade:       null,
+  myLocked:      true,
+  ticketBalance: 0,
+  currentLeague: 'C',
+  weekKey:       null,
+  rankings:      {},   // { A: [], B: [], C: [] }
+  myBestScore:   null,
+  myRank:        null,
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+async function init() {
+  // ตรวจ auth
+  const me = await fetch('/api/me').then(r => r.json()).catch(() => ({}))
+  if (!me.loggedIn) { location.href = '/index.html'; return }
+  state.userId    = me.userId
+  state.firstName = me.firstName || me.role || 'นักเรียน'
+  document.getElementById('topbar-user').textContent = `👤 ${state.firstName}`
+
+  // ดึงข้อมูล my-league + ticket
+  const leagueData = await fetch('/api/leaderboard/my-league').then(r => r.json()).catch(() => ({}))
+  state.myLeague      = leagueData.league || 'C'
+  state.myGrade       = leagueData.grade  || null
+  state.myLocked      = leagueData.locked ?? true
+  state.ticketBalance = leagueData.ticketBalance ?? 0
+  state.currentLeague = state.myLeague
+
+  updateTicketUI()
+  updateLeagueTabs()
+  setActiveTab(state.currentLeague)
+  await loadRankings(state.currentLeague)
+}
+
+// ─── Ticket UI ────────────────────────────────────────────────────────────────
+function updateTicketUI() {
+  document.getElementById('ticket-count').textContent = state.ticketBalance
+  const btn = document.getElementById('btn-enter')
+  btn.disabled = state.ticketBalance < 1
+}
+
+// ─── League tabs ──────────────────────────────────────────────────────────────
+function updateLeagueTabs() {
+  const leagueNames = { A: '🦋 League A — ป.1–ป.2', B: '🦁 League B — ป.3–ป.4', C: '🦅 League C — ป.5–ป.6' }
+  const infoEl = document.getElementById('league-info-text')
+  if (state.myLocked) {
+    infoEl.textContent = `คุณอยู่ ${leagueNames[state.myLeague]} (ล็อก — ไม่สามารถเปลี่ยน league ได้)`
+  } else {
+    infoEl.textContent = `คุณสามารถเลือกแข่งใน league ใดก็ได้ (ชั้น ${state.myGrade || 'ไม่ทราบ'})`
+  }
+
+  // ถ้า grade ถูก lock ให้ disable tab อื่น
+  if (state.myLocked) {
+    ['A','B','C'].forEach(l => {
+      const tab = document.getElementById(`tab-${l}`)
+      if (l !== state.myLeague) {
+        tab.style.opacity = '0.4'
+        tab.style.cursor = 'not-allowed'
+        tab.dataset.locked = 'true'
+      }
+    })
+  }
+}
+
+function setActiveTab(league) {
+  state.currentLeague = league
+  document.querySelectorAll('.league-tab').forEach(el => {
+    el.classList.toggle('active', el.dataset.league === league)
+  })
+  updateWeekLabel()
+  renderRankings()
+  updateMyRankBanner()
+}
+
+function updateWeekLabel() {
+  if (state.weekKey) {
+    document.getElementById('week-label').textContent = `สัปดาห์ ${state.weekKey}`
+  }
+}
+
+// ─── Load rankings ────────────────────────────────────────────────────────────
+async function loadRankings(league) {
+  document.getElementById('rankings-container').innerHTML = '<div class="loading">กำลังโหลด...</div>'
+
+  try {
+    const data = await fetch(`/api/leaderboard?league=${league}`).then(r => r.json())
+    state.rankings[league] = data.rankings || []
+    state.weekKey = data.weekKey
+
+    // หา rank ของตัวเอง
+    const myEntry = state.rankings[league].find(r => r.userId === state.userId)
+    if (myEntry) {
+      state.myRank      = myEntry.rank
+      state.myBestScore = myEntry.score
+    } else {
+      state.myRank      = null
+      state.myBestScore = null
+    }
+
+    updateWeekLabel()
+    renderRankings()
+    updateMyRankBanner()
+  } catch (err) {
+    document.getElementById('rankings-container').innerHTML =
+      '<div class="empty-state"><div class="icon">⚠️</div><p>โหลดข้อมูลไม่สำเร็จ</p></div>'
+  }
+}
+
+// ─── Render rankings ──────────────────────────────────────────────────────────
+function renderRankings() {
+  const league   = state.currentLeague
+  const rankings = state.rankings[league]
+  const container = document.getElementById('rankings-container')
+
+  if (!rankings) {
+    container.innerHTML = '<div class="loading">กำลังโหลด...</div>'
+    return
+  }
+  if (rankings.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">🏁</div>
+        <p>ยังไม่มีผู้เข้าแข่งขัน League ${league} ในสัปดาห์นี้<br>
+        <small>ใช้ตั๋ว 1 ใบเพื่อส่งคะแนนเข้าแข่งคนแรก!</small></p>
+      </div>`
+    return
+  }
+
+  const top3   = rankings.slice(0, 3)
+  const rest   = rankings.slice(3)
+  const initials = name => name ? name.charAt(0).toUpperCase() : '?'
+  const gradeLabel = g => g ? g.replace('p','ป.').replace('m','ม.') : '—'
+  const actBadge = a =>
+    `<span class="activity-badge ${a}">${a === 'grand_prix' ? 'Grand Prix' : 'Daily'}</span>`
+
+  // ── Podium ──
+  let podiumHtml = '<div class="podium">'
+  const podiumOrder = [1, 0, 2]  // 2nd, 1st, 3rd
+
+  for (const orderIdx of podiumOrder) {
+    const entry = top3[orderIdx]
+    const rankClass = `rank-${orderIdx + 1}`
+    const rankLabel = orderIdx === 0 ? '🥇' : orderIdx === 1 ? '🥈' : '🥉'
+
+    if (entry) {
+      const isMe = entry.userId === state.userId
+      podiumHtml += `
+        <div class="podium-slot ${rankClass}">
+          <div class="podium-name">${isMe ? '⭐ ' : ''}${escHtml(entry.name)}</div>
+          <div class="podium-score">${entry.score.toLocaleString()} pt ${actBadge(entry.activity)}</div>
+          <div class="podium-avatar">${initials(entry.name)}</div>
+          <div class="podium-block">${rankLabel}</div>
+        </div>`
+    } else {
+      podiumHtml += `
+        <div class="podium-slot ${rankClass}">
+          <div class="podium-empty">—</div>
+          <div class="podium-block" style="opacity:0.3;">${rankLabel}</div>
+        </div>`
+    }
+  }
+  podiumHtml += '</div>'
+
+  // ── List (4th onward) ──
+  let listHtml = ''
+  if (rest.length > 0) {
+    listHtml = '<div class="ranking-list">'
+    for (const entry of rest) {
+      const isMe = entry.userId === state.userId
+      listHtml += `
+        <div class="rank-row${isMe ? ' me' : ''}">
+          <div class="rank-num">${entry.rank}</div>
+          <div class="rank-avatar-sm">${initials(entry.name)}</div>
+          <div class="rank-info">
+            <div class="rank-name">${isMe ? '⭐ ' : ''}${escHtml(entry.name)}</div>
+            <div class="rank-grade">${gradeLabel(entry.grade)} · ${actBadge(entry.activity)}</div>
+          </div>
+          <div class="rank-score">${entry.score.toLocaleString()}</div>
+        </div>`
+    }
+    listHtml += '</div>'
+  }
+
+  container.innerHTML = podiumHtml + listHtml
+}
+
+// ─── My rank banner ───────────────────────────────────────────────────────────
+function updateMyRankBanner() {
+  const banner = document.getElementById('my-rank-banner')
+  if (state.myRank && state.myBestScore !== null) {
+    banner.style.display = 'flex'
+    document.getElementById('my-rank-value').textContent = `#${state.myRank}`
+    document.getElementById('my-score-value').textContent = state.myBestScore.toLocaleString() + ' pt'
+  } else {
+    banner.style.display = 'none'
+  }
+}
+
+// ─── Enter competition ────────────────────────────────────────────────────────
+// สำหรับหน้านี้ คะแนนที่ส่งมาจาก Daily Mission หรือ Grand Prix
+// แต่ในหน้านี้เราแสดง demo flow: ให้ผู้ใช้กรอก score ชั่วคราว
+// (จริงๆ flow จะถูก trigger จากหน้า grand-prix.html / mission.html หลัง submit)
+document.getElementById('btn-enter').addEventListener('click', () => {
+  // demo: แสดง modal พร้อม score 0 (จะถูกแทนด้วย score จริงจาก activity)
+  document.getElementById('modal-score').textContent = '(คะแนนจาก Grand Prix / Daily Mission)'
+  document.getElementById('modal-league').textContent = `League ${state.currentLeague}`
+  document.getElementById('enter-modal').classList.add('show')
+})
+
+document.getElementById('btn-cancel-enter').addEventListener('click', () => {
+  document.getElementById('enter-modal').classList.remove('show')
+})
+
+document.getElementById('btn-confirm-enter').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-confirm-enter')
+  btn.disabled = true
+  btn.textContent = 'กำลังส่ง...'
+
+  try {
+    // demo submit: score = 0 (flow จริงมาจาก token ที่ได้จากหน้าแข่ง)
+    const enterRes = await fetch('/api/leaderboard/enter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ league: state.currentLeague, activity: 'grand_prix' }),
+      credentials: 'include',
+    }).then(r => r.json())
+
+    if (enterRes.error) {
+      alert(enterRes.error)
+      btn.disabled = false
+      btn.textContent = 'ยืนยัน ใช้ตั๋ว 🎟️'
+      return
+    }
+
+    // submit score demo
+    const submitRes = await fetch('/api/leaderboard/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: enterRes.token, score: 0 }),
+      credentials: 'include',
+    }).then(r => r.json())
+
+    document.getElementById('enter-modal').classList.remove('show')
+    state.ticketBalance = enterRes.ticketBalance
+    updateTicketUI()
+    await loadRankings(state.currentLeague)
+
+  } catch (err) {
+    alert('เกิดข้อผิดพลาด กรุณาลองใหม่')
+  }
+
+  btn.disabled = false
+  btn.textContent = 'ยืนยัน ใช้ตั๋ว 🎟️'
+})
+
+// ─── Tab clicks ───────────────────────────────────────────────────────────────
+document.querySelectorAll('.league-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    if (tab.dataset.locked === 'true') return
+    const league = tab.dataset.league
+    if (!state.rankings[league]) {
+      setActiveTab(league)
+      loadRankings(league)
+    } else {
+      setActiveTab(league)
+    }
+  })
+})
+
+// ─── Logout ───────────────────────────────────────────────────────────────────
+document.getElementById('logout-btn').addEventListener('click', async (e) => {
+  e.preventDefault()
+  await fetch('/api/logout', { method: 'POST', credentials: 'include' })
+  location.href = '/index.html'
+})
+
+// ─── Utility ──────────────────────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str).replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]))
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────
+init()
+</script>
+</body>
+</html>

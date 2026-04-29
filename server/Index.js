@@ -1,3 +1,4 @@
+require('dotenv').config(); // โหลด .env สำหรับ local dev
 // ── Catch startup crashes ──────────────────────────────────────────────────
 process.on('uncaughtException', (err) => {
   console.error('💥 uncaughtException:', err);

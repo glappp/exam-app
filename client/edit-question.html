@@ -180,6 +180,21 @@
         ${q.code ? `<span class="id-badge">${q.code}</span>` : ''}
       </div>
 
+      ${q.needsReview ? `
+      <div id="review-banner" style="background:#fff7ed;border:1px solid #fb923c;border-radius:8px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:18px">⚠️</span>
+          <div>
+            <div style="font-weight:600;color:#9a3412;font-size:14px">โจทย์นี้ต้องตรวจสอบ</div>
+            <div style="font-size:12px;color:#c2410c;margin-top:2px">ข้อมูลไม่ครบถ้วน — กรุณาแก้ไขแล้วกดปุ่มด้านขวา</div>
+          </div>
+        </div>
+        <button class="btn" id="btn-mark-reviewed" onclick="markReviewed()"
+          style="background:#16a34a;color:#fff;white-space:nowrap;padding:8px 16px;font-size:13px">
+          ✓ ตรวจสอบแล้ว
+        </button>
+      </div>` : ''}
+
       <!-- 1. ชุดข้อสอบ -->
       <div class="card">
         <div class="card-title">ชุดข้อสอบ</div>
@@ -499,6 +514,31 @@
     } finally {
       btn.disabled = false;
       btn.textContent = 'บันทึกการแก้ไข';
+    }
+  }
+
+  async function markReviewed() {
+    const btn = document.getElementById('btn-mark-reviewed');
+    btn.disabled = true;
+    btn.textContent = 'กำลังบันทึก...';
+    try {
+      const fd = new FormData();
+      fd.append('needsReview', 'false');
+      const res = await fetch(`/questions/${questionId}`, { method: 'PUT', body: fd });
+      const data = await res.json();
+      if (data.success) {
+        currentQuestion = data.question;
+        document.getElementById('review-banner')?.remove();
+        showMsg('✅ ทำเครื่องหมายตรวจสอบแล้ว', 'success');
+      } else {
+        showMsg(`❌ ${data.error || 'บันทึกไม่สำเร็จ'}`, 'error');
+        btn.disabled = false;
+        btn.textContent = '✓ ตรวจสอบแล้ว';
+      }
+    } catch {
+      showMsg('❌ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้', 'error');
+      btn.disabled = false;
+      btn.textContent = '✓ ตรวจสอบแล้ว';
     }
   }
 

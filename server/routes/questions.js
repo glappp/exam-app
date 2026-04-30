@@ -12,6 +12,7 @@ router.get('/', async (req, res) => {
     const difficulty = req.query.difficulty;
     const attrType   = req.query.attrType;
     const attrValue  = req.query.attrValue;
+    const needsReview = req.query.needsReview;
 
     const where = {};
     if (keyword) where.textTh = { contains: keyword };
@@ -19,6 +20,7 @@ router.get('/', async (req, res) => {
       const diffMap = { easy: '1', medium: '2', hard: '3' };
       where.difficulty = diffMap[difficulty] || difficulty;
     }
+    if (needsReview === 'true') where.needsReview = true;
 
     // ดึงทั้งหมดที่ผ่าน where แล้วกรอง attrType/attrValue ใน JS
     let allMatching = await prisma.question.findMany({
@@ -70,7 +72,7 @@ router.get('/:id', async (req, res) => {
 // ✅ แก้ไขโจทย์
 router.put('/:id', async (req, res) => {
   try {
-    const { questionText, answer, attributesJson, code } = req.body;
+    const { questionText, answer, attributesJson, code, needsReview } = req.body;
     const attributes = attributesJson ? JSON.parse(attributesJson) : undefined;
 
     const data = {};
@@ -81,6 +83,7 @@ router.put('/:id', async (req, res) => {
       data.difficulty = String(attributes.difficulty ?? 1);
     }
     if (code !== undefined) data.code = code || null;
+    if (needsReview !== undefined) data.needsReview = needsReview === 'true' || needsReview === true;
 
     const question = await prisma.question.update({ where: { id: req.params.id }, data });
     res.json({ success: true, question });

@@ -48,9 +48,25 @@ router.get('/', async (req, res) => {
 });
 
 // ✅ ดึงโจทย์ทั้งหมด (ใน practice mode ใช้)
+// ?practiceOnly=true → ยกเว้นข้อสอบจริง/แข่งขัน (isOfficial=true)
 router.get('/all', async (req, res) => {
   try {
-    const questions = await prisma.question.findMany();
+    let where = {};
+
+    if (req.query.practiceOnly === 'true') {
+      const officialSets = await prisma.examSetMetadata.findMany({
+        where: { isOfficial: true },
+        select: { questionSource: true }
+      });
+      const officialSources = officialSets
+        .map(s => s.questionSource)
+        .filter(Boolean);
+      if (officialSources.length > 0) {
+        where.source = { notIn: officialSources };
+      }
+    }
+
+    const questions = await prisma.question.findMany({ where });
     res.json({ questions });
   } catch (err) {
     console.error('❌ ดึงโจทย์ล้มเหลว:', err);

@@ -3,6 +3,19 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+// helper: ดึงโจทย์ฝึกหัด (ยกเว้น official/competition exam sources)
+async function getPracticeQuestions() {
+  const officialSets = await prisma.examSetMetadata.findMany({
+    where: { isOfficial: true },
+    select: { questionSource: true }
+  });
+  const officialSources = officialSets.map(s => s.questionSource).filter(Boolean);
+  const where = officialSources.length > 0
+    ? { source: { notIn: officialSources } }
+    : {};
+  return prisma.question.findMany({ where });
+}
+
 // GET /api/exam-set/random?grade=p6&venue=ipst
 // สุ่มข้อสอบจากทุก source ที่ตรงกับ venue+grade
 router.get('/random', async (req, res) => {
@@ -81,7 +94,7 @@ router.get('/adaptive', async (req, res) => {
       .slice(0, 3)
       .map(([k]) => k);
 
-    const allQ = await prisma.question.findMany();
+    const allQ = await getPracticeQuestions();
 
     let questions;
     if (weakTopicTags.length > 0) {
@@ -115,7 +128,7 @@ router.get('/targeted', async (req, res) => {
     const { tag } = req.query;
     if (!tag) return res.status(400).json({ error: 'ต้องระบุ tag' });
 
-    const allQ = await prisma.question.findMany();
+    const allQ = await getPracticeQuestions();
     const matched = allQ.filter(q =>
       ['topic', 'skill', 'trap'].some(type =>
         Array.isArray(q.attributes?.[type]) && q.attributes[type].includes(tag)

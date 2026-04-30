@@ -241,7 +241,7 @@ async function startExam(runMode = 'practice') {
         return;
       }
 
-      const res = await fetch('/questions/all', { credentials: 'include' });
+      const res = await fetch('/questions/all?practiceOnly=true', { credentials: 'include' });
       if (!res.ok) throw new Error('โหลดโจทย์ไม่สำเร็จ');
       const data = await res.json();
       allQuestions = data.questions || [];

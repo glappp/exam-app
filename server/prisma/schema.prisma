@@ -163,7 +163,13 @@ model Question {
   // }
 
   source           String?   // ชื่อชุดข้อสอบ/สนาม เช่น "Mock PCC ป.6"
-  derivedFrom      String?   // code ของต้นฉบับ (กรณี variant)
+  derivedFrom      String?   // code ของต้นฉบับ (กรณี variant) — legacy string ref
+
+  // Question Family (ต้นฉบับ ↔ mock variants)
+  parentQuestionId String?
+  parent           Question?   @relation("QuestionVariants", fields: [parentQuestionId], references: [id])
+  variants         Question[]  @relation("QuestionVariants")
+
   ownerOrg         String
   createdBy        String
   updatedBy        String
@@ -188,9 +194,13 @@ model ExamSetMetadata {
   timeLimitSec    Int
   blueprint       Json     // [{ difficulty: 1|2|3, count: Int, topicTags?: String[] }]
   isOfficial      Boolean  // true = mock (ข้อสอบจริง), false = timed (จำลอง)
-  questionSource  String?  // filter Question.source
-  createdBy       String   // username ของ admin ที่สร้าง
-  isActive        Boolean  @default(true)
+  questionSource     String?   // filter Question.source
+  createdBy          String    // username ของ admin ที่สร้าง
+  isActive           Boolean   @default(true)
+
+  // Mock generation tracking
+  mockGeneratedAt    DateTime? // null = ยังไม่ได้ mock, มีค่า = mock แล้ว
+  mockQuestionCount  Int?      // จำนวนข้อ mock ที่ generate ได้จริง (text-only เท่านั้น)
 }
 
 model Curriculum {

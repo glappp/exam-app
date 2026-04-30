@@ -273,6 +273,8 @@ function normalizeAnswer(ans) {
 function isCorrectAnswer(userAns, q) {
   if (q.type === 'numeric' || q.answer == null) {
     if (!Array.isArray(q.shortAnswer)) return false;
+    // shortAnswer ว่าง = ไม่มีคำตอบ → ให้คะแนนทุกคำตอบ
+    if (q.shortAnswer.length === 0) return true;
     const a = normalizeAnswer(userAns);
     return q.shortAnswer.some(sa => normalizeAnswer(sa) === a);
   }

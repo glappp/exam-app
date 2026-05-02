@@ -12,6 +12,7 @@ datasource db {
 model School {
   id        Int      @id @default(autoincrement())
   name      String
+  code      String?  @unique  // ตัวย่อโรงเรียน เช่น "hkbu" — ใช้ prefix username
   district  String
   province  String
   isActive  Boolean  @default(true)
@@ -399,6 +400,7 @@ model AcademicRecord {
   classroom    String   // "1", "2", ...
   roomType     String   // "HKEP" | "GIFTED" | "มาตรฐาน"
   academicYear String   // "2568"
+  term         String   @default("1")  // "1" | "2"
   // ข้อมูลรายวิชา
   subjectCode  String   // "ค11101"
   subjectName  String   // "คณิตศาสตร์"

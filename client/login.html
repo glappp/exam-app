@@ -167,6 +167,9 @@
 
       <button class="btn btn-navy btn-full mt-16" id="login-btn" onclick="login()">เข้าสู่ระบบ</button>
 
+      <div class="register-link" style="margin-top:10px">
+        <a href="forgot-password.html" style="color:#6b7280;font-size:13px">ลืมรหัสผ่าน?</a>
+      </div>
       <div class="register-link">
         ยังไม่มีบัญชี? <a href="register.html">สมัครสมาชิก</a>
       </div>
@@ -198,7 +201,11 @@
         });
         const data = await res.json();
         if (res.ok) {
-          window.location.href = 'dashboard.html';
+          if (data.mustChangePassword) {
+            window.location.href = 'change-password.html';
+          } else {
+            window.location.href = 'dashboard.html';
+          }
         } else {
           errEl.textContent = data.message || 'เข้าสู่ระบบไม่สำเร็จ';
           errEl.style.display = 'block';

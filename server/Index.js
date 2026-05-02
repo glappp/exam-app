@@ -82,6 +82,9 @@ if (useR2) {
 const registerRoute = require('./routes/register');
 app.use('/api/register', registerRoute);
 
+const authRoute = require('./routes/api/auth');
+app.use('/api/auth', authRoute);
+
 // ✅ Edit question with optional image upload (must come before questionsRoute)
 // Pre-middleware: ดึง R2 key เดิมเพื่อ overwrite แทนการสร้าง key ใหม่
 async function attachOverwriteKey(req, res, next) {

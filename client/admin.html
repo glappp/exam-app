@@ -60,6 +60,7 @@
       <button class="tab-btn" onclick="switchTab('announce')">ประกาศ</button>
       <button class="tab-btn" onclick="switchTab('mock')">Mock Blueprint</button>
       <button class="tab-btn" onclick="switchTab('reports')" id="tab-btn-reports">แจ้งปัญหา</button>
+      <button class="tab-btn" onclick="switchTab('invite')">รหัสเชิญ</button>
     </div>
 
     <!-- Users tab -->
@@ -184,6 +185,42 @@
       <div id="bp-list-admin"><div style="color:var(--muted);font-size:13px">กำลังโหลด...</div></div>
     </div>
 
+    <!-- Invite Codes tab -->
+    <div class="tab-panel card" id="tab-invite">
+      <div style="max-width:520px">
+        <div class="card-title">สร้างรหัสเชิญใหม่</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div>
+            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">รหัส <span style="color:#b91c1c">*</span></label>
+            <input type="text" id="inv-code" placeholder="เช่น HKBU2568" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;text-transform:uppercase">
+          </div>
+          <div>
+            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">ใช้ได้กี่ครั้ง</label>
+            <input type="number" id="inv-max" value="1" min="1" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+          <div>
+            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">หมายเหตุ</label>
+            <input type="text" id="inv-note" placeholder="เช่น รุ่น 2568 ป.4" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+          </div>
+          <div>
+            <label style="font-size:12px;color:#666;display:block;margin-bottom:4px">หมดอายุ (ไม่บังคับ)</label>
+            <input type="date" id="inv-expires" style="width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="createInviteCode()">สร้างรหัส</button>
+        <div id="inv-msg" style="margin-top:8px;font-size:13px"></div>
+      </div>
+
+      <hr style="margin:20px 0;border:none;border-top:1px solid #f0f0f0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <strong>รหัสเชิญทั้งหมด</strong>
+        <button onclick="loadInviteCodes()" style="padding:5px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;font-size:13px">รีเฟรช</button>
+      </div>
+      <div id="inv-list"><p style="color:var(--muted);font-size:13px">กำลังโหลด...</p></div>
+    </div>
+
     <div class="tab-panel card" id="tab-reports">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
         <strong>รายการแจ้งปัญหาโจทย์</strong>
@@ -194,7 +231,7 @@
   </div>
 
   <script>
-    const TABS = ['users','schools','results','announce','mock','reports'];
+    const TABS = ['users','schools','results','announce','mock','reports','invite'];
     function switchTab(name) {
       document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', TABS[i] === name));
       document.querySelectorAll('.tab-panel').forEach((p,i) => p.classList.toggle('active', `tab-${TABS[i]}` === `tab-${name}`));
@@ -202,6 +239,7 @@
       if (name === 'mock') loadBlueprintList();
       if (name === 'schools') loadSchools();
       if (name === 'reports') loadReports();
+      if (name === 'invite') loadInviteCodes();
     }
 
     // ---- Announcements ----
@@ -569,6 +607,79 @@
       if (remaining === 0)
         document.getElementById('reports-content').innerHTML =
           '<p style="color:var(--muted);font-size:13px">ยังไม่มีรายงาน</p>';
+    }
+
+    // ---- Invite Codes ----
+    async function loadInviteCodes() {
+      const el = document.getElementById('inv-list');
+      el.innerHTML = '<p style="color:#aaa;font-size:13px">กำลังโหลด...</p>';
+      const r = await fetch('/api/admin/invite-codes', { credentials: 'include' });
+      if (!r.ok) { el.innerHTML = '<p style="color:#dc2626;font-size:13px">โหลดไม่ได้</p>'; return; }
+      const { codes } = await r.json();
+      if (!codes.length) { el.innerHTML = '<p style="color:#aaa;font-size:13px">ยังไม่มีรหัสเชิญ</p>'; return; }
+      el.innerHTML = `
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr style="border-bottom:2px solid #f0f0f0;text-align:left">
+              <th style="padding:8px 6px">รหัส</th>
+              <th style="padding:8px 6px">ใช้แล้ว/ทั้งหมด</th>
+              <th style="padding:8px 6px">หมายเหตุ</th>
+              <th style="padding:8px 6px">หมดอายุ</th>
+              <th style="padding:8px 6px">สถานะ</th>
+              <th style="padding:8px 6px"></th>
+            </tr>
+          </thead>
+          <tbody>
+            ${codes.map(c => `
+              <tr style="border-bottom:1px solid #f5f5f5" id="inv-row-${c.id}">
+                <td style="padding:8px 6px;font-weight:700;font-family:monospace">${c.code}</td>
+                <td style="padding:8px 6px">${c.usedCount} / ${c.maxUses}</td>
+                <td style="padding:8px 6px;color:#666">${c.note || '—'}</td>
+                <td style="padding:8px 6px;color:#666">${c.expiresAt ? new Date(c.expiresAt).toLocaleDateString('th-TH') : '—'}</td>
+                <td style="padding:8px 6px">
+                  <span style="padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600;
+                    background:${c.isActive ? '#dcfce7' : '#f3f4f6'};
+                    color:${c.isActive ? '#16a34a' : '#6b7280'}">
+                    ${c.isActive ? 'ใช้ได้' : 'ปิดแล้ว'}
+                  </span>
+                </td>
+                <td style="padding:8px 6px">
+                  ${c.isActive ? `<button onclick="deactivateInviteCode(${c.id})" style="padding:3px 10px;background:#fee2e2;color:#dc2626;border:none;border-radius:5px;font-size:12px;cursor:pointer">ปิด</button>` : ''}
+                </td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    async function createInviteCode() {
+      const code = document.getElementById('inv-code').value.trim().toUpperCase();
+      const maxUses = parseInt(document.getElementById('inv-max').value) || 1;
+      const note = document.getElementById('inv-note').value.trim();
+      const expiresAt = document.getElementById('inv-expires').value;
+      const msg = document.getElementById('inv-msg');
+      if (!code) { msg.style.color='#dc2626'; msg.textContent='กรุณากรอกรหัส'; return; }
+      const r = await fetch('/api/admin/invite-codes', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, maxUses, note: note || null, expiresAt: expiresAt || null })
+      });
+      const d = await r.json();
+      if (d.success) {
+        msg.style.color='#16a34a'; msg.textContent=`✅ สร้างรหัส ${d.code.code} สำเร็จ`;
+        document.getElementById('inv-code').value = '';
+        document.getElementById('inv-note').value = '';
+        document.getElementById('inv-expires').value = '';
+        loadInviteCodes();
+        setTimeout(() => msg.textContent = '', 4000);
+      } else {
+        msg.style.color='#dc2626'; msg.textContent = d.error || 'สร้างไม่สำเร็จ';
+      }
+    }
+
+    async function deactivateInviteCode(id) {
+      if (!confirm('ปิดรหัสเชิญนี้?')) return;
+      const r = await fetch(`/api/admin/invite-codes/${id}/deactivate`, { method: 'PATCH', credentials: 'include' });
+      if (r.ok) loadInviteCodes();
     }
 
     init();

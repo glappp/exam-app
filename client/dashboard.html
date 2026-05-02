@@ -372,7 +372,8 @@
     ]);
     const classroomData = r5.ok    ? await r5.json()   : null;
     const academicData  = rAc.ok   ? await rAc.json()  : null;
-    const hasClassroom  = classroomData?.results?.filter(r => !r.isMulti).length > 0;
+    const hasClassroom  = !!(classroomData?.results?.length > 0 ||
+                              Object.keys(classroomData?.aggregates || {}).length > 0);
     const hasAcademic   = academicData?.total > 0;
     if (hasClassroom || hasAcademic) renderScoreSection(classroomData, academicData);
   }
@@ -535,10 +536,21 @@
 
     // ใส่ข้อมูล ClassroomScoreUpload
     if (classroomData?.results) {
-      for (const r of classroomData.results.filter(r => !r.isMulti)) {
+      for (const r of classroomData.results) {
         const key = `${r.academicYear}|${r.term || '1'}`;
-        if (!timeline[key]) timeline[key] = { classroom: [] };
-        timeline[key].classroom.push(r);
+        if (!timeline[key]) timeline[key] = {};
+        if (r.isMulti) {
+          // multi: เก็บ subjectScores เป็น array สำหรับแสดงรายวิชา
+          if (!timeline[key].multiRows) timeline[key].multiRows = [];
+          const ss = r.myData?.subjectScores || {};
+          for (const [subj, score] of Object.entries(ss)) {
+            const rank = r.ranks?.[subj];
+            timeline[key].multiRows.push({ subject: subj, score: parseFloat(score) || 0, rank, total: r.total });
+          }
+        } else {
+          if (!timeline[key].classroom) timeline[key].classroom = [];
+          timeline[key].classroom.push(r);
+        }
       }
       for (const [key, agg] of Object.entries(classroomData.aggregates || {})) {
         if (!timeline[key]) timeline[key] = {};
@@ -671,6 +683,23 @@
         rowsHtml += `<div style="text-align:center;padding:8px 0;font-size:12px;color:#94a3b8">
           และอีก ${data.academic.length - 10} วิชา — <a href="student-report.html" style="color:#3b82f6">ดูทั้งหมด</a></div>`;
 
+    } else if (data.multiRows?.length) {
+      // multi-type upload → แสดง score + rank ต่อวิชา
+      rowsHtml = data.multiRows.slice(0, 10).map((m, i) => {
+        const sp  = Math.min(100, Math.round(m.score));
+        const bc  = sp >= 80 ? '#16a34a' : sp >= 60 ? '#f59e0b' : '#ef4444';
+        const sep = i < Math.min(data.multiRows.length, 10) - 1 ? 'border-bottom:1px solid #f1f5f9' : '';
+        return `<div style="padding:10px 0;${sep}">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+            <span style="font-size:14px;font-weight:600;flex:1">${m.subject}</span>
+            <span style="font-size:13px;font-weight:700;color:#1e293b">${m.score}</span>
+            ${m.rank ? `<span style="font-size:12px;color:#94a3b8">${m.rank}/${m.total}</span>` : ''}
+          </div>
+          <div style="background:#e2e8f0;border-radius:3px;height:4px">
+            <div style="background:${bc};width:${sp}%;height:4px;border-radius:3px"></div>
+          </div>
+        </div>`;
+      }).join('');
     } else if (data.classroom?.length) {
       // มีแค่ ClassroomScoreUpload → แสดงแบบเดิม (score/grade/rank)
       rowsHtml = data.classroom.slice(0, 8).map((r, i) => {

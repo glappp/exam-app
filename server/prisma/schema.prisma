@@ -386,6 +386,32 @@ model PasswordResetToken {
   createdAt DateTime @default(now())
 }
 
+// ─── Academic Record (ผลการเรียนจาก CSV โรงเรียน) ───────────────────────────
+
+model AcademicRecord {
+  id           Int      @id @default(autoincrement())
+  // ข้อมูลนักเรียน (ใช้ match กับ User)
+  firstName    String
+  lastName     String
+  school       String   // เช่น "ฮั่วเคี้ยวบุรีรัมย์"
+  studentCode  String?  // รหัสนักเรียน (ถ้ามี)
+  grade        String   // "p1"–"p6"
+  classroom    String   // "1", "2", ...
+  roomType     String   // "HKEP" | "GIFTED" | "มาตรฐาน"
+  academicYear String   // "2568"
+  // ข้อมูลรายวิชา
+  subjectCode  String   // "ค11101"
+  subjectName  String   // "คณิตศาสตร์"
+  midScore     Float?
+  finalScore   Float?
+  totalScore   Float?
+  gradeValue   String?  // "4.00", "3.50", ...
+  createdAt    DateTime @default(now())
+
+  @@index([firstName, lastName, school])
+  @@index([studentCode, school])
+}
+
 // ─── Invite Code ─────────────────────────────────────────────────────────────
 
 model InviteCode {

@@ -174,4 +174,68 @@ router.delete('/question-reports/:id', requireAdmin, async (req, res) => {
   }
 });
 
+// ── Reset Password ───────────────────────────────────────────
+
+// POST /api/admin/users/:id/reset-password
+router.post('/users/:id/reset-password', requireAdmin, async (req, res) => {
+  try {
+    const bcrypt = require('bcryptjs');
+    const pin = String(Math.floor(1000 + Math.random() * 9000));
+    const hashed = await bcrypt.hash(pin, 10);
+    await prisma.user.update({
+      where: { id: parseInt(req.params.id) },
+      data: { password: hashed, mustChangePassword: true },
+    });
+    res.json({ ok: true, pin });
+  } catch (err) {
+    res.status(500).json({ error: 'reset password ล้มเหลว' });
+  }
+});
+
+// ── Invite Codes ─────────────────────────────────────────────
+
+// GET /api/admin/invite-codes
+router.get('/invite-codes', requireAdmin, async (req, res) => {
+  try {
+    const codes = await prisma.inviteCode.findMany({ orderBy: { createdAt: 'desc' } });
+    res.json({ codes });
+  } catch (err) {
+    res.status(500).json({ error: 'โหลด invite codes ล้มเหลว' });
+  }
+});
+
+// POST /api/admin/invite-codes — สร้าง code ใหม่
+router.post('/invite-codes', requireAdmin, async (req, res) => {
+  try {
+    const { code, maxUses = 1, note, expiresAt } = req.body;
+    if (!code) return res.status(400).json({ error: 'กรุณากรอก code' });
+    const invite = await prisma.inviteCode.create({
+      data: {
+        code: code.trim().toUpperCase(),
+        maxUses: parseInt(maxUses),
+        note,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        createdBy: req.session.username
+      }
+    });
+    res.json({ success: true, invite });
+  } catch (err) {
+    if (err.code === 'P2002') return res.status(400).json({ error: 'รหัสนี้มีอยู่แล้ว' });
+    res.status(500).json({ error: 'สร้าง invite code ล้มเหลว' });
+  }
+});
+
+// PATCH /api/admin/invite-codes/:id/deactivate — ปิดใช้งาน
+router.patch('/invite-codes/:id/deactivate', requireAdmin, async (req, res) => {
+  try {
+    await prisma.inviteCode.update({
+      where: { id: parseInt(req.params.id) },
+      data: { isActive: false }
+    });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'ปิด invite code ล้มเหลว' });
+  }
+});
+
 module.exports = router;

@@ -56,6 +56,14 @@
       <div class="success-msg" id="success-msg"></div>
 
       <form id="registerForm" novalidate>
+        <div class="section-divider">รหัสเชิญ</div>
+
+        <div class="form-group">
+          <label>รหัสเชิญ <span style="color:#b91c1c">*</span></label>
+          <input name="inviteCode" placeholder="กรอกรหัสเชิญที่ได้รับ" required autocomplete="off">
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">ระบบยังไม่เปิดให้สมัครสาธารณะ — ต้องมีรหัสเชิญจากโรงเรียน</div>
+        </div>
+
         <div class="section-divider">ข้อมูลบัญชี</div>
 
         <div class="form-row">
@@ -80,8 +88,9 @@
         </div>
 
         <div class="form-group">
-          <label>อีเมล</label>
-          <input type="email" name="email" placeholder="example@email.com">
+          <label>อีเมล <span style="color:#b91c1c">*</span></label>
+          <input type="email" name="email" placeholder="example@email.com" required>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">ใช้สำหรับรีเซ็ตรหัสผ่านหากลืม</div>
         </div>
 
         <div class="section-divider">ข้อมูลนักเรียน</div>
@@ -215,9 +224,11 @@
       const data = Object.fromEntries(new FormData(form).entries());
 
       // Basic client-side validation
+      if (!data.inviteCode) { show('error', 'กรุณากรอกรหัสเชิญ'); return; }
       if (!data.firstName || !data.lastName) { show('error', 'กรุณากรอกชื่อ-นามสกุล'); return; }
       if (!data.username)   { show('error', 'กรุณากรอกชื่อผู้ใช้'); return; }
       if (data.password.length < 6) { show('error', 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร'); return; }
+      if (!data.email || !data.email.includes('@')) { show('error', 'กรุณากรอกอีเมลที่ถูกต้อง'); return; }
       if (!data.academicYear || !data.grade) { show('error', 'กรุณากรอกข้อมูลนักเรียนให้ครบ'); return; }
       if (!data.province || !data.district)  { show('error', 'กรุณาเลือกจังหวัดและอำเภอ'); return; }
       if (!data.school) { show('error', 'กรุณาเลือกโรงเรียน'); return; }

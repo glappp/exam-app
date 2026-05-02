@@ -176,6 +176,7 @@ app.use('/api/time-trial', require('./routes/api/time-trial'));
 app.use('/api/tickets', require('./routes/api/tickets'));
 app.use('/api/questions', require('./routes/api/question-report'));
 app.use('/api/feedback',  require('./routes/api/feedback'));
+app.use('/api/academic-records', require('./routes/api/academic-records'));
 app.use('/api/mission',      require('./routes/api/mission'));
 app.use('/api/leaderboard',  require('./routes/api/leaderboard'));
 app.use('/api/box',          require('./routes/api/box'));

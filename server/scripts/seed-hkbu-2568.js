@@ -163,10 +163,14 @@ async function main() {
         const pin    = String(Math.floor(1000 + Math.random() * 9000));
         const hashed = await bcrypt.hash(pin, SALT_ROUNDS);
 
+        const GRADE_NUM = { p1:1, p2:2, p3:3, p4:4, p5:5, p6:6 };
         const gradeLabel = {
           p1:'ป.1', p2:'ป.2', p3:'ป.3',
           p4:'ป.4', p5:'ป.5', p6:'ป.6',
         }[s.grade] || s.grade;
+        // enrollmentYear = ปีที่เริ่มเข้า ป.1
+        // นักเรียนชั้น p1 เพิ่งเข้า 2568, p2 เข้า 2567, ... p6 เข้า 2563
+        const enrollmentYear = String(parseInt(ACADEMIC_YEAR) - (GRADE_NUM[s.grade] || 1) + 1);
 
         await prisma.user.create({
           data: {
@@ -180,13 +184,15 @@ async function main() {
             mustChangePassword: true,
             studentProfiles: {
               create: {
-                academicYear: ACADEMIC_YEAR,
-                school:       SCHOOL,
-                district:     DISTRICT,
-                province:     PROVINCE,
-                grade:        gradeLabel,
-                classroom:    s.classroom,
-                studentCode:  s.studentCode,
+                academicYear:    ACADEMIC_YEAR,
+                school:          SCHOOL,
+                district:        DISTRICT,
+                province:        PROVINCE,
+                grade:           gradeLabel,
+                classroom:       s.classroom,
+                studentCode:     s.studentCode,
+                enrollmentYear,
+                enrollmentGrade: 'p1',
               }
             }
           }

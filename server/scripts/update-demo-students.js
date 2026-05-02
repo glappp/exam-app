@@ -86,6 +86,22 @@ async function main() {
   }
   console.log(`  ✅ อัปเดต ${updated} profiles\n`);
 
+  // ── 1b. แก้ชื่อโรงเรียนใน StudentProfile ของ a1-a29 ให้ตรงกับ AcademicRecord ──
+  console.log('\n🏫 อัปเดต school name ของ a1-a29...');
+  let schoolFixed = 0;
+  for (const u of demoUsers) {
+    for (const sp of u.studentProfiles) {
+      if (sp.school && sp.school !== SCHOOL) {
+        if (!DRY_RUN) {
+          await prisma.studentProfile.update({ where: { id: sp.id }, data: { school: SCHOOL } });
+        }
+        console.log(`  ${u.username}: school "${sp.school}" → "${SCHOOL}"`);
+        schoolFixed++;
+      }
+    }
+  }
+  console.log(`  ✅ แก้ไข ${schoolFixed} profiles\n`);
+
   // ── 2. Mock AcademicRecord ของ a23 ─────────────────────────────────────────
   console.log(`📚 สร้าง AcademicRecord จำลองสำหรับ ${A23.firstName} ${A23.lastName}...`);
 

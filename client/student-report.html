@@ -248,24 +248,39 @@ function renderAcademicTerm(key, records) {
 
   const labels  = subjects.map(s => s.subjectName);
   const myVals  = subjects.map(s => s.totalScore ?? 0);
-  const avgVals = subjects.map(() => 0); // ไม่มี class mean ใน AcademicRecord
+  const avgVals = subjects.map(s => s.classStats?.mean ?? 0);
 
   document.getElementById('score-cards').innerHTML = subjects.map(s => {
-    const total = s.totalScore ?? null;
-    const gv    = parseFloat(s.gradeValue);
-    const pct   = total ?? 0;
-    const cls   = pct >= 80 ? 'good' : pct >= 60 ? 'ok' : 'poor';
-    const clr   = pct >= 80 ? '#22c55e' : pct >= 60 ? '#f59e0b' : '#ef4444';
-    const gcBg  = gv >= 3.5 ? '#dcfce7' : gv >= 2.5 ? '#fef3c7' : gv >= 1 ? '#fee2e2' : '#f1f5f9';
-    const gcClr = gv >= 3.5 ? '#15803d' : gv >= 2.5 ? '#d97706' : gv >= 1 ? '#b91c1c' : '#94a3b8';
+    const total  = s.totalScore ?? null;
+    const gv     = parseFloat(s.gradeValue);
+    const pct    = total ?? 0;
+    const cls    = pct >= 80 ? 'good' : pct >= 60 ? 'ok' : 'poor';
+    const clr    = pct >= 80 ? '#22c55e' : pct >= 60 ? '#f59e0b' : '#ef4444';
+    const gcBg   = gv >= 3.5 ? '#dcfce7' : gv >= 2.5 ? '#fef3c7' : gv >= 1 ? '#fee2e2' : '#f1f5f9';
+    const gcClr  = gv >= 3.5 ? '#15803d' : gv >= 2.5 ? '#d97706' : gv >= 1 ? '#b91c1c' : '#94a3b8';
+    const cs     = s.classStats;
+    const gs     = s.gradeStats;
+    const cpct   = cs?.percentile ?? null;
+    const gpct   = gs?.percentile ?? null;
+    const cpCls  = cpct >= 75 ? 'top' : cpct >= 40 ? 'mid' : 'low';
+    const gpCls  = gpct >= 75 ? 'top' : gpct >= 40 ? 'mid' : 'low';
     return `<div class="score-card ${cls}">
       <div class="subj" onclick="location.href='subject-progress.html?subject='+encodeURIComponent('${s.subjectName}')" title="ดูความก้าวหน้า ${esc(s.subjectName)}">${esc(s.subjectName)} 📈</div>
-      <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px">
+      <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px">
         <span class="big" style="color:${clr}">${total ?? '—'}</span>
         <span class="fs">/ 100</span>
         <span style="margin-left:auto;font-weight:800;font-size:13px;color:${gcClr};background:${gcBg};padding:1px 9px;border-radius:7px">${s.gradeValue ?? '—'}</span>
       </div>
-      <div class="bar-wrap">
+      ${cs ? `<div class="pct-row" style="margin-bottom:2px">
+        <span style="color:#64748b;font-size:11px">เฉลี่ย ${cs.mean} <span style="color:#94a3b8">±${cs.sd}</span></span>
+        ${cpct != null ? `<span class="pct-pill ${cpCls}">ห้อง P${cpct}</span>` : ''}
+      </div>
+      ${(cs.max != null) ? `<div class="minmax-row">
+        <span>สูงสุด <b class="mx">${cs.max}</b></span>
+        <span>ต่ำสุด <b class="mn">${cs.min}</b></span>
+        ${gpct != null ? `<span style="margin-left:auto"><span class="pct-pill ${gpCls}" style="font-size:10px">ชั้น P${gpct}</span></span>` : ''}
+      </div>` : ''}` : ''}
+      <div class="bar-wrap" style="margin-top:6px">
         <div class="bar-fill" style="width:${Math.min(100, pct)}%;background:${clr}"></div>
       </div>
     </div>`;

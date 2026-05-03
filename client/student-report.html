@@ -170,9 +170,15 @@ async function init() {
   ]);
   document.getElementById('loading').style.display = 'none';
 
-  // ── ลอง classroom scores ก่อน ──────────────────────────────────────────────
+  // นับจำนวนเทอมใน AcademicRecord
+  const acTermCount = academicRes?.total > 0
+    ? Object.keys(academicRes.records || {}).reduce((sum, y) => sum + Object.keys(academicRes.records[y]).length, 0)
+    : 0;
+
+  // ── ใช้ classroom mode เฉพาะเมื่อ AcademicRecord มีไม่เกิน 1 เทอม
+  // (ถ้า academic มีประวัติหลายเทอม → แสดง academic เพื่อเห็นพัฒนาการ)
   const singles = (classroomRes?.results || []).filter(r => !r.isMulti);
-  if (singles.length > 0) {
+  if (singles.length > 0 && acTermCount <= 1) {
     renderHeader(classroomRes.student);
     const yearGroups = {};
     singles.forEach(r => {

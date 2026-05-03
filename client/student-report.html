@@ -43,7 +43,8 @@
     .score-card.good  { border-top-color: #22c55e; }
     .score-card.ok    { border-top-color: #f59e0b; }
     .score-card.poor  { border-top-color: #ef4444; }
-    .score-card .subj { font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .score-card .subj { font-size: 12px; font-weight: 700; color: #64748b; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+    .score-card .subj:hover { color: #3b82f6; text-decoration: underline; }
     .score-card .big  { font-size: 32px; font-weight: 800; line-height: 1; }
     .score-card .fs   { font-size: 13px; color: #94a3b8; }
     .score-card .pct-row { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; color: #64748b; }
@@ -252,7 +253,7 @@ function renderAcademicTerm(key, records) {
     const gcBg  = gv >= 3.5 ? '#dcfce7' : gv >= 2.5 ? '#fef3c7' : gv >= 1 ? '#fee2e2' : '#f1f5f9';
     const gcClr = gv >= 3.5 ? '#15803d' : gv >= 2.5 ? '#d97706' : gv >= 1 ? '#b91c1c' : '#94a3b8';
     return `<div class="score-card ${cls}">
-      <div class="subj">${esc(s.subjectName)}</div>
+      <div class="subj" onclick="location.href='subject-progress.html?subject='+encodeURIComponent('${s.subjectName}')" title="ดูความก้าวหน้า ${esc(s.subjectName)}">${esc(s.subjectName)} 📈</div>
       <div>
         <span class="big" style="color:${clr}">${total ?? '—'}</span>
         <span class="fs"> / 100</span>
@@ -314,7 +315,7 @@ function renderTerm(termKey, subjects, aggregates) {
     const pctClass = pct >= 75 ? 'top' : pct >= 40 ? 'mid' : 'low';
     const rankIcon = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
     return `<div class="score-card ${cls}">
-      <div class="subj">${esc(r.subject)}</div>
+      <div class="subj" onclick="location.href='subject-progress.html?subject='+encodeURIComponent('${r.subject}')" title="ดูความก้าวหน้า ${esc(r.subject)}">${esc(r.subject)} 📈</div>
       <div>
         <span class="big" style="color:${clr}">${score ?? '—'}</span>
         <span class="fs"> / ${fs}</span>

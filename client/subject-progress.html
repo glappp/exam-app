@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ความก้าวหน้าวิชา</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    body { background: #f1f5f9; }
+    .page { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+
+    .topbar {
+      background: #1e3a5f; color: #fff; padding: 0 20px; height: 50px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar a { color: #93c5fd; font-size: 13px; text-decoration: none; }
+    .topbar a:hover { color: #fff; }
+
+    .header-card {
+      background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+      color: #fff; border-radius: 16px; padding: 22px 28px;
+      margin-bottom: 20px; box-shadow: 0 4px 16px rgba(59,130,246,.3);
+    }
+    .header-card h2 { margin: 0 0 4px; font-size: 22px; font-weight: 800; }
+    .header-card p  { margin: 0; font-size: 13px; opacity: .85; }
+
+    .card {
+      background: #fff; border-radius: 14px; padding: 22px 24px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07); margin-bottom: 16px;
+    }
+    .card-title { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 16px; }
+
+    /* stat boxes */
+    .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    @media (max-width: 600px) { .stat-row { grid-template-columns: repeat(2, 1fr); } }
+    .stat-box {
+      background: #f8fafc; border-radius: 10px; padding: 14px 12px; text-align: center;
+    }
+    .stat-box .val { font-size: 26px; font-weight: 800; color: #1e293b; line-height: 1; }
+    .stat-box .lbl { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+
+    /* table */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .data-table th { padding: 8px 10px; font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; border-bottom: 2px solid #e2e8f0; text-align: left; }
+    .data-table td { padding: 10px 10px; border-bottom: 1px solid #f8fafc; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .grade-badge {
+      display: inline-block; font-weight: 800; font-size: 13px;
+      padding: 2px 10px; border-radius: 8px;
+    }
+    .trend-up   { color: #16a34a; }
+    .trend-down { color: #dc2626; }
+    .trend-flat { color: #94a3b8; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <span id="subj-title" style="font-weight:700;font-size:15px">ความก้าวหน้า</span>
+  <a href="student-report.html">← รายงานเต็ม</a>
+</div>
+
+<div class="page">
+  <div id="loading" style="text-align:center;padding:60px;color:#94a3b8">⏳ กำลังโหลด…</div>
+  <div id="empty-state" style="display:none;text-align:center;padding:60px;color:#94a3b8">ไม่พบข้อมูลวิชานี้</div>
+  <div id="content" style="display:none">
+
+    <div class="header-card">
+      <h2 id="hd-subject">—</h2>
+      <p id="hd-meta">—</p>
+    </div>
+
+    <!-- สถิติรวม -->
+    <div class="stat-row">
+      <div class="stat-box"><div class="val" id="st-avg">—</div><div class="lbl">เฉลี่ยรวม</div></div>
+      <div class="stat-box"><div class="val" id="st-best">—</div><div class="lbl">สูงสุด</div></div>
+      <div class="stat-box"><div class="val" id="st-latest">—</div><div class="lbl">ล่าสุด</div></div>
+      <div class="stat-box"><div class="val" id="st-trend">—</div><div class="lbl">แนวโน้ม</div></div>
+    </div>
+
+    <!-- Line Chart -->
+    <div class="card">
+      <div class="card-title">คะแนนรวมตามภาคเรียน</div>
+      <canvas id="line-chart" height="120"></canvas>
+    </div>
+
+    <!-- Bar: กลางภาค vs ปลายภาค -->
+    <div class="card">
+      <div class="card-title">กลางภาค vs ปลายภาค</div>
+      <canvas id="bar-chart" height="120"></canvas>
+    </div>
+
+    <!-- ตารางรายภาคเรียน -->
+    <div class="card">
+      <div class="card-title">รายละเอียดทุกภาคเรียน</div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ชั้น / ภาค</th>
+            <th style="text-align:right">กลางภาค</th>
+            <th style="text-align:right">ปลายภาค</th>
+            <th style="text-align:right">รวม</th>
+            <th style="text-align:center">เกรด</th>
+          </tr>
+        </thead>
+        <tbody id="detail-rows"></tbody>
+      </table>
+    </div>
+
+  </div><!-- /content -->
+</div>
+
+<script>
+const GRADE_LBL = { p1:'ป.1', p2:'ป.2', p3:'ป.3', p4:'ป.4', p5:'ป.5', p6:'ป.6' };
+
+async function init() {
+  const params  = new URLSearchParams(location.search);
+  const subject = params.get('subject') || '';
+  if (!subject) { showEmpty(); return; }
+
+  document.getElementById('subj-title').textContent = subject;
+  document.title = `ความก้าวหน้า — ${subject}`;
+
+  const meRes = await fetch('/api/me', { credentials: 'include' });
+  if (!meRes.ok) { location.href = 'login.html'; return; }
+
+  const acRes = await fetch('/api/academic-records/mine', { credentials: 'include' });
+  document.getElementById('loading').style.display = 'none';
+  if (!acRes.ok) { showEmpty(); return; }
+
+  const { records, summary } = await acRes.json();
+
+  // รวม records ของวิชานี้ เรียงตาม year→term
+  const rows = [];
+  const years = Object.keys(records).sort();
+  years.forEach(year => {
+    const sumItem = summary.find(s => s.year === year);
+    const terms = Object.keys(records[year]).sort();
+    terms.forEach(term => {
+      const sub = records[year][term].find(s => s.subjectName === subject);
+      if (sub) rows.push({ year, term, grade: sumItem?.grade || '', ...sub });
+    });
+  });
+
+  if (!rows.length) { showEmpty(); return; }
+
+  // Header
+  document.getElementById('hd-subject').textContent = subject;
+  document.getElementById('hd-meta').textContent =
+    `${rows.length} ภาคเรียน · ป.${rows[0] ? GRADE_LBL[rows[0].grade] || rows[0].grade : ''} ถึง ${GRADE_LBL[rows[rows.length-1].grade] || rows[rows.length-1].grade}`;
+
+  // Stats
+  const totals = rows.map(r => r.totalScore ?? 0);
+  const avg    = Math.round(totals.reduce((a,b)=>a+b,0) / totals.length * 10) / 10;
+  const best   = Math.max(...totals);
+  const latest = totals[totals.length - 1];
+  // แนวโน้ม: เปรียบ ครึ่งหลัง vs ครึ่งแรก
+  const half   = Math.floor(totals.length / 2);
+  const firstH = totals.slice(0, half).reduce((a,b)=>a+b,0) / (half || 1);
+  const lastH  = totals.slice(half).reduce((a,b)=>a+b,0) / (totals.length - half || 1);
+  const diff   = Math.round((lastH - firstH) * 10) / 10;
+  const trendEl = document.getElementById('st-trend');
+  trendEl.textContent = diff > 0 ? `+${diff}` : `${diff}`;
+  trendEl.className = 'val ' + (diff > 0 ? 'trend-up' : diff < 0 ? 'trend-down' : 'trend-flat');
+
+  document.getElementById('st-avg').textContent    = avg;
+  document.getElementById('st-best').textContent   = best;
+  document.getElementById('st-latest').textContent = latest;
+
+  // Labels
+  const labels = rows.map(r => `${GRADE_LBL[r.grade] || r.grade} ภ.${r.term}`);
+  const totV   = rows.map(r => r.totalScore ?? null);
+  const midV   = rows.map(r => r.midScore   ?? null);
+  const finV   = rows.map(r => r.finalScore  ?? null);
+
+  // ─── Line chart ─────────────────────────────────────────────────────────────
+  new Chart(document.getElementById('line-chart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'คะแนนรวม',
+        data: totV,
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59,130,246,.08)',
+        borderWidth: 2.5,
+        pointBackgroundColor: totV.map(v => v >= 80 ? '#16a34a' : v >= 60 ? '#f59e0b' : '#ef4444'),
+        pointRadius: 5,
+        tension: 0.35,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { min: 0, max: 100, ticks: { font: { family: 'inherit' }, stepSize: 20 } },
+        x: { ticks: { font: { family: 'inherit', size: 11 } } }
+      }
+    }
+  });
+
+  // ─── Bar chart mid vs final ──────────────────────────────────────────────────
+  new Chart(document.getElementById('bar-chart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'กลางภาค', data: midV, backgroundColor: 'rgba(99,102,241,.75)', borderRadius: 4 },
+        { label: 'ปลายภาค', data: finV, backgroundColor: 'rgba(34,197,94,.75)',  borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { labels: { font: { family: 'inherit', size: 12 } } } },
+      scales: {
+        y: { min: 0, max: 100, ticks: { font: { family: 'inherit' } } },
+        x: { ticks: { font: { family: 'inherit', size: 11 } } }
+      }
+    }
+  });
+
+  // ─── Detail table ────────────────────────────────────────────────────────────
+  const tbody = document.getElementById('detail-rows');
+  tbody.innerHTML = rows.map((r, i) => {
+    const gv  = parseFloat(r.gradeValue);
+    const gc  = gv >= 3.5 ? '#15803d' : gv >= 2.5 ? '#d97706' : gv >= 1 ? '#b91c1c' : '#94a3b8';
+    const gbg = gv >= 3.5 ? '#dcfce7' : gv >= 2.5 ? '#fef3c7' : gv >= 1 ? '#fee2e2' : '#f1f5f9';
+    const prev = i > 0 ? (rows[i-1].totalScore ?? 0) : null;
+    const cur  = r.totalScore ?? 0;
+    const arrow = prev === null ? '' : cur > prev ? ' <span class="trend-up">▲</span>' : cur < prev ? ' <span class="trend-down">▼</span>' : '';
+    return `<tr>
+      <td style="font-weight:600">${GRADE_LBL[r.grade] || r.grade} ภาคเรียน ${r.term}</td>
+      <td style="text-align:right;color:#64748b">${r.midScore ?? '—'}</td>
+      <td style="text-align:right;color:#64748b">${r.finalScore ?? '—'}</td>
+      <td style="text-align:right;font-weight:700">${r.totalScore ?? '—'}${arrow}</td>
+      <td style="text-align:center"><span class="grade-badge" style="color:${gc};background:${gbg}">${r.gradeValue ?? '—'}</span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('content').style.display = '';
+}
+
+function showEmpty() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('empty-state').style.display = 'block';
+}
+
+init();
+</script>
+</body>
+</html>

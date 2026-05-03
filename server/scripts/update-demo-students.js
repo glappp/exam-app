@@ -102,65 +102,70 @@ async function main() {
   }
   console.log(`  ✅ แก้ไข ${schoolFixed} profiles\n`);
 
-  // ── 2. Mock AcademicRecord ของ a23 ─────────────────────────────────────────
-  console.log(`📚 สร้าง AcademicRecord จำลองสำหรับ ${A23.firstName} ${A23.lastName}...`);
+  // ── 2. Mock AcademicRecord ของ a1-a29 ทุกคน ──────────────────────────────
+  console.log('📚 สร้าง AcademicRecord จำลองสำหรับ a1-a29...');
 
+  // ลบของเก่าทั้งหมดของ demo users (firstName = 'a1'..'a29', lastName = '')
   if (!DRY_RUN) {
+    const demoFirstNames = Array.from({ length: 29 }, (_, i) => `a${i + 1}`);
     const deleted = await prisma.academicRecord.deleteMany({
-      where: { firstName: A23.firstName, lastName: A23.lastName, school: SCHOOL },
+      where: { firstName: { in: demoFirstNames }, lastName: '' },
     });
     if (deleted.count > 0) console.log(`  ลบของเก่า ${deleted.count} แถว`);
   }
 
-  const records = [];
-  for (const g of GRADE_YEARS) {
-    for (const term of ['1', '2']) {
-      // term 2 คะแนนสูงขึ้นเล็กน้อย (นักเรียนพัฒนาขึ้น)
-      const termBonus = term === '2' ? 3 : 0;
-      // ชั้นสูงขึ้นคะแนนลดนิดหน่อย (วิชายากขึ้น)
-      const gradeIdx = GRADE_YEARS.indexOf(g);
-      const baseMid   = 78 - gradeIdx * 1.5 + termBonus;
-      const baseFinal = 80 - gradeIdx * 1.2 + termBonus;
+  const allRecords = [];
+  for (let idx = 1; idx <= 29; idx++) {
+    const firstName = `a${idx}`;
+    // คะแนน base ต่างกันเล็กน้อยแต่ละคน (seed จาก idx)
+    const bias = ((idx * 7) % 20) - 10; // -10 ถึง +10
 
-      for (const sub of SUBJECTS) {
-        // แต่ละวิชา variance ±10
-        const mid   = randScore(Math.max(50, baseMid   - 10), Math.min(99, baseMid   + 10));
-        const final = randScore(Math.max(50, baseFinal - 10), Math.min(99, baseFinal + 10));
-        const total = Math.round((mid + final) / 2 * 10) / 10;
+    for (const g of GRADE_YEARS) {
+      for (const term of ['1', '2']) {
+        const termBonus = term === '2' ? 3 : 0;
+        const gradeIdx  = GRADE_YEARS.indexOf(g);
+        const baseMid   = 75 + bias - gradeIdx * 1.5 + termBonus;
+        const baseFinal = 77 + bias - gradeIdx * 1.2 + termBonus;
 
-        records.push({
-          firstName:    A23.firstName,
-          lastName:     A23.lastName,
-          school:       SCHOOL,
-          studentCode:  null,  // a23 เป็น demo ไม่มีรหัสจริง
-          grade:        g.grade,
-          classroom:    g.classroom,
-          roomType:     g.roomType,
-          academicYear: g.year,
-          term,
-          subjectCode:  sub.code,
-          subjectName:  sub.name,
-          midScore:     mid,
-          finalScore:   final,
-          totalScore:   total,
-          gradeValue:   toGrade(total),
-        });
+        for (const sub of SUBJECTS) {
+          const mid   = randScore(Math.max(50, baseMid   - 10), Math.min(99, baseMid   + 10));
+          const final = randScore(Math.max(50, baseFinal - 10), Math.min(99, baseFinal + 10));
+          const total = Math.round((mid + final) / 2 * 10) / 10;
+
+          allRecords.push({
+            firstName,
+            lastName:     '',
+            school:       SCHOOL,
+            studentCode:  null,
+            grade:        g.grade,
+            classroom:    g.classroom,
+            roomType:     g.roomType,
+            academicYear: g.year,
+            term,
+            subjectCode:  sub.code,
+            subjectName:  sub.name,
+            midScore:     mid,
+            finalScore:   final,
+            totalScore:   total,
+            gradeValue:   toGrade(total),
+          });
+        }
       }
     }
   }
 
-  console.log(`  จะสร้าง ${records.length} แถว (${GRADE_YEARS.length} ชั้น × 2 เทอม × ${SUBJECTS.length} วิชา)`);
+  console.log(`  จะสร้าง ${allRecords.length} แถว (29 คน × 6 ชั้น × 2 เทอม × ${SUBJECTS.length} วิชา)`);
 
   if (!DRY_RUN) {
-    const BATCH = 200;
-    for (let i = 0; i < records.length; i += BATCH) {
-      await prisma.academicRecord.createMany({ data: records.slice(i, i + BATCH) });
+    const BATCH = 500;
+    for (let i = 0; i < allRecords.length; i += BATCH) {
+      await prisma.academicRecord.createMany({ data: allRecords.slice(i, i + BATCH) });
     }
     console.log('  ✅ บันทึกสำเร็จ');
   } else {
-    console.log('  [DRY RUN] ตัวอย่าง 3 แถวแรก:');
-    records.slice(0, 3).forEach(r =>
-      console.log(`    ${r.grade} เทอม${r.term} ${r.subjectName}: mid=${r.midScore} final=${r.finalScore} total=${r.totalScore} grade=${r.gradeValue}`)
+    console.log('  [DRY RUN] ตัวอย่าง 3 แถวแรก (a1):');
+    allRecords.slice(0, 3).forEach(r =>
+      console.log(`    ${r.firstName} ${r.grade} เทอม${r.term} ${r.subjectName}: mid=${r.midScore} total=${r.total} grade=${r.gradeValue}`)
     );
   }
 

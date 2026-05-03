@@ -163,43 +163,62 @@ async function init() {
   const me = await meRes.json();
   document.getElementById('nav-name').textContent = me.firstName || me.username || '';
 
-  const data = await fetch('/api/classroom/my-scores', {credentials:'include'}).then(r => r.json()).catch(() => null);
+  const [classroomRes, academicRes] = await Promise.all([
+    fetch('/api/classroom/my-scores',   {credentials:'include'}).then(r => r.json()).catch(() => null),
+    fetch('/api/academic-records/mine', {credentials:'include'}).then(r => r.json()).catch(() => null),
+  ]);
   document.getElementById('loading').style.display = 'none';
 
-  if (!data || !data.student || !data.results || data.results.length === 0) {
-    document.getElementById('empty-state').style.display = 'block';
+  // ── ลอง classroom scores ก่อน ──────────────────────────────────────────────
+  const singles = (classroomRes?.results || []).filter(r => !r.isMulti);
+  if (singles.length > 0) {
+    renderHeader(classroomRes.student);
+    const yearGroups = {};
+    singles.forEach(r => {
+      const key = `${r.academicYear}|${r.term || '1'}`;
+      if (!yearGroups[key]) yearGroups[key] = [];
+      yearGroups[key].push(r);
+    });
+    const years = Object.keys(yearGroups).sort((a, b) => b.localeCompare(a));
+    const tabsEl = document.getElementById('term-tabs');
+    tabsEl.innerHTML = years.map((key, i) =>
+      `<button class="term-tab${i === 0 ? ' active' : ''}" onclick="switchTerm('${key}', this)">${esc(termLabel(key))}</button>`
+    ).join('');
+    window._termData = { yearGroups, aggregates: classroomRes.aggregates, mode: 'classroom' };
+    renderTerm(years[0], yearGroups[years[0]], classroomRes.aggregates);
+    document.getElementById('terms-section').style.display = 'block';
     return;
   }
 
-  renderHeader(data.student);
+  // ── fallback: AcademicRecord ────────────────────────────────────────────────
+  if (academicRes?.total > 0) {
+    const { records, years: acYears, summary } = academicRes;
+    // flatten year|term keys เรียงล่าสุดก่อน
+    const keys = [];
+    acYears.forEach(y => Object.keys(records[y] || {}).sort().forEach(t => keys.push(`${y}|${t}`)));
+    keys.sort((a, b) => b.localeCompare(a));
 
-  // จัดกลุ่ม single-subject results ตาม year|term
-  const singles = data.results.filter(r => !r.isMulti);
-  const yearGroups = {};
-  singles.forEach(r => {
-    const key = `${r.academicYear}|${r.term || '1'}`;
-    if (!yearGroups[key]) yearGroups[key] = [];
-    yearGroups[key].push(r);
-  });
-  const years = Object.keys(yearGroups).sort((a, b) => b.localeCompare(a));
+    // header จาก summary ล่าสุด
+    const s = summary[summary.length - 1] || {};
+    const GRADE_LBL = { p1:'ป.1', p2:'ป.2', p3:'ป.3', p4:'ป.4', p5:'ป.5', p6:'ป.6' };
+    renderHeader({
+      name: me.firstName ? `${me.firstName} ${me.lastName || ''}`.trim() : me.username,
+      school: '', grade: GRADE_LBL[s.grade] || s.grade || '',
+      classroom: '', studentCode: '', academicYear: s.year || ''
+    });
 
-  if (years.length === 0) {
-    document.getElementById('empty-state').style.display = 'block';
+    const tabsEl = document.getElementById('term-tabs');
+    tabsEl.innerHTML = keys.map((key, i) =>
+      `<button class="term-tab${i === 0 ? ' active' : ''}" onclick="switchAcTerm('${key}', this)">${esc(termLabel(key))}</button>`
+    ).join('');
+
+    window._termData = { acRecords: records, mode: 'academic' };
+    renderAcademicTerm(keys[0], records);
+    document.getElementById('terms-section').style.display = 'block';
     return;
   }
 
-  // สร้าง tab buttons
-  const tabsEl = document.getElementById('term-tabs');
-  tabsEl.innerHTML = years.map((key, i) =>
-    `<button class="term-tab${i === 0 ? ' active' : ''}" onclick="switchTerm('${key}', this)">${esc(termLabel(key))}</button>`
-  ).join('');
-
-  // เก็บ data ไว้ใช้ตอน switch tab
-  window._termData = { yearGroups, aggregates: data.aggregates };
-
-  // แสดงเทอมล่าสุด
-  renderTerm(years[0], yearGroups[years[0]], data.aggregates);
-  document.getElementById('terms-section').style.display = 'block';
+  document.getElementById('empty-state').style.display = 'block';
 }
 
 function switchTerm(key, btn) {
@@ -207,6 +226,52 @@ function switchTerm(key, btn) {
   btn.classList.add('active');
   const { yearGroups, aggregates } = window._termData;
   renderTerm(key, yearGroups[key], aggregates);
+}
+
+function switchAcTerm(key, btn) {
+  document.querySelectorAll('.term-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAcademicTerm(key, window._termData.acRecords);
+}
+
+function renderAcademicTerm(key, records) {
+  document.getElementById('term-label').textContent = termLabel(key);
+  const [year, term] = key.split('|');
+  const subjects = records[year]?.[term] || [];
+
+  const labels  = subjects.map(s => s.subjectName);
+  const myVals  = subjects.map(s => s.totalScore ?? 0);
+  const avgVals = subjects.map(() => 0); // ไม่มี class mean ใน AcademicRecord
+
+  document.getElementById('score-cards').innerHTML = subjects.map(s => {
+    const total = s.totalScore ?? null;
+    const gv    = parseFloat(s.gradeValue);
+    const pct   = total ?? 0;
+    const cls   = pct >= 80 ? 'good' : pct >= 60 ? 'ok' : 'poor';
+    const clr   = pct >= 80 ? '#22c55e' : pct >= 60 ? '#f59e0b' : '#ef4444';
+    const gcBg  = gv >= 3.5 ? '#dcfce7' : gv >= 2.5 ? '#fef3c7' : gv >= 1 ? '#fee2e2' : '#f1f5f9';
+    const gcClr = gv >= 3.5 ? '#15803d' : gv >= 2.5 ? '#d97706' : gv >= 1 ? '#b91c1c' : '#94a3b8';
+    return `<div class="score-card ${cls}">
+      <div class="subj">${esc(s.subjectName)}</div>
+      <div>
+        <span class="big" style="color:${clr}">${total ?? '—'}</span>
+        <span class="fs"> / 100</span>
+      </div>
+      <div class="pct-row">
+        <span>กลาง <b>${s.midScore ?? '—'}</b></span>
+        <span>ปลาย <b>${s.finalScore ?? '—'}</b></span>
+      </div>
+      <div style="margin-top:6px">
+        <span style="font-weight:800;font-size:14px;color:${gcClr};background:${gcBg};padding:2px 10px;border-radius:7px">${s.gradeValue ?? '—'}</span>
+      </div>
+      <div class="bar-wrap">
+        <div class="bar-fill" style="width:${Math.min(100, pct)}%;background:${clr}"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  renderBarChart(labels, myVals, avgVals);
+  renderRadarChart(labels, myVals, avgVals);
 }
 
 function renderHeader(s) {

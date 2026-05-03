@@ -58,8 +58,8 @@ function toGrade(score) {
   return '0.00';
 }
 
-// a23 = เด็กชายชัยวงศ์ สุขัง (index 22 ใน seed-demo-students)
-const A23 = { firstName: 'ชัยวงศ์', lastName: 'สุขัง' };
+// a23 = demo test account (firstName='a23', lastName='')
+const A23 = { firstName: 'a23', lastName: '' };
 
 async function main() {
   if (DRY_RUN) console.log('🔍 DRY RUN\n');

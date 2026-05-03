@@ -181,17 +181,37 @@ router.post('/matrix-entry', requireTeacher, async (req, res) => {
   }
 });
 
+// GET /api/classroom/known-subjects — รายชื่อวิชาในฐาน AcademicRecord ของโรงเรียนนี้
+router.get('/known-subjects', requireTeacher, async (req, res) => {
+  try {
+    const school = req.session.school || '';
+    const where  = school ? { school } : {};
+    const rows   = await prisma.academicRecord.findMany({
+      where,
+      select:   { subjectName: true },
+      distinct: ['subjectName'],
+      orderBy:  { subjectName: 'asc' },
+    });
+    res.json({ subjects: rows.map(r => r.subjectName) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // POST /api/classroom/paste-entry — รับข้อมูล paste จาก Google Sheet (tab-separated)
-// body: { school, grade, classroom, academicYear, term, examPeriod, pastedText }
+// body: { school, grade, classroom, academicYear, term, examPeriod, pastedText, subjectMapping? }
+// subjectMapping: { 'คณิต': 'คณิตศาสตร์', ... } — rename ชื่อวิชาก่อนบันทึก
 // pastedText format (header row + data rows, tab-separated):
 //   ชื่อ  [TAB]  วิชา1  [TAB]  วิชา2  [TAB]  คะแนนเต็ม
 //   สมชาย [TAB]  85     [TAB]  72     [TAB]  100
 router.post('/paste-entry', requireTeacher, async (req, res) => {
   try {
-    const { school, grade, classroom, academicYear, term, examPeriod, pastedText } = req.body;
+    const { school, grade, classroom, academicYear, term, examPeriod, pastedText, subjectMapping } = req.body;
     if (!pastedText?.trim()) return res.status(400).json({ error: 'ไม่มีข้อมูล' });
 
     const schoolName = school || req.session.school || '';
+    // subjectMapping: { 'คณิต': 'คณิตศาสตร์', ... } — ถ้าส่งมาจะ rename headers ก่อน process
+    const smap = (subjectMapping && typeof subjectMapping === 'object') ? subjectMapping : {};
 
     // Parse tab-separated
     const lines = pastedText.replace(/\r/g, '').trim().split('\n').filter(l => l.trim());
@@ -202,7 +222,7 @@ router.post('/paste-entry', requireTeacher, async (req, res) => {
     // หาคอลัมน์ fullScore (คอลัมน์สุดท้ายที่ชื่อมี "เต็ม" หรือ "full" หรือถ้าไม่มีใช้คอลัมน์สุดท้าย)
     const fullScoreIdx = headers.findIndex(h => /เต็ม|full/i.test(h));
     const subjectCols = headers
-      .map((h, i) => ({ h, i }))
+      .map((h, i) => ({ h: smap[h] || h, i }))   // apply subjectMapping ถ้ามี
       .filter(({ i }) => i !== nameCol && i !== fullScoreIdx);
 
     if (subjectCols.length === 0) return res.status(400).json({ error: 'ไม่พบคอลัมน์วิชา' });

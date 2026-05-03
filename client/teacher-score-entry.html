@@ -106,7 +106,16 @@
         <table class="preview-table" id="preview-table"></table>
       </div>
       <div class="stat-chips" id="stat-chips"></div>
-      <button class="btn btn-primary btn-full" style="margin-top:16px;background:#16a34a" onclick="save()">💾 บันทึกข้อมูล</button>
+
+      <!-- ── Subject name check ───────────────────────────────────────── -->
+      <div id="subject-check" style="display:none;margin-top:16px">
+        <div style="background:#fef3c7;border:1.5px solid #f59e0b;border-radius:10px;padding:16px 18px">
+          <div style="font-weight:700;color:#92400e;font-size:14px;margin-bottom:10px">⚠️ พบชื่อวิชาที่ไม่ตรงกับฐานข้อมูล — กรุณาระบุชื่อที่ถูกต้องก่อนบันทึก</div>
+          <div id="mapping-rows" style="display:flex;flex-direction:column;gap:10px"></div>
+          <button class="btn btn-primary" onclick="confirmMapping()" style="margin-top:14px">✅ ยืนยันและบันทึก</button>
+        </div>
+      </div>
+      <button id="save-btn" class="btn btn-primary btn-full" style="margin-top:16px;background:#16a34a" onclick="save()">💾 บันทึกข้อมูล</button>
     </div>
 
     <div class="success-banner" id="success-banner">
@@ -119,6 +128,9 @@
   let currentPeriod = 'midterm';
   let parsedRows = [];
   let parsedSubjects = [];
+  let knownSubjects = [];     // โหลดครั้งเดียว
+  let confirmedMapping = {};  // { 'คณิต': 'คณิตศาสตร์', ... } ที่ครูยืนยันแล้ว
+  let mappingNeeded = false;  // มีชื่อวิชาที่ต้องยืนยัน
 
   function setPeriod(p) {
     currentPeriod = p;
@@ -173,9 +185,66 @@
     document.getElementById('subj-count').textContent = parsedSubjects.length;
     document.getElementById('preview-area').style.display = 'block';
     document.getElementById('success-banner').style.display = 'none';
+    document.getElementById('subject-check').style.display = 'none';
+    confirmedMapping = {};
+    mappingNeeded = false;
+
+    // ตรวจสอบชื่อวิชากับฐานข้อมูล
+    checkSubjectNames();
+  }
+
+  async function checkSubjectNames() {
+    try {
+      if (!knownSubjects.length) {
+        const r = await fetch('/api/classroom/known-subjects', { credentials: 'include' });
+        if (r.ok) knownSubjects = (await r.json()).subjects || [];
+      }
+      if (!knownSubjects.length) return; // ไม่มีข้อมูล — ไม่บังคับ
+      const mismatches = parsedSubjects.filter(s => !knownSubjects.includes(s));
+      if (!mismatches.length) return; // ชื่อครบถ้วน
+      mappingNeeded = true;
+      document.getElementById('save-btn').style.display = 'none';
+      renderMappingUI(mismatches);
+      document.getElementById('subject-check').style.display = 'block';
+    } catch { /* ถ้า API ล้มเหลวไม่บังคับ */ }
+  }
+
+  function renderMappingUI(mismatches) {
+    const rows = mismatches.map(orig => {
+      const opts = knownSubjects.map(s =>
+        `<option value="${esc(s)}"${s === orig ? ' selected' : ''}>${esc(s)}</option>`
+      ).join('');
+      return `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-weight:700;color:#1e293b;min-width:120px">"${esc(orig)}"</span>
+        <span style="color:#94a3b8">→</span>
+        <select id="map-${esc(orig)}" style="padding:6px 10px;border-radius:6px;border:1.5px solid #e2e8f0;font-size:13px;flex:1;min-width:180px">
+          <option value="${esc(orig)}">— ใช้ชื่อนี้ต่อไป (ไม่เปลี่ยน) —</option>
+          ${opts}
+        </select>
+      </div>`;
+    }).join('');
+    document.getElementById('mapping-rows').innerHTML = rows;
+  }
+
+  function confirmMapping() {
+    const mismatches = parsedSubjects.filter(s => !knownSubjects.includes(s));
+    mismatches.forEach(orig => {
+      const sel = document.getElementById(`map-${orig}`);
+      if (sel && sel.value !== orig) confirmedMapping[orig] = sel.value;
+    });
+    mappingNeeded = false;
+    document.getElementById('subject-check').style.display = 'none';
+    document.getElementById('save-btn').style.display = 'block';
+    // บันทึกทันทีหลังยืนยัน
+    save();
+  }
+
+  function esc(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
   async function save() {
+    if (mappingNeeded) { return; } // รอยืนยัน mapping ก่อน
     const grade     = document.getElementById('m-grade').value;
     const classroom = document.getElementById('m-classroom').value.trim();
     const year      = document.getElementById('m-year').value.trim();
@@ -186,15 +255,17 @@
     if (!year)      { alert('กรุณากรอกปีการศึกษา'); return; }
 
     const pastedText = document.getElementById('paste-area').value;
-    const btn = document.querySelector('button[onclick="save()"]');
+    const btn = document.getElementById('save-btn');
     btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
 
     try {
+      const body = { grade, classroom, academicYear: year, term, examPeriod: currentPeriod, pastedText };
+      if (Object.keys(confirmedMapping).length) body.subjectMapping = confirmedMapping;
       const res = await fetch('/api/classroom/paste-entry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ grade, classroom, academicYear: year, term, examPeriod: currentPeriod, pastedText })
+        body: JSON.stringify(body)
       });
       const data = await res.json();
       if (!res.ok) { alert('เกิดข้อผิดพลาด: ' + data.error); return; }
@@ -205,7 +276,7 @@
       document.getElementById('success-banner').style.display = 'block';
       document.getElementById('preview-area').style.display = 'none';
       document.getElementById('paste-area').value = '';
-      parsedRows = []; parsedSubjects = [];
+      parsedRows = []; parsedSubjects = []; confirmedMapping = {};
     } catch(e) {
       alert('เกิดข้อผิดพลาด: ' + e.message);
     } finally {
@@ -217,7 +288,9 @@
     document.getElementById('paste-area').value = '';
     document.getElementById('preview-area').style.display = 'none';
     document.getElementById('success-banner').style.display = 'none';
-    parsedRows = []; parsedSubjects = [];
+    document.getElementById('subject-check').style.display = 'none';
+    parsedRows = []; parsedSubjects = []; confirmedMapping = {}; mappingNeeded = false;
+    document.getElementById('save-btn').style.display = 'block';
   }
 
   function logout() { fetch('/api/logout', { method:'POST', credentials:'include' }); location.href='login.html'; }

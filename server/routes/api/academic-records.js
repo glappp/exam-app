@@ -1,6 +1,6 @@
 // GET /api/academic-records/mine
 // ดึง AcademicRecord ของนักเรียนที่ login อยู่
-// match ด้วย firstName + lastName + school (จาก StudentProfile)
+// match ด้วย firstName + lastName (ชื่อเดียวกันในระบบกับใน CSV)
 
 const express = require('express');
 const router = express.Router();
@@ -16,29 +16,10 @@ router.get('/mine', async (req, res) => {
     });
     if (!user) return res.status(404).json({ error: 'ไม่พบผู้ใช้' });
 
-    const profile = await prisma.studentProfile.findFirst({
-      where: { userId: req.session.userId, status: 'active' },
-      orderBy: { academicYear: 'desc' }
+    const records = await prisma.academicRecord.findMany({
+      where: { firstName: user.firstName, lastName: user.lastName },
+      orderBy: [{ academicYear: 'asc' }, { term: 'asc' }, { subjectName: 'asc' }]
     });
-
-    // ค้นหาโดยชื่อ+นามสกุล ก่อน — ถ้ามีโรงเรียนใน profile ให้กรองด้วย
-    // ถ้าไม่เจอ (เช่น ชื่อโรงเรียนใน profile ต่างจากที่ import) ให้ลองใหม่โดยไม่กรองโรงเรียน
-    const baseWhere = { firstName: user.firstName, lastName: user.lastName };
-
-    let records = [];
-    if (profile?.school) {
-      records = await prisma.academicRecord.findMany({
-        where: { ...baseWhere, school: { contains: profile.school.replace(/^โรงเรียน/, '') } },
-        orderBy: [{ academicYear: 'asc' }, { term: 'asc' }, { subjectName: 'asc' }]
-      });
-    }
-    // fallback: ค้นด้วยชื่ออย่างเดียว (ถ้ายังไม่เจอ)
-    if (!records.length) {
-      records = await prisma.academicRecord.findMany({
-        where: baseWhere,
-        orderBy: [{ academicYear: 'asc' }, { term: 'asc' }, { subjectName: 'asc' }]
-      });
-    }
 
     // จัดกลุ่มเป็น { year: { term: [records] } }
     const grouped = {};

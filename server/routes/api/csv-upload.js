@@ -373,12 +373,9 @@ router.get('/my-scores', async (req, res) => {
       orderBy: { academicYear: 'desc' }
     });
 
-    // โหลด uploads ที่เกี่ยวข้องกับโรงเรียน+ชั้น (ถ้ามี) เพื่อกรอง
+    // โหลด uploads ของโรงเรียนนี้ — ไม่กรอง grade เพราะนักเรียนควรเห็นทุก upload ของตัวเอง
     const where = {};
-    if (profile) {
-      if (profile.school) where.school = profile.school;
-      if (profile.grade)  where.grade  = profile.grade;
-    }
+    if (profile?.school) where.school = profile.school;
     const uploads = await prisma.classroomScoreUpload.findMany({
       where,
       orderBy: { createdAt: 'desc' },

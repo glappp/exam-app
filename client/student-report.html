@@ -260,16 +260,10 @@ function renderAcademicTerm(key, records) {
     const gcClr = gv >= 3.5 ? '#15803d' : gv >= 2.5 ? '#d97706' : gv >= 1 ? '#b91c1c' : '#94a3b8';
     return `<div class="score-card ${cls}">
       <div class="subj" onclick="location.href='subject-progress.html?subject='+encodeURIComponent('${s.subjectName}')" title="ดูความก้าวหน้า ${esc(s.subjectName)}">${esc(s.subjectName)} 📈</div>
-      <div>
+      <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:6px">
         <span class="big" style="color:${clr}">${total ?? '—'}</span>
-        <span class="fs"> / 100</span>
-      </div>
-      <div class="pct-row">
-        <span>กลาง <b>${s.midScore ?? '—'}</b></span>
-        <span>ปลาย <b>${s.finalScore ?? '—'}</b></span>
-      </div>
-      <div style="margin-top:6px">
-        <span style="font-weight:800;font-size:14px;color:${gcClr};background:${gcBg};padding:2px 10px;border-radius:7px">${s.gradeValue ?? '—'}</span>
+        <span class="fs">/ 100</span>
+        <span style="margin-left:auto;font-weight:800;font-size:13px;color:${gcClr};background:${gcBg};padding:1px 9px;border-radius:7px">${s.gradeValue ?? '—'}</span>
       </div>
       <div class="bar-wrap">
         <div class="bar-fill" style="width:${Math.min(100, pct)}%;background:${clr}"></div>

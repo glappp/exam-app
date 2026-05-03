@@ -100,6 +100,44 @@
     nav a:hover { color:#fff; }
     .container { max-width: 960px; margin: 0 auto; padding: 20px 16px; }
 
+    /* ── Stats guide ── */
+    .stats-guide-btn {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #eff6ff; border: 1.5px solid #bfdbfe; color: #1d4ed8;
+      border-radius: 10px; padding: 9px 16px; font-size: 13px; font-weight: 600;
+      cursor: pointer; margin-bottom: 12px; width: 100%; text-align: left;
+      transition: background .15s; font-family: inherit;
+    }
+    .stats-guide-btn:hover { background: #dbeafe; }
+    .stats-guide-panel {
+      background: #f8fafc; border-radius: 12px; padding: 20px;
+      border: 1px solid #e2e8f0; margin-bottom: 16px;
+    }
+    .guide-sec-title { font-size: 13px; font-weight: 700; color: #475569; margin: 0 0 10px; }
+    .guide-simple-list { list-style: none; padding: 0; margin: 0 0 4px; display: flex; flex-direction: column; gap: 7px; }
+    .guide-simple-list li { font-size: 13px; color: #334155; display: flex; align-items: flex-start; gap: 6px; line-height: 1.5; }
+    .guide-simple-list li::before { content: '▸'; color: #3b82f6; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+    .guide-sep { border: none; border-top: 1px solid #e2e8f0; margin: 16px 0; }
+    .guide-diagram-row { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; }
+    .mock-card-d {
+      background: #fff; border-radius: 12px; padding: 14px; width: 195px; flex-shrink: 0;
+      box-shadow: 0 2px 10px rgba(0,0,0,.1); border: 1px solid #e2e8f0;
+      border-top: 4px solid #22c55e; pointer-events: none; user-select: none;
+    }
+    .cn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 16px; height: 16px; min-width: 16px; border-radius: 50%;
+      background: #3b82f6; color: #fff; font-size: 9px; font-weight: 800;
+      vertical-align: middle; margin: 0 2px; line-height: 1; flex-shrink: 0;
+    }
+    .guide-legend { flex: 1; min-width: 200px; }
+    .gl-row { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; border-bottom: 1px solid #f1f5f9; font-size: 12px; color: #334155; line-height: 1.5; }
+    .gl-row:last-child { border-bottom: none; }
+    .gl-row b { color: #1e293b; }
+    .pct-color-note { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; margin-top: 10px; padding: 10px 12px; background: #fff; border-radius: 8px; border: 1px solid #e2e8f0; }
+    .pct-color-note span { display: flex; align-items: center; gap: 4px; }
+    @media (max-width: 520px) { .guide-diagram-row { flex-direction: column; } .mock-card-d { width: 100%; box-sizing: border-box; } }
+
     /* ── Empty state ── */
     .empty { text-align:center; padding: 60px 20px; color: #94a3b8; }
     .empty .icon { font-size: 48px; margin-bottom: 12px; }
@@ -135,6 +173,58 @@
     <div id="term-tabs" class="term-tabs"></div>
 
     <p class="sec-title">📊 <span id="term-label" style="color:#3b82f6"></span></p>
+
+    <!-- Stats guide (collapsible) -->
+    <button class="stats-guide-btn" id="guide-toggle" onclick="toggleGuide()">
+      <span>📖 วิธีอ่านผลคะแนน</span>
+      <span id="guide-arrow" style="font-size:11px;transition:transform .2s;display:inline-block">▾</span>
+    </button>
+    <div class="stats-guide-panel" id="stats-guide" style="display:none">
+      <p class="guide-sec-title">🔍 อธิบายแต่ละส่วนในการ์ดคะแนน</p>
+      <div class="guide-diagram-row">
+
+        <!-- Mock card with callout numbers -->
+        <div class="mock-card-d">
+          <div style="font-size:11px;font-weight:700;color:#64748b;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            <span class="cn">1</span> คณิตศาสตร์ 📈
+          </div>
+          <div style="display:flex;align-items:baseline;gap:4px;margin-bottom:5px">
+            <span style="font-size:28px;font-weight:800;color:#22c55e">72</span>
+            <span style="font-size:12px;color:#94a3b8">/ 100 <span class="cn">2</span></span>
+            <span style="margin-left:auto;font-weight:800;font-size:12px;color:#15803d;background:#dcfce7;padding:1px 8px;border-radius:6px">3.0 <span class="cn">3</span></span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#64748b;margin-bottom:3px">
+            <span>เฉลี่ย 65.4<span class="cn">4</span><span style="color:#94a3b8"> ±12.1<span class="cn">5</span></span></span>
+            <span style="padding:2px 7px;border-radius:99px;font-weight:700;background:#dcfce7;color:#166534;font-size:11px">ห้อง P68 <span class="cn">6</span></span>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8">
+            <span>สูงสุด <b style="color:#16a34a;font-weight:700">95</b> <span class="cn">7</span></span>
+            <span>ต่ำสุด <b style="color:#dc2626;font-weight:700">32</b> <span class="cn">8</span></span>
+            <span style="margin-left:auto;padding:2px 6px;border-radius:99px;font-size:10px;font-weight:700;background:#dcfce7;color:#166534">ชั้น P61 <span class="cn">9</span></span>
+          </div>
+          <div style="height:6px;background:#f1f5f9;border-radius:99px;margin-top:8px;overflow:hidden">
+            <div style="height:100%;width:72%;background:#22c55e;border-radius:99px"></div>
+          </div>
+          <div style="font-size:9px;color:#b0bec5;text-align:center;margin-top:3px"><span class="cn">10</span> แถบคะแนน</div>
+        </div>
+
+        <!-- Legend -->
+        <div class="guide-legend">
+          <div class="gl-row"><span class="cn">1</span><span><b>ชื่อวิชา</b> — คลิก 📈 เพื่อดูกราฟพัฒนาการย้อนหลังหลายเทอม</span></div>
+          <div class="gl-row"><span class="cn">2</span><span><b>คะแนนรวม / 100</b> — สีแสดงระดับ: <span style="color:#22c55e;font-weight:700">●</span> ≥80 &nbsp;<span style="color:#f59e0b;font-weight:700">●</span> 60–79 &nbsp;<span style="color:#ef4444;font-weight:700">●</span> &lt;60</span></div>
+          <div class="gl-row"><span class="cn">3</span><span><b>เกรด</b> — ระดับ 0–4 (4.0=A, 3.5=B+, 3.0=B, 2.5=C+, 2.0=C, 1.5=D+, 1.0=D, 0=F)</span></div>
+          <div class="gl-row"><span class="cn">4</span><span><b>ค่าเฉลี่ยห้อง (Mean)</b> — ค่ากลางของคะแนนนักเรียนทุกคนในห้อง</span></div>
+          <div class="gl-row"><span class="cn">5</span><span><b>SD (ส่วนเบี่ยงเบนมาตรฐาน)</b> — ±SD คือช่วงที่ครอบคลุมนักเรียน ~68% เช่น เฉลี่ย 65 ±12 → ช่วงปกติคือ 53–77</span></div>
+          <div class="gl-row"><span class="cn">6</span><span><b>ห้อง Pn (Percentile ระดับห้อง)</b> — P68 = ทำได้สูงกว่า 68% ของเพื่อนในห้องนี้ &nbsp;<span style="background:#dcfce7;color:#166534;padding:1px 5px;border-radius:4px;font-size:11px;font-weight:700">P≥75</span> ดีมาก &nbsp;<span style="background:#fef9c3;color:#92400e;padding:1px 5px;border-radius:4px;font-size:11px;font-weight:700">P40–74</span> กลาง &nbsp;<span style="background:#fee2e2;color:#991b1b;padding:1px 5px;border-radius:4px;font-size:11px;font-weight:700">P&lt;40</span> ต้องปรับ</span></div>
+          <div class="gl-row"><span class="cn">7</span><span><b>คะแนนสูงสุด</b> — คะแนนที่สูงที่สุดในห้องเรียน</span></div>
+          <div class="gl-row"><span class="cn">8</span><span><b>คะแนนต่ำสุด</b> — คะแนนที่ต่ำที่สุดในห้องเรียน</span></div>
+          <div class="gl-row"><span class="cn">9</span><span><b>ชั้น Pn (Percentile ระดับชั้น)</b> — เทียบกับนักเรียน<b>ทุกห้อง</b>ในชั้นเดียวกัน เช่น ป.4 ทุกห้องรวมกัน</span></div>
+          <div class="gl-row"><span class="cn">10</span><span><b>แถบคะแนน</b> — แสดงสัดส่วนคะแนนของคุณเทียบกับคะแนนเต็ม 100</span></div>
+        </div>
+
+      </div>
+    </div>
+
     <div id="score-cards" class="score-cards"></div>
 
     <div class="charts-row">
@@ -422,6 +512,14 @@ function renderRadarChart(labels, myVals, avgVals) {
   });
 }
 
+
+function toggleGuide() {
+  const panel = document.getElementById('stats-guide');
+  const arrow = document.getElementById('guide-arrow');
+  const open  = panel.style.display === 'none';
+  panel.style.display = open ? 'block' : 'none';
+  arrow.style.transform = open ? 'rotate(180deg)' : '';
+}
 
 function esc(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');

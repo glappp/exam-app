@@ -114,13 +114,51 @@
 <script>
 const GRADE_LBL = { p1:'ป.1', p2:'ป.2', p3:'ป.3', p4:'ป.4', p5:'ป.5', p6:'ป.6' };
 
+// ชื่อย่อจาก ClassroomScoreUpload → ชื่อเต็มใน AcademicRecord
+const SUBJECT_ALIAS = {
+  'คณิต':        'คณิตศาสตร์',
+  'คณิตเสริม':   'คณิตศาสตร์เสริม',
+  'วิทย์':       'วิทยาศาสตร์',
+  'วิทย์เสริม':  'วิทยาศาสตร์เสริม',
+  'สังคม':       'สังคมศึกษา',
+  'ประวัติฯ':    'ประวัติศาสตร์',
+  'สุขศึกษา':    'สุขศึกษาและพลศึกษา',
+  'การงาน':      'การงานอาชีพ',
+  'อังกฤษ':      'ภาษาอังกฤษ',
+  'อังกฤษเสริม': 'ภาษาอังกฤษเสริม',
+  'อังกฤษสม':    'ภาษาอังกฤษเสริม',
+  'จีน':         'ภาษาจีนหลัก',
+  'จีนหนัก':     'ภาษาจีนหลัก',
+  'จีนสม':       'ภาษาจีนเพื่อการสื่อสาร',
+  'คอมพิวเตอร์': 'คอมพิวเตอร์/วิทยาการคำนวณ',
+};
+
+// ค้นหา subject ใน list รองรับทั้งชื่อเต็มและชื่อย่อ
+function findInList(list, subject) {
+  // 1. ตรงเป๊ะ
+  let s = list.find(r => r.subjectName === subject);
+  if (s) return s;
+  // 2. ใช้ alias map
+  const mapped = SUBJECT_ALIAS[subject];
+  if (mapped) { s = list.find(r => r.subjectName === mapped); if (s) return s; }
+  // 3. contains fallback
+  const q = subject.replace(/ฯ$/, '').trim();
+  if (q.length >= 3) {
+    s = list.find(r => r.subjectName.includes(q) || q.includes(r.subjectName));
+    if (s) return s;
+  }
+  return null;
+}
+
 async function init() {
   const params  = new URLSearchParams(location.search);
   const subject = params.get('subject') || '';
   if (!subject) { showEmpty(); return; }
 
-  document.getElementById('subj-title').textContent = subject;
-  document.title = `ความก้าวหน้า — ${subject}`;
+  // ชื่อที่แสดง = ชื่อเต็ม (ถ้ามี alias) หรือชื่อเดิม
+  const displayName = SUBJECT_ALIAS[subject] || subject;
+  document.getElementById('subj-title').textContent = displayName;
+  document.title = `ความก้าวหน้า — ${displayName}`;
 
   const meRes = await fetch('/api/me', { credentials: 'include' });
   if (!meRes.ok) { location.href = 'login.html'; return; }
@@ -138,15 +176,18 @@ async function init() {
     const sumItem = summary.find(s => s.year === year);
     const terms = Object.keys(records[year]).sort();
     terms.forEach(term => {
-      const sub = records[year][term].find(s => s.subjectName === subject);
+      const sub = findInList(records[year][term], subject);
       if (sub) rows.push({ year, term, grade: sumItem?.grade || '', ...sub });
     });
   });
 
   if (!rows.length) { showEmpty(); return; }
 
-  // Header
-  document.getElementById('hd-subject').textContent = subject;
+  // Header — ใช้ชื่อเต็มจาก record จริง (ถ้ามี) ไม่ใช่ชื่อย่อ
+  const fullName = rows[0]?.subjectName || displayName;
+  document.getElementById('hd-subject').textContent = fullName;
+  document.getElementById('subj-title').textContent = fullName;
+  document.title = `ความก้าวหน้า — ${fullName}`;
   document.getElementById('hd-meta').textContent =
     `${rows.length} ภาคเรียน · ป.${rows[0] ? GRADE_LBL[rows[0].grade] || rows[0].grade : ''} ถึง ${GRADE_LBL[rows[rows.length-1].grade] || rows[rows.length-1].grade}`;
 

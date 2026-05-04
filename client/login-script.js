@@ -14,10 +14,17 @@ async function login() {
     const data = await res.json();
 
     if (res.ok) {
-      status.innerText = "✅ เข้าสู่ระบบสำเร็จ";
-      setTimeout(() => {
-        window.location.href = "dashboard.html";
-      }, 1000);
+      if (data.mustChangePassword) {
+        status.innerText = "🔑 กรุณาตั้งรหัสผ่านใหม่ก่อนใช้งาน";
+        setTimeout(() => {
+          window.location.href = "change-password.html";
+        }, 800);
+      } else {
+        status.innerText = "✅ เข้าสู่ระบบสำเร็จ";
+        setTimeout(() => {
+          window.location.href = "dashboard.html";
+        }, 1000);
+      }
     } else {
       status.innerText = "❌ " + (data.message || "เข้าสู่ระบบไม่สำเร็จ");
     }

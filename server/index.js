@@ -244,7 +244,10 @@ app.post('/api/login', async (req, res) => {
     await prisma.user.update({ where: { id: user.id }, data: { firstLoginAt: new Date() } });
   }
 
-  res.json({ user: { id: user.id, username: user.username, role: user.role, firstName: user.firstName } });
+  res.json({
+    user: { id: user.id, username: user.username, role: user.role, firstName: user.firstName },
+    mustChangePassword: user.mustChangePassword,
+  });
 });
 
 
@@ -344,8 +347,10 @@ async function seedSubjectGradeIfNeeded() {
 }
 
 // ✅ Start server
+const { ensureActiveSeason } = require('./utils/season-check');
 const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, async () => {
   console.log(`✅ Backend is running on http://localhost:${PORT}`);
   await seedSubjectGradeIfNeeded().catch(e => console.error('seed error:', e));
+  await ensureActiveSeason().catch(e => console.error('season-check error:', e));
 });

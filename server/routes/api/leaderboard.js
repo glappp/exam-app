@@ -360,4 +360,122 @@ router.post('/seed-season', requireLogin, async (req, res) => {
   }
 });
 
+// ── GET /api/leaderboard/seasons (admin) ─────────────────────────────────────
+router.get('/seasons', requireLogin, async (req, res) => {
+  try {
+    if (!['admin', 'school_admin'].includes(req.session.role)) {
+      return res.status(403).json({ error: 'ไม่มีสิทธิ์' });
+    }
+    const seasons = await prisma.leaderboardSeason.findMany({
+      orderBy: { startDate: 'desc' },
+      include: { _count: { select: { periods: true } } },
+    });
+    res.json({ seasons });
+  } catch (err) {
+    console.error('❌ leaderboard/seasons:', err);
+    res.status(500).json({ error: 'โหลด seasons ล้มเหลว' });
+  }
+});
+
+// ── PATCH /api/leaderboard/seasons/:id (admin) — แก้วันเริ่ม/จบ ────────────
+// Body: { startDate?, endDate?, status? }
+router.patch('/seasons/:id', requireLogin, async (req, res) => {
+  try {
+    if (!['admin', 'school_admin'].includes(req.session.role)) {
+      return res.status(403).json({ error: 'ไม่มีสิทธิ์' });
+    }
+    const id = parseInt(req.params.id);
+    const { startDate, endDate, status } = req.body;
+    const data = {};
+    if (startDate) data.startDate = new Date(startDate);
+    if (endDate)   data.endDate   = new Date(endDate);
+    if (status)    data.status    = status;
+
+    const updated = await prisma.leaderboardSeason.update({ where: { id }, data });
+
+    // ถ้าเปลี่ยนวัน → regenerate weekly periods ใหม่
+    if (startDate || endDate) {
+      const season = await prisma.leaderboardSeason.findUnique({ where: { id } });
+      // ลบ periods เดิม
+      await prisma.leaderboardPeriod.deleteMany({ where: { seasonId: id } });
+
+      // สร้างใหม่
+      const { createSeasonForYear } = require('../../utils/season-check');
+      // rebuild periods directly
+      const periods = [];
+      let cur = new Date(season.startDate);
+      let weekNum = 1;
+      while (cur <= season.endDate) {
+        const weekStart = new Date(cur);
+        const weekEnd   = new Date(cur);
+        weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
+        periods.push({ seasonId: id, type: 'weekly', weekKey: weekStart.toISOString().slice(0,10), label: `สัปดาห์ที่ ${weekNum}`, startDate: weekStart, endDate: weekEnd });
+        cur.setUTCDate(cur.getUTCDate() + 7);
+        weekNum++;
+      }
+      const weeklies = periods.filter(p => p.type === 'weekly');
+      let monthNum = 1;
+      for (let i = 0; i < weeklies.length; i += 4) {
+        const chunk = weeklies.slice(i, i + 4);
+        if (!chunk.length) break;
+        const mStart = chunk[0].startDate;
+        const mEnd   = chunk[chunk.length - 1].endDate;
+        const sl = mStart.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+        const el = mEnd.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+        periods.push({ seasonId: id, type: 'monthly', monthKey: `${id}-M${monthNum}`, label: `เดือนที่ ${monthNum} (${sl}–${el})`, startDate: mStart, endDate: mEnd });
+        monthNum++;
+      }
+      await prisma.leaderboardPeriod.createMany({ data: periods });
+    }
+
+    res.json({ ok: true, season: updated });
+  } catch (err) {
+    console.error('❌ leaderboard/seasons PATCH:', err);
+    res.status(500).json({ error: 'แก้ไข season ล้มเหลว' });
+  }
+});
+
+// ── POST /api/leaderboard/year-rollover (admin) ───────────────────────────────
+// รีเซ็ต activityXp ทุกคน (permanentXp ไม่แตะ) + อัปเดต grade/year ใน StudentProfile
+// Body: { newAcademicYear: "2568" }
+router.post('/year-rollover', requireLogin, async (req, res) => {
+  try {
+    if (!['admin'].includes(req.session.role)) {
+      return res.status(403).json({ error: 'เฉพาะ admin เท่านั้น' });
+    }
+    const { newAcademicYear } = req.body;
+    if (!newAcademicYear) return res.status(400).json({ error: 'ต้องระบุ newAcademicYear' });
+
+    // 1. reset activityXp ทุกคน, recalculate level จาก permanentXp
+    const allCS = await prisma.characterState.findMany();
+    const { calcLevel } = require('../../utils/gamification');
+
+    let resetCount = 0;
+    for (const cs of allCS) {
+      const newLevel = calcLevel(cs.permanentXp);
+      await prisma.characterState.update({
+        where: { id: cs.id },
+        data: { activityXp: 0, level: Math.max(1, newLevel) },
+      });
+      resetCount++;
+    }
+
+    // 2. อัปเดต academicYear ใน StudentProfile ทุก active profile
+    const updated = await prisma.studentProfile.updateMany({
+      where: { status: 'active' },
+      data: { academicYear: newAcademicYear },
+    });
+
+    res.json({
+      ok: true,
+      resetXpCount: resetCount,
+      updatedProfiles: updated.count,
+      note: 'permanentXP (subtopic/topic pass) ไม่ถูกแตะ — carry-over อัตโนมัติ',
+    });
+  } catch (err) {
+    console.error('❌ leaderboard/year-rollover:', err);
+    res.status(500).json({ error: 'year-rollover ล้มเหลว' });
+  }
+});
+
 module.exports = router;

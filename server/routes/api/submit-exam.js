@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
+const { awardXP } = require('../../utils/xp-service');
 const prisma = new PrismaClient();
 
 
@@ -102,19 +103,33 @@ router.post('/', async (req, res) => {
       const { grade, topicKey, subtopicKey } = req.body;
 
       if (mode === 'subtopic_test' && isPassed && grade && topicKey && subtopicKey) {
+        const existing = await prisma.subtopicPass.findUnique({
+          where: { studentProfileId_grade_topicKey_subtopicKey: { studentProfileId, grade, topicKey, subtopicKey } }
+        });
         await prisma.subtopicPass.upsert({
           where: { studentProfileId_grade_topicKey_subtopicKey: { studentProfileId, grade, topicKey, subtopicKey } },
           create: { studentProfileId, grade, topicKey, subtopicKey },
           update: { passedAt: new Date() }
         });
+        // award permanentXP เฉพาะครั้งแรกที่ผ่าน subtopic นี้เท่านั้น
+        if (!existing && req.session?.userId) {
+          await awardXP(prisma, req.session.userId, 30, 'permanent');
+        }
       }
 
       if (mode === 'topic_test' && isPassed && grade && topicKey) {
+        const existing = await prisma.topicPass.findUnique({
+          where: { studentProfileId_grade_topicKey: { studentProfileId, grade, topicKey } }
+        });
         await prisma.topicPass.upsert({
           where: { studentProfileId_grade_topicKey: { studentProfileId, grade, topicKey } },
           create: { studentProfileId, grade, topicKey },
           update: { passedAt: new Date() }
         });
+        // award permanentXP เฉพาะครั้งแรกที่ผ่าน topic นี้เท่านั้น
+        if (!existing && req.session?.userId) {
+          await awardXP(prisma, req.session.userId, 80, 'permanent');
+        }
       }
     }
 

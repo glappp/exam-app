@@ -58,12 +58,13 @@ model StudentProfile {
   status          String            @default("active") // "active" | "archived"
   createdAt       DateTime          @default(now())
 
-  examResults     ExamResult[]
-  examAnswers     ExamAnswer[]
-  weakTopics      WeakTopicState[]
-  sectionProgress SectionProgress[]
-  subtopicPasses  SubtopicPass[]
-  topicPasses     TopicPass[]
+  examResults       ExamResult[]
+  examAnswers       ExamAnswer[]
+  weakTopics        WeakTopicState[]
+  sectionProgress   SectionProgress[]
+  subtopicPasses    SubtopicPass[]
+  topicPasses       TopicPass[]
+  adaptiveWeaknesses AdaptiveWeakness[]
 }
 
 // ─── Exam Core ────────────────────────────────────────────────────────────────
@@ -572,4 +573,20 @@ model ParentPointLog {
   source    String   // "auto_login"|"auto_mission"|"auto_subtopic"|"auto_weekly"|"parent_manual"
   date      String   // "YYYY-MM-DD"
   createdAt DateTime @default(now())
+}
+
+// ─── Adaptive Learning (ตะลุยโจทย์) ──────────────────────────────────────────
+
+model AdaptiveWeakness {
+  id               Int            @id @default(autoincrement())
+  studentProfileId Int
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id])
+  tagType          String         // "topic" | "subtopic" | "skill" | "trap"
+  tagKey           String         // เช่น "topic:fractions", "skill:multi-step"
+  failCount        Int            @default(1)
+  correctStreak    Int            @default(0)
+  lastFailedAt     DateTime
+  createdAt        DateTime       @default(now())
+
+  @@unique([studentProfileId, tagKey])
 }

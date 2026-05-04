@@ -179,6 +179,7 @@ app.use('/api/feedback',  require('./routes/api/feedback'));
 app.use('/api/academic-records', require('./routes/api/academic-records'));
 app.use('/api/mission',      require('./routes/api/mission'));
 app.use('/api/leaderboard',  require('./routes/api/leaderboard'));
+app.use('/api/saturday-quiz', require('./routes/api/saturday-quiz'));
 app.use('/api/box',          require('./routes/api/box'));
 app.use('/api/parent',       require('./routes/api/parent'));
 app.use('/api/adaptive',    require('./routes/api/adaptive'));

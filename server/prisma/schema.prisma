@@ -37,7 +37,8 @@ model User {
 
   pointTransactions PointTransaction[]
   dailyMissions     DailyMission[]
-  timeTrialScores   TimeTrialScore[]
+  timeTrialScores      TimeTrialScore[]
+  saturdayQuizAttempts SaturdayQuizAttempt[]
 }
 
 // ─── Student ──────────────────────────────────────────────────────────────────
@@ -182,7 +183,8 @@ model Question {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  examAnswers      ExamAnswer[]
+  examAnswers        ExamAnswer[]
+  saturdayQuizPools  SaturdayQuizPool[]
 }
 
 // ─── Exam Set & Curriculum ────────────────────────────────────────────────────
@@ -493,17 +495,72 @@ model WeeklyChallengeResult {
 
 // ─── Leaderboard ──────────────────────────────────────────────────────────────
 
-model WeeklyLeaderboard {
+model LeaderboardSeason {
+  id        Int      @id @default(autoincrement())
+  name      String   // "Season 1 (2026)"
+  startDate DateTime // วันแรกของ season (อาทิตย์)
+  endDate   DateTime // วันสุดท้าย (ก่อนปิดเทอม)
+  status    String   @default("active") // "active" | "offseason" | "closed"
+  createdAt DateTime @default(now())
+
+  periods   LeaderboardPeriod[]
+}
+
+model LeaderboardPeriod {
+  id        Int               @id @default(autoincrement())
+  seasonId  Int
+  season    LeaderboardSeason @relation(fields: [seasonId], references: [id])
+  type      String            // "weekly" | "monthly"
+  weekKey   String?           // "2026-05-04" (วันอาทิตย์) สำหรับ weekly
+  monthKey  String?           // "2026-M1" สำหรับ monthly
+  label     String            // "สัปดาห์ที่ 1" / "เดือนที่ 1 (1–28 พ.ค)"
+  startDate DateTime
+  endDate   DateTime
+  settled   Boolean           @default(false)
+
+  @@index([type, weekKey])
+  @@index([type, monthKey])
+}
+
+// Saturday Quiz — ข้อสอบ 10 ข้อประจำสัปดาห์ (เหมือนกันทุกคน)
+model SaturdayQuizPool {
+  id         Int      @id @default(autoincrement())
+  weekKey    String   // "2026-05-04" (วันอาทิตย์ต้นสัปดาห์)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id])
+  sortOrder  Int      // ลำดับที่แสดง (1–10)
+
+  @@unique([weekKey, questionId])
+  @@index([weekKey])
+}
+
+model SaturdayQuizAttempt {
   id          Int      @id @default(autoincrement())
   userId      Int
-  weekKey     String   // "2026-W18"
-  league      String   // "A"|"B"|"C"
-  activity    String   // "grand_prix"|"daily_mission"
-  score       Int      // คะแนนที่ส่งเข้า leaderboard
-  ticketsUsed Int      @default(1)
+  user        User     @relation(fields: [userId], references: [id])
+  weekKey     String   // "2026-05-04"
+  score       Int      // จำนวนข้อที่ถูก (0–10)
+  timeUsed    Int      // วินาทีที่ใช้
+  answers     Json     // { questionId: selectedAnswer, ... }
+  completedAt DateTime @default(now())
+
+  @@unique([userId, weekKey])
+  @@index([weekKey])
+}
+
+// Hall of Fame — บันทึกถาวรหลัง settle
+model HallOfFame {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  periodId    Int
+  activity    String   // "time_trial" | "saturday_quiz"
+  totalScore  Int
+  totalTime   Int?     // วินาทีรวม (tiebreak)
+  rank        Int
   createdAt   DateTime @default(now())
 
-  @@index([weekKey, league])
+  @@unique([userId, periodId, activity])
+  @@index([periodId, activity])
 }
 
 // ─── Box System ───────────────────────────────────────────────────────────────

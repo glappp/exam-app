@@ -55,6 +55,34 @@ function getWeekRange(weekKey) {
   return { start: mon, end: sun };
 }
 
+// ─── POST /api/time-trial/start ──────────────────────────────────
+// ตรวจตั๋ว — ถ้ามีให้หักก่อนเริ่ม, ถ้าไม่มีแจ้ง warning แต่ยังเล่นได้
+router.post('/start', async (req, res) => {
+  if (!req.session?.userId) return res.status(401).json({ error: 'กรุณาเข้าสู่ระบบ' });
+  const userId = req.session.userId;
+  try {
+    const wallet = await prisma.ticketWallet.findUnique({ where: { userId } });
+    const balance = wallet?.balance ?? 0;
+    const hasTicket = balance > 0;
+
+    if (hasTicket) {
+      await deductTicket(userId);
+    }
+
+    res.json({
+      ok: true,
+      willRecord: hasTicket,
+      remainingTickets: hasTicket ? balance - 1 : balance,
+      message: hasTicket
+        ? 'หักตั๋ว 1 ใบ — ผลจะถูกบันทึกใน leaderboard'
+        : 'ไม่มีตั๋วแข่งขัน — เล่นได้แต่ผลจะไม่ถูกบันทึก',
+    });
+  } catch (err) {
+    console.error('❌ time-trial/start:', err);
+    res.status(500).json({ error: 'เริ่มเกมล้มเหลว' });
+  }
+});
+
 // ─── POST /api/time-trial/score ───────────────────────────────────
 router.post('/score', async (req, res) => {
   if (!req.session?.userId) return res.status(401).json({ error: 'กรุณาเข้าสู่ระบบ' });

@@ -79,6 +79,10 @@ async function generateWeekPool(weekKey) {
 
   const pool = [...shuffledPractice, ...shuffledCompetitive];
 
+  // ล้างข้อมูลสัปดาห์เก่าก่อนสร้างใหม่
+  await prisma.saturdayQuizAttempt.deleteMany({ where: { weekKey: { not: weekKey } } });
+  await prisma.saturdayQuizPool.deleteMany({ where: { weekKey: { not: weekKey } } });
+
   // บันทึก pool ลง DB
   await prisma.saturdayQuizPool.createMany({
     data: pool.map((q, i) => ({
@@ -89,6 +93,7 @@ async function generateWeekPool(weekKey) {
     skipDuplicates: true,
   });
 
+  console.log(`✅ SaturdayQuiz pool สร้างใหม่: ${weekKey} (ล้างข้อมูลเก่าแล้ว)`);
   return weekKey;
 }
 

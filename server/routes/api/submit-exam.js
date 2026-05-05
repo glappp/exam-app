@@ -70,6 +70,8 @@ router.post('/', async (req, res) => {
       }
     }
 
+    let milestones = null;
+
     if (studentProfileId) {
       await prisma.examResult.create({
         data: {
@@ -99,6 +101,8 @@ router.post('/', async (req, res) => {
 
       // บันทึก pass record สำหรับ test mode
       const TEST_PASS_SCORE = 8;
+      milestones = { newSubtopicPass: false, newTopicPass: false, xpBonus: 0 };
+
       const isPassed = correctCount >= TEST_PASS_SCORE && questions.length === 10;
       const { grade, topicKey, subtopicKey } = req.body;
 
@@ -111,9 +115,10 @@ router.post('/', async (req, res) => {
           create: { studentProfileId, grade, topicKey, subtopicKey },
           update: { passedAt: new Date() }
         });
-        // award permanentXP เฉพาะครั้งแรกที่ผ่าน subtopic นี้เท่านั้น
         if (!existing && req.session?.userId) {
           await awardXP(prisma, req.session.userId, 30, 'permanent');
+          milestones.newSubtopicPass = true;
+          milestones.xpBonus = 30;
         }
       }
 
@@ -126,9 +131,10 @@ router.post('/', async (req, res) => {
           create: { studentProfileId, grade, topicKey },
           update: { passedAt: new Date() }
         });
-        // award permanentXP เฉพาะครั้งแรกที่ผ่าน topic นี้เท่านั้น
         if (!existing && req.session?.userId) {
           await awardXP(prisma, req.session.userId, 80, 'permanent');
+          milestones.newTopicPass = true;
+          milestones.xpBonus = 80;
         }
       }
     }
@@ -232,7 +238,8 @@ router.post('/', async (req, res) => {
       userAnswers: answers,
       weakAttributes,
       characterLevel,
-      passed: TEST_MODES.includes(mode) ? correctCount >= 8 && questions.length === 10 : undefined
+      passed: TEST_MODES.includes(mode) ? correctCount >= 8 && questions.length === 10 : undefined,
+      milestones: milestones ?? undefined,
     });
 
   } catch (err) {

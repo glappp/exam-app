@@ -615,7 +615,7 @@ async function submitAndShowResults() {
 }
 
 function showFinalResults(data, durationSec) {
-  const { correctCount, total, passed } = data;
+  const { correctCount, total, passed, milestones } = data;
   const pct = total > 0 ? Math.round(correctCount / total * 100) : 0;
   const mins = Math.floor(durationSec / 60);
   const secs = durationSec % 60;
@@ -645,10 +645,14 @@ function showFinalResults(data, durationSec) {
       ? getSubtopicLabel(testSubtopicKey) || 'subtopic'
       : getTopicLabel(testTopicKey) || 'topic';
     if (passed) {
+      const xpBonus = milestones?.xpBonus > 0
+        ? `<div style="display:inline-block;margin-top:10px;background:#dcfce7;border:1px solid #86efac;border-radius:20px;padding:4px 14px;font-size:13px;font-weight:700;color:#15803d">⭐ +${milestones.xpBonus} XP ถาวร (ครั้งแรก!)</div>`
+        : '';
       return `<div style="background:#f0fdf4;border:2px solid #16a34a;border-radius:10px;padding:16px;text-align:center;margin-bottom:16px">
         <div style="font-size:36px">🎉</div>
         <div style="font-weight:700;color:#15803d;font-size:18px;margin-top:4px">ผ่าน!</div>
         <div style="color:#166534;font-size:14px;margin-top:4px">${typeName} — ${correctCount}/${total} ข้อ</div>
+        ${xpBonus}
       </div>`;
     } else {
       return `<div style="background:#fef2f2;border:2px solid #dc2626;border-radius:10px;padding:16px;text-align:center;margin-bottom:16px">

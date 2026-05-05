@@ -228,9 +228,6 @@
       <button class="btn-back" id="btn-review" style="display:none;background:#38a169;color:white;margin-top:12px" onclick="loadReview()">
         📖 ดูเฉลย
       </button>
-      <p id="review-hint" style="font-size:0.78rem;color:#a0aec0;margin-top:10px;display:none">
-        เฉลยเปิดให้ดูวันอาทิตย์ 05:00 น.
-      </p>
       <button class="btn-back" onclick="location.href='leaderboard.html'">🏆 ดู Leaderboard</button>
       <button class="btn-back" style="margin-top:8px" onclick="location.href='dashboard.html'">← กลับหน้าหลัก</button>
     </div>
@@ -357,8 +354,6 @@ async function init() {
 
     if (isAfterMaintenance()) {
       document.getElementById('btn-review').style.display = 'block';
-    } else {
-      document.getElementById('review-hint').style.display = 'block';
     }
 
     showScreen('already');

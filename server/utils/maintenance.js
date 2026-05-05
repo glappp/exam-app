@@ -108,14 +108,100 @@ async function settleWeekly() {
   console.log(`✅ Settled ${weekKey}: TT=${ttRanked.length}, SQ=${sqAttempts.length}, HoF=${hofCount} records`);
 }
 
+// ── Settle Monthly (ถ้า monthly period เพิ่งจบเมื่อวาน = เสาร์สุดท้ายของรอบ) ──
+async function settleMonthlyIfDue() {
+  const yesterday = yesterdayICT(); // เสาร์ที่เพิ่งผ่านไป
+
+  // หา monthly period ที่ endDate ตรงกับเมื่อวาน และยังไม่ settled
+  const period = await prisma.leaderboardPeriod.findFirst({
+    where: {
+      type: 'monthly',
+      settled: false,
+      endDate: {
+        gte: new Date(yesterday + 'T00:00:00Z'),
+        lt:  new Date(yesterday + 'T23:59:59Z'),
+      },
+    },
+  });
+
+  if (!period) return; // ไม่มี monthly period จบวันนี้
+
+  console.log(`📊 Settling monthly period: ${period.label} (id=${period.id})`);
+
+  // ดึง weekly periods ใน range
+  const weeklyPeriods = await prisma.leaderboardPeriod.findMany({
+    where: {
+      type: 'weekly',
+      seasonId: period.seasonId,
+      startDate: { gte: period.startDate },
+      endDate:   { lte: period.endDate },
+    },
+    select: { weekKey: true },
+  });
+  const weekKeys = weeklyPeriods.map(p => p.weekKey).filter(Boolean);
+  if (!weekKeys.length) { console.log('   ⚠️ ไม่มี weekKey — ข้าม'); return; }
+
+  // รวมคะแนน Time Trial
+  const ttScores = await prisma.timeTrialScore.findMany({ where: { weekKey: { in: weekKeys } }, orderBy: [{ score: 'desc' }] });
+  const ttUserWeek = new Map();
+  for (const s of ttScores) {
+    const key = `${s.userId}:${s.weekKey}`;
+    if (!ttUserWeek.has(key)) ttUserWeek.set(key, s.score);
+  }
+  const ttTotals = new Map();
+  for (const [key, score] of ttUserWeek) {
+    const userId = parseInt(key.split(':')[0]);
+    ttTotals.set(userId, (ttTotals.get(userId) || 0) + score);
+  }
+
+  // รวมคะแนน Saturday Quiz (จาก HallOfFame weekly ที่ settle แล้ว)
+  const weeklyHoF = await prisma.hallOfFame.findMany({
+    where: { periodId: { in: (await prisma.leaderboardPeriod.findMany({ where: { type: 'weekly', weekKey: { in: weekKeys } }, select: { id: true } })).map(p => p.id) }, activity: 'saturday_quiz' },
+  });
+  const sqTotals = new Map();
+  const sqTimeTotals = new Map();
+  for (const h of weeklyHoF) {
+    sqTotals.set(h.userId, (sqTotals.get(h.userId) || 0) + h.totalScore);
+    sqTimeTotals.set(h.userId, (sqTimeTotals.get(h.userId) || 0) + (h.totalTime || 0));
+  }
+
+  const hofEntries = [];
+
+  // Time Trial
+  const ttSorted = [...ttTotals.entries()].sort((a, b) => b[1] - a[1]);
+  for (let i = 0; i < ttSorted.length; i++) {
+    const [userId, totalScore] = ttSorted[i];
+    hofEntries.push({ userId, periodId: period.id, activity: 'time_trial', totalScore, rank: i + 1 });
+  }
+
+  // Saturday Quiz (tiebreak: totalTime น้อยกว่า)
+  const sqSorted = [...sqTotals.entries()].sort((a, b) => b[1] !== a[1] ? b[1] - a[1] : (sqTimeTotals.get(a[0]) || 0) - (sqTimeTotals.get(b[0]) || 0));
+  for (let i = 0; i < sqSorted.length; i++) {
+    const [userId, totalScore] = sqSorted[i];
+    hofEntries.push({ userId, periodId: period.id, activity: 'saturday_quiz', totalScore, totalTime: sqTimeTotals.get(userId) || null, rank: i + 1 });
+  }
+
+  for (const entry of hofEntries) {
+    await prisma.hallOfFame.upsert({
+      where: { userId_periodId_activity: { userId: entry.userId, periodId: entry.periodId, activity: entry.activity } },
+      create: entry,
+      update: { totalScore: entry.totalScore, totalTime: entry.totalTime ?? null, rank: entry.rank },
+    });
+  }
+
+  await prisma.leaderboardPeriod.update({ where: { id: period.id }, data: { settled: true } });
+  console.log(`✅ Monthly settled: ${period.label} — TT=${ttSorted.length}, SQ=${sqSorted.length}`);
+}
+
 async function runMaintenance() {
   const date = yesterdayICT();
   const { start, end } = ictDateToUTCRange(date);
 
-  // ── Settle weekly (เฉพาะวันอาทิตย์ ICT) ─────────────────────────────────
+  // ── Settle weekly + monthly (เฉพาะวันอาทิตย์ ICT) ──────────────────────
   const ict = new Date(Date.now() + 7 * 60 * 60 * 1000);
   if (ict.getUTCDay() === 0) {   // 0 = อาทิตย์
     await settleWeekly().catch(e => console.error('❌ settleWeekly error:', e));
+    await settleMonthlyIfDue().catch(e => console.error('❌ settleMonthly error:', e));
   }
   console.log(`🔧 Maintenance: aggregating ${date} (UTC ${start.toISOString()} – ${end.toISOString()})`);
 

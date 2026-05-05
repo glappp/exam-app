@@ -135,6 +135,29 @@ router.get('/overview', requireLogin, async (req, res) => {
   }
 });
 
+// ── GET /api/leaderboard/periods — ตารางรอบ monthly (public) ────────────────
+router.get('/periods', async (req, res) => {
+  try {
+    const season = await prisma.leaderboardSeason.findFirst({ where: { status: 'active' } });
+    if (!season) return res.json({ season: null, periods: [] });
+
+    const periods = await prisma.leaderboardPeriod.findMany({
+      where: { seasonId: season.id, type: 'monthly' },
+      orderBy: { startDate: 'asc' },
+      select: { id: true, label: true, startDate: true, endDate: true, settled: true },
+    });
+
+    // หา weekKey ปัจจุบัน เพื่อบอกว่าอยู่ในรอบไหน
+    const weekKey = getWeekKey();
+    const now = new Date();
+    const currentPeriod = periods.find(p => p.startDate <= now && p.endDate >= now);
+
+    res.json({ season: { id: season.id, name: season.name }, periods, currentPeriodId: currentPeriod?.id ?? null, weekKey });
+  } catch (err) {
+    res.status(500).json({ error: 'โหลด periods ล้มเหลว' });
+  }
+});
+
 // ── GET /api/leaderboard/hall-of-fame ────────────────────────────────────────
 router.get('/hall-of-fame', requireLogin, async (req, res) => {
   try {

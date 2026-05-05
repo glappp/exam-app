@@ -164,6 +164,42 @@
     .tag-answer  { background: #ebf8ff; color: #2c5282; }
 
     .loading { text-align:center; padding: 60px; color: #a0aec0; }
+
+    /* ─── Review screen ─── */
+    .review-list { max-width: 680px; margin: 0 auto; padding: 0 16px 24px; }
+    .review-item {
+      background: white; border-radius: 12px; padding: 16px;
+      margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .review-qnum { font-size: 0.78rem; font-weight: 700; color: #718096; margin-bottom: 6px; }
+    .review-qtext { font-size: 0.95rem; line-height: 1.6; color: #2d3748; margin-bottom: 10px; }
+    .review-qimage { max-width:100%; border-radius:8px; margin-bottom:10px; }
+    .review-choices { display:flex; flex-direction:column; gap:7px; }
+    .review-choice {
+      display:flex; gap:10px; align-items:flex-start;
+      padding: 9px 12px; border-radius:8px;
+      border: 2px solid #e2e8f0; font-size:0.88rem;
+    }
+    .review-choice.is-correct-answer { border-color:#38a169; background:#f0fff4; }
+    .review-choice.is-user-wrong     { border-color:#e53e3e; background:#fff5f5; }
+    .review-choice-key {
+      width:24px; height:24px; border-radius:50%; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:0.75rem; font-weight:700; background:#e2e8f0; color:#4a5568;
+    }
+    .review-choice.is-correct-answer .review-choice-key { background:#38a169; color:white; }
+    .review-choice.is-user-wrong .review-choice-key     { background:#e53e3e; color:white; }
+    .review-badge { font-size:0.72rem; margin-top:4px; }
+    .badge-you    { color:#c05621; font-weight:600; }
+    .badge-ans    { color:#276749; font-weight:600; }
+
+    .review-score-bar {
+      background: white; border-radius: 12px; padding: 20px;
+      margin: 16px 16px 12px; max-width:648px; margin-left:auto; margin-right:auto;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07); text-align:center;
+    }
+    .review-score-big { font-size:2.2rem; font-weight:800; color:#2b6cb0; }
+    .review-score-sub { font-size:0.85rem; color:#718096; margin-top:2px; }
   </style>
 </head>
 <body>
@@ -189,10 +225,32 @@
       <h2>สอบสัปดาห์นี้แล้ว</h2>
       <p id="already-msg">คุณส่งคำตอบสัปดาห์นี้ไปแล้ว</p>
       <div class="date-badge" id="already-score">—</div>
+      <button class="btn-back" id="btn-review" style="display:none;background:#38a169;color:white;margin-top:12px" onclick="loadReview()">
+        📖 ดูเฉลย
+      </button>
+      <p id="review-hint" style="font-size:0.78rem;color:#a0aec0;margin-top:10px;display:none">
+        เฉลยเปิดให้ดูวันอาทิตย์ 05:00 น.
+      </p>
       <button class="btn-back" onclick="location.href='leaderboard.html'">🏆 ดู Leaderboard</button>
       <button class="btn-back" style="margin-top:8px" onclick="location.href='dashboard.html'">← กลับหน้าหลัก</button>
     </div>
   </div>
+</div>
+
+<!-- ── Review Screen ── -->
+<div id="screen-review" class="screen">
+  <div class="exam-header">
+    <div>
+      <div class="exam-title">📖 ดูเฉลย Saturday Quiz</div>
+      <div class="exam-sub" id="review-date-label">—</div>
+    </div>
+    <button style="background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 14px;border-radius:6px;cursor:pointer" onclick="showScreen('already')">← กลับ</button>
+  </div>
+  <div class="review-score-bar">
+    <div class="review-score-big" id="review-score-big">—</div>
+    <div class="review-score-sub" id="review-score-sub">—</div>
+  </div>
+  <div class="review-list" id="review-list"></div>
 </div>
 
 <!-- ── Exam Screen ── -->
@@ -289,6 +347,17 @@ async function init() {
     document.getElementById('already-msg').textContent =
       `คุณส่งคำตอบไปแล้วเมื่อ ${new Date(a.completedAt).toLocaleTimeString('th-TH', { timeZone:'Asia/Bangkok' })}`;
     document.getElementById('already-score').textContent = `คะแนน ${a.score} / 10 ⏱️ ${formatTime(a.timeUsed)}`;
+
+    // ตรวจว่าเปิดดูเฉลยได้แล้วหรือยัง (อาทิตย์ 05:00+ ICT)
+    const ict = new Date(Date.now() + 7 * 60 * 60 * 1000);
+    const ictDay = ict.getUTCDay(); const ictHour = ict.getUTCHours();
+    const reviewOpen = (ictDay === 0 && ictHour >= 5) || (ictDay >= 1 && ictDay <= 5);
+    if (reviewOpen) {
+      document.getElementById('btn-review').style.display = 'block';
+    } else {
+      document.getElementById('review-hint').style.display = 'block';
+    }
+
     showScreen('already');
     return;
   }
@@ -503,6 +572,93 @@ function showResult(data) {
   document.getElementById('result-list').innerHTML = listHtml;
 
   showScreen('result');
+}
+
+// ── Review ─────────────────────────────────────────────────────────────────
+async function loadReview() {
+  showScreen('loading');
+  try {
+    const res = await fetch('/api/saturday-quiz/review', { credentials: 'include' });
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || 'โหลดเฉลยล้มเหลว');
+      showScreen('already');
+      return;
+    }
+
+    const { weekKey: wk, score, timeUsed, questions: qs } = data;
+
+    // label วันเสาร์
+    const sat = new Date(wk + 'T00:00:00Z');
+    sat.setUTCDate(sat.getUTCDate() + 6);
+    document.getElementById('review-date-label').textContent =
+      sat.toLocaleDateString('th-TH', { weekday:'long', day:'numeric', month:'long', year:'numeric', timeZone:'UTC' });
+
+    document.getElementById('review-score-big').textContent = `${score} / ${qs.length}`;
+    document.getElementById('review-score-sub').textContent = `⏱️ ${formatTime(timeUsed)}`;
+
+    const keys = ['a','b','c','d'];
+    const html = qs.map((q, i) => {
+      const isCorrect = q.isCorrect;
+      const userAns   = q.userAnswer;
+      const correctAns = q.answer; // MC
+
+      // โจทย์
+      let textHtml = '';
+      if (Array.isArray(q.content) && q.content.length > 0) {
+        q.content.forEach(b => {
+          if (b.type === 'text') textHtml += `<p>${b.value}</p>`;
+          else if (b.type === 'image') textHtml += `<img src="${b.url}" class="review-qimage">`;
+        });
+      } else {
+        textHtml = q.textTh || '';
+      }
+      const qImgTag = q.image ? `<img src="/uploads/${q.image}" class="review-qimage">` : '';
+
+      // choices (MC)
+      let choicesHtml = '';
+      if (q.type === 'mc' && Array.isArray(q.choices)) {
+        choicesHtml = q.choices.map((c, ci) => {
+          const key = keys[ci];
+          const isAnswer = key === correctAns;
+          const isUserPick = key === userAns;
+          let cls = '';
+          if (isAnswer) cls = 'is-correct-answer';
+          else if (isUserPick && !isAnswer) cls = 'is-user-wrong';
+          const badge = isAnswer && isUserPick ? `<div class="review-badge badge-ans">✅ ถูก</div>`
+                      : isAnswer ? `<div class="review-badge badge-ans">✅ เฉลย</div>`
+                      : isUserPick ? `<div class="review-badge badge-you">❌ คุณเลือก</div>`
+                      : '';
+          return `<div class="review-choice ${cls}">
+            <div class="review-choice-key">${key.toUpperCase()}</div>
+            <div style="flex:1">${c.textTh || ''}${badge}</div>
+          </div>`;
+        }).join('');
+      } else if (q.type === 'numeric') {
+        const accepted = Array.isArray(q.shortAnswer) ? q.shortAnswer.join(', ') : (q.shortAnswer || '—');
+        choicesHtml = `
+          <div style="font-size:0.88rem;margin-top:4px">
+            <span class="tag tag-answer">เฉลย: ${accepted}</span>
+            ${userAns != null ? `<span class="tag ${isCorrect ? 'tag-correct' : 'tag-wrong'}" style="margin-left:6px">คุณตอบ: ${userAns}</span>` : ''}
+          </div>`;
+      }
+
+      const borderColor = isCorrect ? '#38a169' : '#e53e3e';
+      return `<div class="review-item" style="border-left:4px solid ${borderColor}">
+        <div class="review-qnum">ข้อ ${i+1} — ${isCorrect ? '✅ ถูก' : '❌ ผิด'}</div>
+        <div class="review-qtext">${textHtml}</div>
+        ${qImgTag}
+        <div class="review-choices">${choicesHtml}</div>
+      </div>`;
+    }).join('');
+
+    document.getElementById('review-list').innerHTML = html;
+    showScreen('review');
+  } catch (err) {
+    alert('เกิดข้อผิดพลาด: ' + err.message);
+    showScreen('already');
+  }
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────

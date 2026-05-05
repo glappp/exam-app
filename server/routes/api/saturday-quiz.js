@@ -148,6 +148,78 @@ router.get('/questions', requireLogin, async (req, res) => {
   }
 });
 
+// GET /api/saturday-quiz/review — ดูเฉลย (เปิดวันอาทิตย์ 05:00+ ICT หลัง maintenance)
+// เฉพาะคนที่สอบแล้วเท่านั้น
+router.get('/review', requireLogin, async (req, res) => {
+  try {
+    // ตรวจเวลา ICT
+    const now = new Date();
+    const ict = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+    const ictDay  = ict.getUTCDay();  // 0=อาทิตย์
+    const ictHour = ict.getUTCHours();
+    const reviewOpen = (ictDay === 0 && ictHour >= 5) || (ictDay >= 1 && ictDay <= 5);
+
+    if (!reviewOpen) {
+      return res.status(403).json({
+        error: 'ดูเฉลยได้หลัง 05:00 น. วันอาทิตย์',
+        code: 'REVIEW_NOT_OPEN',
+      });
+    }
+
+    // weekKey ของสัปดาห์ที่สอบ (= weekKey ก่อนหน้า 7 วัน จากต้นสัปดาห์ปัจจุบัน)
+    const currentWeekKey = getWeekKey(); // อาทิตย์นี้
+    const prevSun = new Date(currentWeekKey + 'T00:00:00Z');
+    prevSun.setUTCDate(prevSun.getUTCDate() - 7);
+    const reviewWeekKey = req.query.weekKey || prevSun.toISOString().slice(0, 10);
+
+    // ตรวจว่าผู้ใช้สอบแล้วหรือยัง
+    const attempt = await prisma.saturdayQuizAttempt.findUnique({
+      where: { userId_weekKey: { userId: req.session.userId, weekKey: reviewWeekKey } },
+    });
+    if (!attempt) {
+      return res.status(403).json({
+        error: 'ไม่พบผลการสอบ — ดูเฉลยได้เฉพาะคนที่เข้าสอบเท่านั้น',
+        code: 'NO_ATTEMPT',
+      });
+    }
+
+    // ดึงข้อสอบพร้อมเฉลย
+    const pool = await prisma.saturdayQuizPool.findMany({
+      where: { weekKey: reviewWeekKey },
+      include: { question: true }, // รวม answer + shortAnswer ด้วย
+      orderBy: { sortOrder: 'asc' },
+    });
+
+    const userAnswers = attempt.answers || {};
+    const questions = pool.map(p => {
+      const q = p.question;
+      const userAns = userAnswers[q.id];
+      let correct = false;
+      if (q.type === 'mc') {
+        correct = userAns === q.answer;
+      } else if (q.type === 'numeric' && q.shortAnswer) {
+        const accepted = Array.isArray(q.shortAnswer) ? q.shortAnswer : [q.shortAnswer];
+        correct = accepted.includes(String(userAns));
+      }
+      return {
+        ...q,                         // รวม answer + shortAnswer (unhide แล้ว)
+        userAnswer: userAns ?? null,
+        isCorrect: correct,
+      };
+    });
+
+    res.json({
+      weekKey: reviewWeekKey,
+      score: attempt.score,
+      timeUsed: attempt.timeUsed,
+      questions,
+    });
+  } catch (err) {
+    console.error('❌ saturday-quiz/review:', err);
+    res.status(500).json({ error: 'โหลดเฉลยล้มเหลว' });
+  }
+});
+
 // POST /api/saturday-quiz/submit
 // Body: { weekKey, answers: { questionId: selectedAnswer }, timeUsed }
 router.post('/submit', requireLogin, async (req, res) => {

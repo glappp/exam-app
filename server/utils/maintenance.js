@@ -193,7 +193,7 @@ async function settleMonthlyIfDue() {
   console.log(`✅ Monthly settled: ${period.label} — TT=${ttSorted.length}, SQ=${sqSorted.length}`);
 }
 
-// ── Close Season + Reset Boxes (ถ้า active season สิ้นสุดเมื่อวาน) ───────────
+// ── Close Season + Year Rollover (ถ้า active season สิ้นสุดเมื่อวาน) ──────────
 async function closeSeasonIfDue() {
   const yesterday = yesterdayICT();
 
@@ -209,23 +209,68 @@ async function closeSeasonIfDue() {
 
   if (!season) return;
 
-  console.log(`🗓️  Season หมดอายุ: ${season.name} — ปิด season และ reset กล่องรางวัล`);
+  console.log(`🗓️  Season หมดอายุ: ${season.name} — เริ่ม year rollover อัตโนมัติ`);
 
-  // Reset BoxInventory + TicketWallet ของทุก user
+  // ── 1. Reset activityXp + recalculate level จาก permanentXp ─────────────
+  const { calcLevel } = require('./gamification');
+  const allCS = await prisma.characterState.findMany();
+  for (const cs of allCS) {
+    const newLevel = Math.max(1, calcLevel(cs.permanentXp));
+    await prisma.characterState.update({
+      where: { id: cs.id },
+      data:  { activityXp: 0, level: newLevel },
+    });
+  }
+  console.log(`   ✅ activityXp reset: ${allCS.length} users`);
+
+  // ── 2. เลื่อนชั้น StudentProfile + disable ม.3→ม.4 ───────────────────────
+  const GRADE_UP = {
+    'ป.1': 'ป.2', 'ป.2': 'ป.3', 'ป.3': 'ป.4',
+    'ป.4': 'ป.5', 'ป.5': 'ป.6', 'ป.6': 'ม.1',
+    'ม.1': 'ม.2', 'ม.2': 'ม.3', 'ม.3': 'ม.4',
+  };
+
+  // ปีการศึกษาใหม่ = ปี พ.ศ. ของวันนี้ (ICT)
+  const ictNow = new Date(Date.now() + 7 * 3600000);
+  const newAcademicYear = String(ictNow.getUTCFullYear() + 543);
+
+  const profiles = await prisma.studentProfile.findMany({
+    where:  { status: 'active' },
+    select: { id: true, grade: true, userId: true },
+  });
+
+  const disableUserIds = [];
+  for (const p of profiles) {
+    const newGrade = GRADE_UP[p.grade] || p.grade;
+    await prisma.studentProfile.update({
+      where: { id: p.id },
+      data:  { grade: newGrade, academicYear: newAcademicYear },
+    });
+    if (newGrade === 'ม.4') disableUserIds.push(p.userId);
+  }
+
+  if (disableUserIds.length > 0) {
+    await prisma.user.updateMany({
+      where: { id: { in: disableUserIds } },
+      data:  { role: 'disabled' },
+    });
+  }
+  console.log(`   ✅ เลื่อนชั้น: ${profiles.length} students, disable ม.4: ${disableUserIds.length} accounts`);
+
+  // ── 3. Reset BoxInventory + TicketWallet ─────────────────────────────────
   const [boxReset, ticketReset] = await Promise.all([
     prisma.boxInventory.updateMany({ data: { silverCount: 0, goldCount: 0 } }),
     prisma.ticketWallet.updateMany({ data: { balance: 0 } }),
   ]);
+  console.log(`   ✅ BoxInventory reset: ${boxReset.count} | TicketWallet reset: ${ticketReset.count}`);
 
-  // Mark season as closed
+  // ── 4. Mark season closed ─────────────────────────────────────────────────
   await prisma.leaderboardSeason.update({
     where: { id: season.id },
     data:  { status: 'closed' },
   });
 
-  console.log(`✅ Season "${season.name}" ปิดแล้ว`);
-  console.log(`   BoxInventory reset: ${boxReset.count} users`);
-  console.log(`   TicketWallet reset: ${ticketReset.count} users`);
+  console.log(`✅ Season "${season.name}" ปิดแล้ว — ปีการศึกษา ${newAcademicYear} เริ่มต้น`);
 }
 
 async function runMaintenance() {

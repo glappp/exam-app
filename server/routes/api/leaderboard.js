@@ -458,8 +458,9 @@ router.patch('/seasons/:id', requireLogin, async (req, res) => {
   }
 });
 
-// ── POST /api/leaderboard/year-rollover (admin) ───────────────────────────────
-// รีเซ็ต activityXp + เลื่อนชั้น grade + disable account ม.3→ม.4
+// ── POST /api/leaderboard/year-rollover (admin — emergency manual trigger) ─────
+// ปกติ rollover จะรันอัตโนมัติใน closeSeasonIfDue() ตอน maintenance วันอาทิตย์
+// endpoint นี้ไว้ใช้กรณีฉุกเฉิน เช่น maintenance พัง หรือต้องรันซ้ำ
 // Body: { newAcademicYear: "2568" }
 router.post('/year-rollover', requireLogin, async (req, res) => {
   try {

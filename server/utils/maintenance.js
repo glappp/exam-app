@@ -211,10 +211,11 @@ async function closeSeasonIfDue() {
 
   console.log(`🗓️  Season หมดอายุ: ${season.name} — ปิด season และ reset กล่องรางวัล`);
 
-  // Reset BoxInventory ของทุก user
-  const resetResult = await prisma.boxInventory.updateMany({
-    data: { silverCount: 0, goldCount: 0 },
-  });
+  // Reset BoxInventory + TicketWallet ของทุก user
+  const [boxReset, ticketReset] = await Promise.all([
+    prisma.boxInventory.updateMany({ data: { silverCount: 0, goldCount: 0 } }),
+    prisma.ticketWallet.updateMany({ data: { balance: 0 } }),
+  ]);
 
   // Mark season as closed
   await prisma.leaderboardSeason.update({
@@ -222,7 +223,9 @@ async function closeSeasonIfDue() {
     data:  { status: 'closed' },
   });
 
-  console.log(`✅ Season "${season.name}" ปิดแล้ว — reset BoxInventory ${resetResult.count} users`);
+  console.log(`✅ Season "${season.name}" ปิดแล้ว`);
+  console.log(`   BoxInventory reset: ${boxReset.count} users`);
+  console.log(`   TicketWallet reset: ${ticketReset.count} users`);
 }
 
 async function runMaintenance() {

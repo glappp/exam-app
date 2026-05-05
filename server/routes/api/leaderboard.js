@@ -526,12 +526,20 @@ router.post('/year-rollover', requireLogin, async (req, res) => {
       disabled = disableUserIds.length;
     }
 
+    // 3. reset กล่องรางวัลและตั๋วแข่งขันทุก user
+    const [boxReset, ticketReset] = await Promise.all([
+      prisma.boxInventory.updateMany({ data: { silverCount: 0, goldCount: 0 } }),
+      prisma.ticketWallet.updateMany({ data: { balance: 0 } }),
+    ]);
+
     res.json({
       ok: true,
       resetXpCount: resetCount,
       gradeUpdated,
       disabled,
-      note: `permanentXP carry-over อัตโนมัติ | ม.3→ม.4 disabled ${disabled} accounts`,
+      boxReset: boxReset.count,
+      ticketReset: ticketReset.count,
+      note: `permanentXP carry-over อัตโนมัติ | ม.3→ม.4 disabled ${disabled} accounts | กล่อง+ตั๋ว reset แล้ว`,
     });
   } catch (err) {
     console.error('❌ leaderboard/year-rollover:', err);

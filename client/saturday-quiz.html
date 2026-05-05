@@ -316,6 +316,13 @@
 </div>
 
 <script>
+// หลัง maintenance = อาทิตย์ 05:00+ ICT (ใช้เงื่อนไขเดียวกับ backend)
+function isAfterMaintenance() {
+  const ict = new Date(Date.now() + 7 * 60 * 60 * 1000);
+  const day = ict.getUTCDay(), hour = ict.getUTCHours();
+  return (day === 0 && hour >= 5) || (day >= 1 && day <= 5);
+}
+
 // ── State ──────────────────────────────────────────────────────────────────
 let questions = [];
 let answers   = {};   // { questionId: selectedAnswer }
@@ -348,11 +355,7 @@ async function init() {
       `คุณส่งคำตอบไปแล้วเมื่อ ${new Date(a.completedAt).toLocaleTimeString('th-TH', { timeZone:'Asia/Bangkok' })}`;
     document.getElementById('already-score').textContent = `คะแนน ${a.score} / 10 ⏱️ ${formatTime(a.timeUsed)}`;
 
-    // ตรวจว่าเปิดดูเฉลยได้แล้วหรือยัง (อาทิตย์ 05:00+ ICT)
-    const ict = new Date(Date.now() + 7 * 60 * 60 * 1000);
-    const ictDay = ict.getUTCDay(); const ictHour = ict.getUTCHours();
-    const reviewOpen = (ictDay === 0 && ictHour >= 5) || (ictDay >= 1 && ictDay <= 5);
-    if (reviewOpen) {
+    if (isAfterMaintenance()) {
       document.getElementById('btn-review').style.display = 'block';
     } else {
       document.getElementById('review-hint').style.display = 'block';

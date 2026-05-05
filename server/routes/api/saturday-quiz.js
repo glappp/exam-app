@@ -8,6 +8,14 @@ function requireLogin(req, res, next) {
   next();
 }
 
+// หลัง maintenance = อาทิตย์ 05:00+ ICT (review + settle เปิดพร้อมกัน)
+function isAfterMaintenance() {
+  const ict = new Date(Date.now() + 7 * 60 * 60 * 1000);
+  const day  = ict.getUTCDay();
+  const hour = ict.getUTCHours();
+  return (day === 0 && hour >= 5) || (day >= 1 && day <= 5);
+}
+
 // weekKey = วันอาทิตย์ต้นสัปดาห์ (YYYY-MM-DD)
 function getWeekKey(date = new Date()) {
   const d = new Date(date);
@@ -157,14 +165,7 @@ router.get('/questions', requireLogin, async (req, res) => {
 // เฉพาะคนที่สอบแล้วเท่านั้น
 router.get('/review', requireLogin, async (req, res) => {
   try {
-    // ตรวจเวลา ICT
-    const now = new Date();
-    const ict = new Date(now.getTime() + 7 * 60 * 60 * 1000);
-    const ictDay  = ict.getUTCDay();  // 0=อาทิตย์
-    const ictHour = ict.getUTCHours();
-    const reviewOpen = (ictDay === 0 && ictHour >= 5) || (ictDay >= 1 && ictDay <= 5);
-
-    if (!reviewOpen) {
+    if (!isAfterMaintenance()) {
       return res.status(403).json({
         error: 'ดูเฉลยได้หลัง 05:00 น. วันอาทิตย์',
         code: 'REVIEW_NOT_OPEN',

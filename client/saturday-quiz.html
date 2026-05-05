@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สอบประจำสัปดาห์ — Saturday Quiz</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #1a202c; min-height: 100vh; }
+
+    /* ─── Header ─── */
+    .exam-header {
+      background: #2b6cb0; color: white;
+      padding: 12px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .exam-title { font-size: 1rem; font-weight: 700; }
+    .exam-sub { font-size: 0.78rem; opacity: 0.8; margin-top: 1px; }
+
+    /* Timer */
+    .timer {
+      background: rgba(255,255,255,0.2); border-radius: 8px;
+      padding: 6px 14px; text-align: center;
+      min-width: 80px;
+    }
+    .timer-val { font-size: 1.3rem; font-weight: 700; letter-spacing: 1px; }
+    .timer-label { font-size: 0.65rem; opacity: 0.8; }
+    .timer.warning { background: #e53e3e; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+
+    /* ─── Progress dots ─── */
+    .progress-bar {
+      background: white; padding: 10px 20px;
+      display: flex; gap: 5px; justify-content: center; flex-wrap: wrap;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .dot {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 600; cursor: pointer;
+      border: 2px solid #cbd5e0; color: #718096; transition: all 0.2s;
+    }
+    .dot.current { border-color: #2b6cb0; color: #2b6cb0; background: #ebf8ff; }
+    .dot.answered { background: #2b6cb0; border-color: #2b6cb0; color: white; }
+
+    /* ─── Question Card ─── */
+    .question-area {
+      max-width: 680px; margin: 0 auto; padding: 16px;
+    }
+    .q-card {
+      background: white; border-radius: 12px; padding: 20px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08); margin-bottom: 14px;
+    }
+    .q-num { font-size: 0.8rem; color: #718096; margin-bottom: 8px; font-weight: 600; }
+    .q-text { font-size: 1rem; line-height: 1.65; color: #2d3748; }
+    .q-image { max-width: 100%; border-radius: 8px; margin: 10px 0; }
+
+    /* Choices */
+    .choices { display: flex; flex-direction: column; gap: 9px; margin-top: 14px; }
+    .choice {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 11px 14px; border-radius: 8px;
+      border: 2px solid #e2e8f0; cursor: pointer;
+      transition: all 0.15s; background: white;
+    }
+    .choice:hover { border-color: #90cdf4; background: #ebf8ff; }
+    .choice.selected { border-color: #2b6cb0; background: #ebf8ff; }
+    .choice-key {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: #e2e8f0; display: flex; align-items: center; justify-content: center;
+      font-size: 0.8rem; font-weight: 700; color: #4a5568; flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .choice.selected .choice-key { background: #2b6cb0; color: white; }
+    .choice-text { font-size: 0.93rem; line-height: 1.5; color: #2d3748; padding-top: 2px; }
+    .choice-image { max-width: 100%; border-radius: 6px; margin-top: 6px; }
+
+    /* Numeric input */
+    .numeric-input {
+      margin-top: 14px;
+    }
+    .numeric-input input {
+      width: 100%; padding: 10px 14px;
+      border: 2px solid #e2e8f0; border-radius: 8px;
+      font-size: 1rem; outline: none;
+    }
+    .numeric-input input:focus { border-color: #2b6cb0; }
+
+    /* ─── Navigation ─── */
+    .nav-row {
+      display: flex; gap: 10px; justify-content: space-between;
+      max-width: 680px; margin: 0 auto; padding: 0 16px 16px;
+    }
+    .nav-btn {
+      flex: 1; padding: 11px; border-radius: 8px; border: none;
+      font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
+    }
+    .btn-prev { background: #e2e8f0; color: #4a5568; }
+    .btn-prev:hover { background: #cbd5e0; }
+    .btn-next { background: #2b6cb0; color: white; }
+    .btn-next:hover { background: #2c5282; }
+    .btn-submit { background: #38a169; color: white; flex: 2; }
+    .btn-submit:hover { background: #276749; }
+    .btn-submit:disabled { background: #a0aec0; cursor: not-allowed; }
+
+    /* ─── Screens ─── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* Not Saturday screen */
+    .center-card {
+      max-width: 480px; margin: 40px auto; padding: 16px;
+    }
+    .info-box {
+      background: white; border-radius: 14px; padding: 36px 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center;
+    }
+    .info-box .icon { font-size: 3rem; margin-bottom: 14px; }
+    .info-box h2 { font-size: 1.2rem; color: #2d3748; margin-bottom: 8px; }
+    .info-box p { font-size: 0.9rem; color: #718096; line-height: 1.6; }
+    .info-box .date-badge {
+      display: inline-block; margin-top: 16px;
+      background: #ebf8ff; color: #2b6cb0; border-radius: 8px;
+      padding: 8px 18px; font-weight: 600; font-size: 0.95rem;
+    }
+    .btn-back {
+      display: block; margin-top: 20px;
+      background: #e2e8f0; color: #4a5568; border: none;
+      padding: 10px 24px; border-radius: 8px; cursor: pointer; font-size: 0.95rem;
+      font-weight: 600; width: 100%;
+    }
+    .btn-back:hover { background: #cbd5e0; }
+
+    /* Result screen */
+    .result-box {
+      background: white; border-radius: 14px; padding: 28px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08); text-align: center; margin-bottom: 16px;
+    }
+    .score-circle {
+      width: 110px; height: 110px; border-radius: 50%;
+      border: 6px solid #2b6cb0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; margin: 0 auto 16px;
+    }
+    .score-num { font-size: 2rem; font-weight: 800; color: #2b6cb0; }
+    .score-total { font-size: 0.8rem; color: #718096; }
+    .result-msg { font-size: 1.1rem; font-weight: 600; margin-bottom: 6px; }
+    .result-time { font-size: 0.85rem; color: #718096; }
+
+    /* Result detail */
+    .result-list { max-width: 680px; margin: 0 auto; padding: 0 16px 24px; }
+    .result-item {
+      background: white; border-radius: 10px; padding: 14px 16px;
+      margin-bottom: 10px; border-left: 4px solid #e2e8f0;
+    }
+    .result-item.correct { border-left-color: #38a169; }
+    .result-item.wrong   { border-left-color: #e53e3e; }
+    .result-item .q-num  { margin-bottom: 4px; }
+    .result-item .q-text { font-size: 0.9rem; }
+    .result-item .ans-row { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .tag { font-size: 0.78rem; padding: 3px 10px; border-radius: 10px; font-weight: 600; }
+    .tag-correct { background: #c6f6d5; color: #276749; }
+    .tag-wrong   { background: #fed7d7; color: #9b2c2c; }
+    .tag-answer  { background: #ebf8ff; color: #2c5282; }
+
+    .loading { text-align:center; padding: 60px; color: #a0aec0; }
+  </style>
+</head>
+<body>
+
+<!-- ── Not Saturday Screen ── -->
+<div id="screen-not-saturday" class="screen">
+  <div class="center-card">
+    <div class="info-box">
+      <div class="icon">📅</div>
+      <h2>สอบได้เฉพาะวันเสาร์</h2>
+      <p>Saturday Quiz เปิดให้สอบทุกวันเสาร์ สัปดาห์ละ 1 ครั้ง<br>10 ข้อ เวลา 20 นาที</p>
+      <div class="date-badge" id="opens-at-text">—</div>
+      <button class="btn-back" onclick="location.href='dashboard.html'">← กลับหน้าหลัก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Already Attempted Screen ── -->
+<div id="screen-already" class="screen">
+  <div class="center-card">
+    <div class="info-box">
+      <div class="icon">✅</div>
+      <h2>สอบสัปดาห์นี้แล้ว</h2>
+      <p id="already-msg">คุณส่งคำตอบสัปดาห์นี้ไปแล้ว</p>
+      <div class="date-badge" id="already-score">—</div>
+      <button class="btn-back" onclick="location.href='leaderboard.html'">🏆 ดู Leaderboard</button>
+      <button class="btn-back" style="margin-top:8px" onclick="location.href='dashboard.html'">← กลับหน้าหลัก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Exam Screen ── -->
+<div id="screen-exam" class="screen">
+  <div class="exam-header">
+    <div>
+      <div class="exam-title">📝 สอบประจำสัปดาห์</div>
+      <div class="exam-sub" id="exam-date-label">—</div>
+    </div>
+    <div class="timer" id="timer-box">
+      <div class="timer-val" id="timer-val">20:00</div>
+      <div class="timer-label">เหลือเวลา</div>
+    </div>
+  </div>
+
+  <div class="progress-bar" id="progress-dots"></div>
+
+  <div class="question-area">
+    <div class="q-card" id="q-card">
+      <div class="q-num" id="q-num">ข้อ 1 / 10</div>
+      <div class="q-text" id="q-text"></div>
+      <img class="q-image" id="q-image" style="display:none">
+      <div class="choices" id="choices-area"></div>
+      <div class="numeric-input" id="numeric-area" style="display:none">
+        <input type="number" id="numeric-input" placeholder="พิมพ์คำตอบ..." oninput="recordNumeric()" step="any">
+      </div>
+    </div>
+  </div>
+
+  <div class="nav-row" id="nav-row">
+    <button class="nav-btn btn-prev" id="btn-prev" onclick="goPrev()">← ก่อนหน้า</button>
+    <button class="nav-btn btn-next" id="btn-next" onclick="goNext()">ถัดไป →</button>
+  </div>
+</div>
+
+<!-- ── Result Screen ── -->
+<div id="screen-result" class="screen">
+  <div class="exam-header">
+    <div>
+      <div class="exam-title">📊 ผลการสอบ</div>
+      <div class="exam-sub">Saturday Quiz</div>
+    </div>
+    <button style="background:rgba(255,255,255,0.2);border:none;color:white;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:0.9rem" onclick="location.href='leaderboard.html'">🏆 Leaderboard</button>
+  </div>
+
+  <div class="center-card" style="max-width:680px">
+    <div class="result-box">
+      <div class="score-circle">
+        <div class="score-num" id="res-score">—</div>
+        <div class="score-total">จาก 10</div>
+      </div>
+      <div class="result-msg" id="res-msg">—</div>
+      <div class="result-time" id="res-time">—</div>
+    </div>
+  </div>
+
+  <div class="result-list" id="result-list"></div>
+</div>
+
+<!-- Loading -->
+<div id="screen-loading" class="screen active">
+  <div class="loading">⏳ กำลังโหลด...</div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let questions = [];
+let answers   = {};   // { questionId: selectedAnswer }
+let weekKey   = '';
+let currentIdx = 0;
+let timerInterval = null;
+let secondsLeft = 20 * 60; // 20 นาที
+let startTime = Date.now();
+let submitted = false;
+
+// ── Init ───────────────────────────────────────────────────────────────────
+async function init() {
+  const me = await fetch('/api/me', { credentials: 'include' }).then(r => r.json()).catch(() => null);
+  if (!me?.loggedIn) { location.href = 'login.html'; return; }
+
+  const res = await fetch('/api/saturday-quiz/questions', { credentials: 'include' });
+  const data = await res.json();
+
+  if (res.status === 403 && data.code === 'NOT_SATURDAY') {
+    const d = new Date(data.opensAt);
+    const fmt = d.toLocaleDateString('th-TH', { weekday:'long', day:'numeric', month:'long', timeZone:'Asia/Bangkok' });
+    document.getElementById('opens-at-text').textContent = `เปิดสอบ ${fmt}`;
+    showScreen('not-saturday');
+    return;
+  }
+
+  if (res.status === 409 && data.code === 'ALREADY_ATTEMPTED') {
+    const a = data.attempt;
+    document.getElementById('already-msg').textContent =
+      `คุณส่งคำตอบไปแล้วเมื่อ ${new Date(a.completedAt).toLocaleTimeString('th-TH', { timeZone:'Asia/Bangkok' })}`;
+    document.getElementById('already-score').textContent = `คะแนน ${a.score} / 10 ⏱️ ${formatTime(a.timeUsed)}`;
+    showScreen('already');
+    return;
+  }
+
+  if (!res.ok) {
+    alert('โหลดข้อสอบล้มเหลว: ' + (data.error || ''));
+    location.href = 'dashboard.html';
+    return;
+  }
+
+  questions = data.questions;
+  weekKey   = data.weekKey;
+
+  // label วันที่
+  const satDate = new Date(weekKey);
+  satDate.setUTCDate(satDate.getUTCDate() + 6);
+  document.getElementById('exam-date-label').textContent =
+    satDate.toLocaleDateString('th-TH', { weekday:'long', day:'numeric', month:'long', year:'numeric', timeZone:'UTC' });
+
+  renderDots();
+  renderQuestion(0);
+  startTimer();
+  showScreen('exam');
+}
+
+// ── Timer ──────────────────────────────────────────────────────────────────
+function startTimer() {
+  startTime = Date.now();
+  timerInterval = setInterval(() => {
+    secondsLeft--;
+    const m = Math.floor(secondsLeft / 60).toString().padStart(2,'0');
+    const s = (secondsLeft % 60).toString().padStart(2,'0');
+    document.getElementById('timer-val').textContent = `${m}:${s}`;
+    if (secondsLeft <= 120) document.getElementById('timer-box').classList.add('warning');
+    if (secondsLeft <= 0) { clearInterval(timerInterval); submitAnswers(true); }
+  }, 1000);
+}
+
+function formatTime(sec) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m} นาที ${s} วินาที`;
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function renderDots() {
+  const container = document.getElementById('progress-dots');
+  container.innerHTML = questions.map((q, i) => {
+    const cls = i === currentIdx ? 'dot current' : (answers[q.id] != null ? 'dot answered' : 'dot');
+    return `<div class="${cls}" onclick="jumpTo(${i})">${i+1}</div>`;
+  }).join('');
+}
+
+function renderQuestion(idx) {
+  currentIdx = idx;
+  const q = questions[idx];
+  document.getElementById('q-num').textContent = `ข้อ ${idx+1} / ${questions.length}`;
+
+  // ข้อความโจทย์
+  let textHtml = '';
+  if (Array.isArray(q.content) && q.content.length > 0) {
+    q.content.forEach(block => {
+      if (block.type === 'text') textHtml += `<p style="margin-bottom:6px">${block.value}</p>`;
+      else if (block.type === 'image') textHtml += `<img src="${block.url}" class="q-image" style="display:block;max-width:100%;border-radius:8px;margin:8px 0">`;
+    });
+  } else {
+    textHtml = q.textTh || '';
+  }
+  document.getElementById('q-text').innerHTML = textHtml;
+
+  // รูปหลักของโจทย์
+  const qImg = document.getElementById('q-image');
+  if (q.image) {
+    qImg.src = '/uploads/' + q.image;
+    qImg.style.display = 'block';
+  } else {
+    qImg.style.display = 'none';
+  }
+
+  // Choices หรือ Numeric
+  const choices = document.getElementById('choices-area');
+  const numArea = document.getElementById('numeric-area');
+
+  if (q.type === 'numeric') {
+    choices.style.display = 'none';
+    numArea.style.display = 'block';
+    document.getElementById('numeric-input').value = answers[q.id] ?? '';
+  } else {
+    numArea.style.display = 'none';
+    choices.style.display = 'flex';
+    const keys = ['a','b','c','d'];
+    const choiceArr = Array.isArray(q.choices) ? q.choices : [];
+    choices.innerHTML = choiceArr.map((c, i) => {
+      const key = keys[i];
+      const sel = answers[q.id] === key ? 'selected' : '';
+      const imgTag = c.image ? `<img src="/uploads/${c.image}" class="choice-image">` : '';
+      return `<div class="choice ${sel}" onclick="selectAnswer('${q.id}','${key}',this)">
+        <div class="choice-key">${key.toUpperCase()}</div>
+        <div class="choice-text">${c.textTh || ''}${imgTag}</div>
+      </div>`;
+    }).join('');
+  }
+
+  updateNav();
+  renderDots();
+}
+
+function selectAnswer(qId, key, el) {
+  answers[qId] = key;
+  // อัปเดต selected style
+  el.closest('.choices').querySelectorAll('.choice').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  el.querySelector('.choice-key') && el.closest('.choices').querySelectorAll('.choice-key').forEach(k => k.parentElement.classList.contains('selected') ? null : null);
+  renderDots();
+}
+
+function recordNumeric() {
+  const q = questions[currentIdx];
+  const val = document.getElementById('numeric-input').value.trim();
+  answers[q.id] = val || null;
+  renderDots();
+}
+
+function updateNav() {
+  const isFirst = currentIdx === 0;
+  const isLast  = currentIdx === questions.length - 1;
+  document.getElementById('btn-prev').style.display = isFirst ? 'none' : '';
+  const btnNext = document.getElementById('btn-next');
+  if (isLast) {
+    // แสดงปุ่ม submit
+    document.getElementById('nav-row').innerHTML = `
+      <button class="nav-btn btn-prev" onclick="goPrev()">← ก่อนหน้า</button>
+      <button class="nav-btn btn-submit" id="btn-submit" onclick="confirmSubmit()">
+        ส่งคำตอบ (${Object.keys(answers).filter(k => answers[k] != null).length}/${questions.length})
+      </button>`;
+  } else {
+    document.getElementById('nav-row').innerHTML = `
+      <button class="nav-btn btn-prev" ${isFirst ? 'style="display:none"' : ''} onclick="goPrev()">← ก่อนหน้า</button>
+      <button class="nav-btn btn-next" onclick="goNext()">ถัดไป →</button>`;
+  }
+}
+
+function goNext() { if (currentIdx < questions.length-1) renderQuestion(currentIdx+1); }
+function goPrev() { if (currentIdx > 0) renderQuestion(currentIdx-1); }
+function jumpTo(i) { renderQuestion(i); }
+
+// ── Submit ─────────────────────────────────────────────────────────────────
+function confirmSubmit() {
+  const unanswered = questions.filter(q => answers[q.id] == null).length;
+  if (unanswered > 0) {
+    if (!confirm(`ยังมี ${unanswered} ข้อที่ยังไม่ตอบ ต้องการส่งคำตอบเลยไหม?`)) return;
+  }
+  submitAnswers(false);
+}
+
+async function submitAnswers(timeUp = false) {
+  if (submitted) return;
+  submitted = true;
+  clearInterval(timerInterval);
+  const timeUsed = Math.round((Date.now() - startTime) / 1000);
+
+  showScreen('loading');
+
+  try {
+    const res = await fetch('/api/saturday-quiz/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ weekKey, answers, timeUsed }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert('ส่งคำตอบล้มเหลว: ' + (data.error || ''));
+      showScreen('exam');
+      submitted = false;
+      return;
+    }
+
+    showResult(data);
+  } catch (err) {
+    alert('เกิดข้อผิดพลาด: ' + err.message);
+    showScreen('exam');
+    submitted = false;
+  }
+}
+
+function showResult(data) {
+  const { score, total, timeUsed, result } = data;
+  document.getElementById('res-score').textContent = score;
+
+  const msgs = ['💪 ฝึกต่อไปนะ!','😊 ไม่เลว!','👍 ดีมาก!','🌟 เยี่ยมมาก!','🏆 สุดยอด!'];
+  document.getElementById('res-msg').textContent = msgs[Math.min(Math.floor(score/2), 4)];
+  document.getElementById('res-time').textContent = `⏱️ ใช้เวลา ${formatTime(timeUsed)}`;
+
+  // Result detail
+  const listHtml = questions.map((q, i) => {
+    const r = result[q.id] || {};
+    const cls = r.correct ? 'correct' : 'wrong';
+    const userAns = answers[q.id];
+    const correctAns = Array.isArray(r.correctAnswer) ? r.correctAnswer.join(', ') : (r.correctAnswer || '—');
+
+    return `<div class="result-item ${cls}">
+      <div class="q-num">ข้อ ${i+1} — ${r.correct ? '✅ ถูก' : '❌ ผิด'}</div>
+      <div class="q-text">${q.textTh?.slice(0,100) || ''}${q.textTh?.length > 100 ? '...' : ''}</div>
+      <div class="ans-row">
+        <span class="tag ${r.correct ? 'tag-correct' : 'tag-wrong'}">คำตอบของคุณ: ${userAns ?? '(ไม่ตอบ)'}</span>
+        ${!r.correct ? `<span class="tag tag-answer">เฉลย: ${correctAns}</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('result-list').innerHTML = listHtml;
+
+  showScreen('result');
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+init();
+</script>
+</body>
+</html>

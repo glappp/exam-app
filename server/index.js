@@ -36,6 +36,19 @@ require('./grand-prix-socket')(io);
 // ✅ Trust Render/proxy reverse proxy (ต้องมีก่อน session)
 app.set('trust proxy', 1);
 
+// ✅ Maintenance window: 04:00–05:00 ICT (= 21:00–22:00 UTC)
+app.use((req, res, next) => {
+  const utcHour = new Date().getUTCHours();
+  if (utcHour === 21) { // 04:00–05:00 ICT
+    if (req.path.startsWith('/api/') || req.method !== 'GET') {
+      return res.status(503).json({
+        error: 'ระบบปิดปรับปรุงชั่วคราว (04:00–05:00 น.) กรุณากลับมาใหม่ภายหลัง'
+      });
+    }
+  }
+  next();
+});
+
 // ✅ Middleware (ต้องอยู่ก่อน routes ทั้งหมด)
 app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());

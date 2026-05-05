@@ -167,21 +167,21 @@ async function runMaintenance() {
   }
 }
 
-// ── Scheduler: รัน runMaintenance ทุกคืน 22:00 ICT ─────────────────────────
-// ICT = UTC+7 → 22:00 ICT = 15:00 UTC
+// ── Scheduler: รัน runMaintenance ทุกคืน 04:00 ICT ─────────────────────────
+// ICT = UTC+7 → 04:00 ICT = 21:00 UTC (วันก่อนหน้า)
 function scheduleMaintenance() {
-  function msUntilNext15UTC() {
+  function msUntilNext21UTC() {
     const now = new Date();
     const next = new Date();
-    next.setUTCHours(15, 0, 0, 0);
+    next.setUTCHours(21, 0, 0, 0);
     if (next <= now) next.setUTCDate(next.getUTCDate() + 1);
     return next - now;
   }
 
   function loop() {
-    const delay = msUntilNext15UTC();
+    const delay = msUntilNext21UTC();
     const nextRun = new Date(Date.now() + delay);
-    console.log(`⏰ Maintenance scheduled: ${nextRun.toISOString()} (${Math.round(delay/60000)} นาที)`);
+    console.log(`⏰ Maintenance scheduled: ${nextRun.toISOString()} (${Math.round(delay/60000)} นาที) [04:00 ICT]`);
     setTimeout(async () => {
       await runMaintenance();
       loop(); // schedule ครั้งต่อไป

@@ -632,6 +632,35 @@ model ParentPointLog {
   createdAt DateTime @default(now())
 }
 
+// ─── Usage Tracking ───────────────────────────────────────────────────────────
+
+// LoginLog — raw login events, ลบทุกคืนหลัง aggregate
+model LoginLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  schoolId  Int?
+  loginAt   DateTime @default(now())
+
+  @@index([loginAt])
+  @@index([userId])
+}
+
+// DailyUsageStat — aggregated stats (เก็บถาวร)
+// grade/classroom = null → school-level aggregate
+model DailyUsageStat {
+  id                 Int      @id @default(autoincrement())
+  date               String   // "YYYY-MM-DD"
+  schoolId           Int?
+  grade              String?  // null = school-level
+  classroom          String?  // null = school-level
+  activeUsers        Int      @default(0)
+  questionsAnswered  Int      @default(0)
+  createdAt          DateTime @default(now())
+
+  @@unique([date, schoolId, grade, classroom])
+  @@index([date, schoolId])
+}
+
 // ─── Adaptive Learning (ตะลุยโจทย์) ──────────────────────────────────────────
 
 model AdaptiveWeakness {

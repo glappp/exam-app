@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #1a202c; }
+
+    header {
+      background: #2b6cb0; color: white; padding: 14px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    header h1 { font-size: 1.2rem; }
+    header .sub { font-size: 0.85rem; opacity: 0.8; margin-top: 2px; }
+    .back-btn {
+      background: rgba(255,255,255,0.2); border: none; color: white;
+      padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.9rem;
+    }
+    .back-btn:hover { background: rgba(255,255,255,0.3); }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 20px 16px; }
+
+    /* Summary cards */
+    .summary-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px; margin-bottom: 20px;
+    }
+    .card {
+      background: white; border-radius: 10px; padding: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .card .label { font-size: 0.78rem; color: #718096; margin-bottom: 4px; }
+    .card .value { font-size: 1.7rem; font-weight: 700; color: #2b6cb0; }
+    .card .sub-val { font-size: 0.8rem; color: #4a5568; margin-top: 2px; }
+
+    /* Chart */
+    .chart-card { background: white; border-radius: 10px; padding: 16px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .chart-card h3 { font-size: 0.95rem; color: #4a5568; margin-bottom: 12px; }
+    .bar-chart { display: flex; align-items: flex-end; gap: 6px; height: 80px; }
+    .bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .bar { width: 100%; background: #bee3f8; border-radius: 3px 3px 0 0; min-height: 2px; transition: height 0.3s; }
+    .bar.active { background: #2b6cb0; }
+    .bar-label { font-size: 0.65rem; color: #718096; text-align: center; }
+    .bar-val { font-size: 0.65rem; color: #2d3748; font-weight: 600; }
+
+    /* Filters */
+    .filters {
+      background: white; border-radius: 10px; padding: 14px 16px;
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    .filters label { font-size: 0.85rem; color: #4a5568; }
+    .filters select {
+      border: 1px solid #e2e8f0; border-radius: 6px;
+      padding: 6px 10px; font-size: 0.9rem; background: white;
+    }
+    .btn-refresh {
+      margin-left: auto; background: #2b6cb0; color: white;
+      border: none; padding: 7px 16px; border-radius: 6px;
+      cursor: pointer; font-size: 0.9rem;
+    }
+    .btn-refresh:hover { background: #2c5282; }
+
+    /* Table */
+    .table-card { background: white; border-radius: 10px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .table-card h3 { font-size: 0.95rem; color: #4a5568; margin-bottom: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th { background: #ebf8ff; color: #2b6cb0; font-weight: 600; padding: 9px 10px; text-align: left; }
+    td { padding: 8px 10px; border-bottom: 1px solid #f0f4f8; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f7fafc; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+    .badge-green { background: #c6f6d5; color: #276749; }
+    .badge-red   { background: #fed7d7; color: #9b2c2c; }
+    .badge-gray  { background: #e2e8f0; color: #4a5568; }
+    .badge-blue  { background: #bee3f8; color: #2c5282; }
+
+    .loading { text-align: center; padding: 40px; color: #a0aec0; font-size: 0.95rem; }
+    .empty { text-align: center; padding: 30px; color: #a0aec0; }
+
+    @media (max-width: 640px) {
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
+      table { font-size: 0.78rem; }
+      th, td { padding: 7px 6px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>🏫 Teacher Dashboard</h1>
+    <div class="sub" id="school-name">กำลังโหลด...</div>
+  </div>
+  <button class="back-btn" onclick="location.href='dashboard.html'">← กลับ</button>
+</header>
+
+<div class="container">
+
+  <!-- Summary Cards -->
+  <div class="summary-grid">
+    <div class="card">
+      <div class="label">นักเรียนทั้งหมด</div>
+      <div class="value" id="stat-total">—</div>
+      <div class="sub-val">ในโรงเรียน</div>
+    </div>
+    <div class="card">
+      <div class="label">เข้าใช้งาน 7 วัน</div>
+      <div class="value" id="stat-active">—</div>
+      <div class="sub-val">unique users</div>
+    </div>
+    <div class="card">
+      <div class="label">ข้อที่ทำ 7 วัน</div>
+      <div class="value" id="stat-questions">—</div>
+      <div class="sub-val">ข้อทั้งโรงเรียน</div>
+    </div>
+    <div class="card">
+      <div class="label">เฉลี่ยต่อวัน</div>
+      <div class="value" id="stat-avg">—</div>
+      <div class="sub-val">คนต่อวัน</div>
+    </div>
+  </div>
+
+  <!-- Bar Chart -->
+  <div class="chart-card">
+    <h3>📊 จำนวนคนเข้าใช้งานรายวัน (7 วันล่าสุด)</h3>
+    <div class="bar-chart" id="bar-chart">
+      <div class="loading">กำลังโหลด...</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <label>ชั้น:</label>
+    <select id="filter-grade" onchange="loadStudents()">
+      <option value="">ทุกชั้น</option>
+    </select>
+    <label>ห้อง:</label>
+    <select id="filter-classroom" onchange="loadStudents()">
+      <option value="">ทุกห้อง</option>
+    </select>
+    <button class="btn-refresh" onclick="loadAll()">🔄 รีเฟรช</button>
+  </div>
+
+  <!-- Students Table -->
+  <div class="table-card">
+    <h3 id="table-title">📋 รายชื่อนักเรียน</h3>
+    <div id="students-container">
+      <div class="loading">เลือกชั้น/ห้องเพื่อดูรายชื่อ</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let schoolData = null;
+
+async function init() {
+  // ตรวจสอบ login
+  const me = await fetch('/api/me', { credentials: 'include' }).then(r => r.json()).catch(() => null);
+  if (!me?.loggedIn) { location.href = 'login.html'; return; }
+  if (!['admin', 'school_admin', 'teacher'].includes(me.role)) {
+    location.href = 'dashboard.html'; return;
+  }
+
+  await Promise.all([loadSchoolStats(), loadFilters()]);
+}
+
+async function loadSchoolStats() {
+  try {
+    const res = await fetch('/api/teacher/school-stats?days=7', { credentials: 'include' });
+    const data = await res.json();
+
+    document.getElementById('stat-total').textContent = data.totalStudents ?? '—';
+    document.getElementById('stat-active').textContent = data.totalActiveUsers ?? '—';
+    document.getElementById('stat-questions').textContent = (data.totalQuestionsAnswered ?? '—').toLocaleString?.() ?? '—';
+    const avg = data.daily?.length ? Math.round(data.totalActiveUsers / data.daily.length) : '—';
+    document.getElementById('stat-avg').textContent = avg;
+
+    // Bar chart
+    if (data.daily?.length) {
+      const maxVal = Math.max(...data.daily.map(d => d.activeUsers), 1);
+      const html = data.daily.map(d => {
+        const h = Math.round((d.activeUsers / maxVal) * 72);
+        const label = d.date.slice(5); // MM-DD
+        return `<div class="bar-wrap">
+          <div class="bar-val">${d.activeUsers}</div>
+          <div class="bar${d.activeUsers > 0 ? ' active' : ''}" style="height:${h}px"></div>
+          <div class="bar-label">${label}</div>
+        </div>`;
+      }).join('');
+      document.getElementById('bar-chart').innerHTML = html;
+    } else {
+      document.getElementById('bar-chart').innerHTML = '<div class="empty">ยังไม่มีข้อมูล</div>';
+    }
+  } catch (err) {
+    console.error('school-stats error:', err);
+  }
+}
+
+async function loadFilters() {
+  try {
+    const res = await fetch('/api/teacher/filters', { credentials: 'include' });
+    const data = await res.json();
+
+    if (data.schoolName) {
+      document.getElementById('school-name').textContent = data.schoolName;
+    }
+
+    const gradeEl = document.getElementById('filter-grade');
+    data.grades?.forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g; opt.textContent = g;
+      gradeEl.appendChild(opt);
+    });
+
+    const classEl = document.getElementById('filter-classroom');
+    data.classrooms?.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c; opt.textContent = `ห้อง ${c}`;
+      classEl.appendChild(opt);
+    });
+  } catch (err) {
+    console.error('filters error:', err);
+  }
+}
+
+async function loadStudents() {
+  const grade = document.getElementById('filter-grade').value;
+  const classroom = document.getElementById('filter-classroom').value;
+  const container = document.getElementById('students-container');
+  const title = document.getElementById('table-title');
+
+  const label = [grade, classroom ? `ห้อง ${classroom}` : ''].filter(Boolean).join(' ');
+  title.textContent = `📋 รายชื่อนักเรียน${label ? ` — ${label}` : ''}`;
+  container.innerHTML = '<div class="loading">กำลังโหลด...</div>';
+
+  try {
+    const params = new URLSearchParams();
+    if (grade) params.set('grade', grade);
+    if (classroom) params.set('classroom', classroom);
+
+    const res = await fetch(`/api/teacher/students-detail?${params}`, { credentials: 'include' });
+    const data = await res.json();
+    const students = data.students || [];
+
+    if (students.length === 0) {
+      container.innerHTML = '<div class="empty">ไม่พบนักเรียน</div>';
+      return;
+    }
+
+    const rows = students.map((s, i) => `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${s.name || '—'}<br><small style="color:#a0aec0">${s.studentCode || ''}</small></td>
+        <td>${s.grade} / ${s.classroom || '—'}</td>
+        <td>Lv.${s.level} <small style="color:#a0aec0">(${s.totalXp.toLocaleString()} XP)</small></td>
+        <td>
+          ${s.dailyDone
+            ? `<span class="badge badge-green">✅ ครบ</span>`
+            : `<span class="badge badge-gray">${s.dailyCorrect}/5</span>`}
+        </td>
+        <td>
+          ${s.satQuizScore !== null
+            ? `<span class="badge badge-blue">${s.satQuizScore}/10</span>`
+            : `<span class="badge badge-gray">ยังไม่สอบ</span>`}
+        </td>
+        <td>
+          ${s.tickets > 0
+            ? `<span class="badge badge-green">🎫 ${s.tickets}</span>`
+            : `<span class="badge badge-gray">0</span>`}
+        </td>
+      </tr>
+    `).join('');
+
+    container.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>ชื่อ-นามสกุล</th>
+            <th>ชั้น/ห้อง</th>
+            <th>Level / XP</th>
+            <th>Daily วันนี้</th>
+            <th>Saturday Quiz</th>
+            <th>ตั๋ว</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div style="margin-top:10px;font-size:0.8rem;color:#a0aec0;text-align:right">
+        รวม ${students.length} คน
+      </div>
+    `;
+  } catch (err) {
+    container.innerHTML = '<div class="empty">โหลดข้อมูลล้มเหลว</div>';
+    console.error(err);
+  }
+}
+
+async function loadAll() {
+  await Promise.all([loadSchoolStats(), loadStudents()]);
+}
+
+init();
+</script>
+</body>
+</html>

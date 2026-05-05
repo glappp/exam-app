@@ -233,6 +233,9 @@
           <button class="mode-btn" id="teacher-btn" style="display:none;background:#f0fdf4;color:#166534" onclick="location.href='teacher-report.html'">
             <span class="icon">👩‍🏫</span>รายงานครู
           </button>
+          <button class="mode-btn" id="teacher-dashboard-btn" style="display:none;background:#ebf8ff;color:#2c5282" onclick="location.href='teacher-dashboard.html'">
+            <span class="icon">📊</span>ภาพรวมห้องเรียน
+          </button>
           <button class="mode-btn" style="background:#fef3c7;color:#92400e;grid-column:1/-1" onclick="location.href='grand-prix.html'">
             <span class="icon">🏎️</span>สูตรคูณ Grand Prix
           </button>
@@ -316,8 +319,9 @@
     const me = await res.json();
 
     document.getElementById('topbar-name').textContent = me.firstName || me.username || '';
-    if (['admin','teacher'].includes(me.role)) {
+    if (['admin','school_admin','teacher'].includes(me.role)) {
       document.getElementById('teacher-btn').style.display = '';
+      document.getElementById('teacher-dashboard-btn').style.display = '';
       document.getElementById('admin-link').style.display = '';
     }
     document.getElementById('welcome-name').textContent = `สวัสดี, ${me.firstName || 'นักเรียน'} 👋`;

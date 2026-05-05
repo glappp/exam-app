@@ -436,7 +436,7 @@ router.patch('/seasons/:id', requireLogin, async (req, res) => {
 });
 
 // ── POST /api/leaderboard/year-rollover (admin) ───────────────────────────────
-// รีเซ็ต activityXp ทุกคน (permanentXp ไม่แตะ) + อัปเดต grade/year ใน StudentProfile
+// รีเซ็ต activityXp + เลื่อนชั้น grade + disable account ม.3→ม.4
 // Body: { newAcademicYear: "2568" }
 router.post('/year-rollover', requireLogin, async (req, res) => {
   try {
@@ -445,6 +445,14 @@ router.post('/year-rollover', requireLogin, async (req, res) => {
     }
     const { newAcademicYear } = req.body;
     if (!newAcademicYear) return res.status(400).json({ error: 'ต้องระบุ newAcademicYear' });
+
+    // Grade progression map
+    const GRADE_UP = {
+      'ป.1': 'ป.2', 'ป.2': 'ป.3', 'ป.3': 'ป.4',
+      'ป.4': 'ป.5', 'ป.5': 'ป.6', 'ป.6': 'ม.1',
+      'ม.1': 'ม.2', 'ม.2': 'ม.3', 'ม.3': 'ม.4',
+    };
+    const DISABLE_AT = 'ม.4'; // ถึง ม.4 → disable account
 
     // 1. reset activityXp ทุกคน, recalculate level จาก permanentXp
     const allCS = await prisma.characterState.findMany();
@@ -460,17 +468,47 @@ router.post('/year-rollover', requireLogin, async (req, res) => {
       resetCount++;
     }
 
-    // 2. อัปเดต academicYear ใน StudentProfile ทุก active profile
-    const updated = await prisma.studentProfile.updateMany({
+    // 2. เลื่อนชั้น StudentProfile ทีละ record
+    const profiles = await prisma.studentProfile.findMany({
       where: { status: 'active' },
-      data: { academicYear: newAcademicYear },
+      select: { id: true, grade: true, userId: true },
     });
+
+    let gradeUpdated = 0;
+    let disabled = 0;
+    const disableUserIds = [];
+
+    for (const p of profiles) {
+      const newGrade = GRADE_UP[p.grade] || p.grade; // ถ้าไม่มีใน map ปล่อยเดิม
+      await prisma.studentProfile.update({
+        where: { id: p.id },
+        data: { grade: newGrade, academicYear: newAcademicYear },
+      });
+      gradeUpdated++;
+
+      // ม.3 → ม.4: disable account
+      if (newGrade === DISABLE_AT) {
+        disableUserIds.push(p.userId);
+      }
+    }
+
+    // disable user accounts ที่ขึ้น ม.4
+    if (disableUserIds.length > 0) {
+      // ใช้ role 'disabled' หรือ status field — เพิ่ม isActive = false ใน User
+      // ตอนนี้ User ไม่มี isActive field → ใช้ role = 'disabled' แทน
+      await prisma.user.updateMany({
+        where: { id: { in: disableUserIds } },
+        data: { role: 'disabled' },
+      });
+      disabled = disableUserIds.length;
+    }
 
     res.json({
       ok: true,
       resetXpCount: resetCount,
-      updatedProfiles: updated.count,
-      note: 'permanentXP (subtopic/topic pass) ไม่ถูกแตะ — carry-over อัตโนมัติ',
+      gradeUpdated,
+      disabled,
+      note: `permanentXP carry-over อัตโนมัติ | ม.3→ม.4 disabled ${disabled} accounts`,
     });
   } catch (err) {
     console.error('❌ leaderboard/year-rollover:', err);

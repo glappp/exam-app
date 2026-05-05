@@ -193,6 +193,38 @@ async function settleMonthlyIfDue() {
   console.log(`✅ Monthly settled: ${period.label} — TT=${ttSorted.length}, SQ=${sqSorted.length}`);
 }
 
+// ── Close Season + Reset Boxes (ถ้า active season สิ้นสุดเมื่อวาน) ───────────
+async function closeSeasonIfDue() {
+  const yesterday = yesterdayICT();
+
+  const season = await prisma.leaderboardSeason.findFirst({
+    where: {
+      status: 'active',
+      endDate: {
+        gte: new Date(yesterday + 'T00:00:00Z'),
+        lt:  new Date(yesterday + 'T23:59:59Z'),
+      },
+    },
+  });
+
+  if (!season) return;
+
+  console.log(`🗓️  Season หมดอายุ: ${season.name} — ปิด season และ reset กล่องรางวัล`);
+
+  // Reset BoxInventory ของทุก user
+  const resetResult = await prisma.boxInventory.updateMany({
+    data: { silverCount: 0, goldCount: 0 },
+  });
+
+  // Mark season as closed
+  await prisma.leaderboardSeason.update({
+    where: { id: season.id },
+    data:  { status: 'closed' },
+  });
+
+  console.log(`✅ Season "${season.name}" ปิดแล้ว — reset BoxInventory ${resetResult.count} users`);
+}
+
 async function runMaintenance() {
   const date = yesterdayICT();
   const { start, end } = ictDateToUTCRange(date);
@@ -202,6 +234,7 @@ async function runMaintenance() {
   if (ict.getUTCDay() === 0) {   // 0 = อาทิตย์
     await settleWeekly().catch(e => console.error('❌ settleWeekly error:', e));
     await settleMonthlyIfDue().catch(e => console.error('❌ settleMonthly error:', e));
+    await closeSeasonIfDue().catch(e => console.error('❌ closeSeasonIfDue error:', e));
   }
   console.log(`🔧 Maintenance: aggregating ${date} (UTC ${start.toISOString()} – ${end.toISOString()})`);
 

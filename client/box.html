@@ -24,6 +24,17 @@
       cursor: pointer; font-size: 0.9rem;
     }
 
+    /* ── Season bar ── */
+    .season-bar {
+      display: none;
+      padding: 10px 16px;
+      font-size: 0.82rem;
+      text-align: center;
+    }
+    .season-bar.active  { background: rgba(99,102,241,0.15); color: #a5b4fc; display: block; }
+    .season-bar.warning { background: rgba(245,158,11,0.18); color: #fbbf24; display: block; font-weight: 600; }
+    .season-bar.closed  { background: rgba(239,68,68,0.15);  color: #fca5a5; display: block; font-weight: 600; }
+
     .container { max-width: 600px; margin: 0 auto; padding: 20px 16px; }
 
     /* ── Inventory ── */
@@ -94,7 +105,7 @@
       cursor: pointer;
       display: inline-block;
     }
-    .opening-box.shaking { animation: shake .7s ease-in-out; }
+    .opening-box.shaking  { animation: shake .7s ease-in-out; }
     .opening-box.bursting { animation: burst .35s ease-in forwards; }
 
     /* ── Result card ── */
@@ -117,11 +128,15 @@
     .result-gold_box      { color: #fbbf24; }
     .result-reward        { color: #f9a8d4; }
 
-    .claim-ref {
-      display: inline-block; margin-top: 12px;
-      background: rgba(255,255,255,0.06);
-      border-radius: 8px; padding: 6px 14px;
-      font-family: monospace; font-size: 0.82rem; color: #cbd5e1;
+    .result-reward-note {
+      margin-top: 14px;
+      background: rgba(249,168,212,0.08);
+      border: 1px solid rgba(249,168,212,0.2);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      color: #f9a8d4;
+      line-height: 1.5;
     }
 
     .open-again-btn {
@@ -152,6 +167,34 @@
     .h-box   { font-size: 0.72rem; color: #475569; }
     .h-time  { font-size: 0.72rem; color: #334155; white-space: nowrap; }
     .empty-history { text-align: center; color: #334155; padding: 24px; font-size: 0.88rem; }
+
+    /* ── Warning popup ── */
+    .popup-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.65);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100; padding: 16px;
+    }
+    .popup-box {
+      background: #1e293b;
+      border: 2px solid #f59e0b;
+      border-radius: 20px;
+      max-width: 380px; width: 100%;
+      padding: 28px 24px;
+      text-align: center;
+      animation: popIn .4s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    .popup-box .popup-icon { font-size: 3rem; margin-bottom: 12px; }
+    .popup-box h2 { font-size: 1.1rem; font-weight: 700; color: #fbbf24; margin-bottom: 8px; }
+    .popup-box p  { font-size: 0.88rem; color: #94a3b8; line-height: 1.6; }
+    .popup-close {
+      margin-top: 18px;
+      background: rgba(245,158,11,0.15);
+      border: 1px solid rgba(245,158,11,0.4);
+      color: #fbbf24;
+      padding: 8px 24px; border-radius: 10px;
+      cursor: pointer; font-size: 0.9rem;
+    }
   </style>
 </head>
 <body>
@@ -160,6 +203,19 @@
   <button class="back-btn" onclick="history.back()">← กลับ</button>
   <h1>🎁 กล่องรางวัล</h1>
 </header>
+
+<!-- Season status bar -->
+<div class="season-bar" id="season-bar"></div>
+
+<!-- Warning popup (hidden by default) -->
+<div class="popup-overlay" id="warn-popup" style="display:none">
+  <div class="popup-box">
+    <div class="popup-icon">⏰</div>
+    <h2 id="warn-title">กล่องรางวัลจะหมดอายุเร็วๆ นี้</h2>
+    <p id="warn-body"></p>
+    <button class="popup-close" onclick="document.getElementById('warn-popup').style.display='none'">รับทราบ</button>
+  </div>
+</div>
 
 <div class="container">
 
@@ -199,6 +255,7 @@
 
 <script>
 let inventory = { silver: 0, gold: 0 };
+let seasonData = null;
 let busy = false;
 
 /* ── Icons & labels ── */
@@ -213,13 +270,16 @@ function rewardLabel(type, amount, name) {
   if (type === 'reward')        return name || 'ของรางวัลพิเศษ';
   return type;
 }
-function rewardSub(type, amount, name, desc) {
+function rewardSub(type) {
   if (type === 'xp')            return 'เพิ่ม XP ให้นักเรียน';
   if (type === 'parent_points') return 'คะแนนสำหรับผู้ปกครอง';
   if (type === 'ticket')        return 'Ticket ใช้สำหรับซื้อสิทธิ์พิเศษ';
-  if (type === 'gold_box')      return '🎉 โชคดี! ได้กล่องทองมา';
-  if (type === 'reward')        return desc || '';
+  if (type === 'gold_box')      return '🎉 โชคดี! ได้กล่องทองเพิ่มมา';
+  if (type === 'reward')        return '';
   return '';
+}
+function fmtDate(iso) {
+  return new Date(iso).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 function fmtTime(iso) {
   return new Date(iso).toLocaleString('th-TH', {
@@ -227,21 +287,67 @@ function fmtTime(iso) {
   });
 }
 
+/* ── Season bar ── */
+function renderSeasonBar(season) {
+  const bar = document.getElementById('season-bar');
+  if (!season) {
+    bar.className = 'season-bar closed';
+    bar.textContent = '🔒 ขณะนี้อยู่นอกช่วงปีการศึกษา — ไม่สามารถเปิดกล่องได้';
+    return;
+  }
+  const d = season.daysLeft;
+  const endStr = fmtDate(season.endsAt);
+  if (d <= 0) {
+    bar.className = 'season-bar closed';
+    bar.textContent = `🔒 ปีการศึกษาสิ้นสุดแล้ว (${endStr}) — กล่องที่เหลือถูก reset แล้ว`;
+  } else if (d <= 5) {
+    bar.className = 'season-bar warning';
+    bar.textContent = `⚠️ กล่องรางวัลจะหมดอายุใน ${d} วัน (${endStr}) — เปิดก่อนสิ้นสุดปีการศึกษา!`;
+    showWarnPopup(d, endStr);
+  } else {
+    bar.className = 'season-bar active';
+    bar.textContent = `📅 ปีการศึกษานี้สิ้นสุด ${endStr} (เหลือ ${d} วัน) — กล่องที่ไม่ได้เปิดจะถูก reset`;
+  }
+}
+
+function showWarnPopup(daysLeft, endStr) {
+  const already = sessionStorage.getItem('box-warn-seen');
+  if (already) return;
+  sessionStorage.setItem('box-warn-seen', '1');
+
+  const popup = document.getElementById('warn-popup');
+  document.getElementById('warn-title').textContent =
+    daysLeft === 1 ? '⚠️ พรุ่งนี้กล่องจะหมดอายุ!' : `⚠️ กล่องรางวัลเหลือ ${daysLeft} วัน`;
+  document.getElementById('warn-body').innerHTML =
+    `กล่องรางวัลทั้งหมดจะถูก <strong>reset เป็น 0</strong> เมื่อสิ้นสุดปีการศึกษา (${endStr})<br><br>
+    อย่าลืมเปิดกล่องที่มีอยู่ก่อนหมดเวลา!`;
+  popup.style.display = 'flex';
+}
+
 /* ── Inventory ── */
+function isSeasonOpen() {
+  return seasonData && seasonData.daysLeft > 0;
+}
+
 async function loadInventory() {
   try {
     const res = await fetch('/api/box/inventory');
     if (!res.ok) return;
-    inventory = await res.json();
+    const data = await res.json();
+    inventory = { silver: data.silver, gold: data.gold };
+    seasonData = data.season;
     renderInventory();
+    renderSeasonBar(seasonData);
   } catch(e) {}
 }
 
 function renderInventory() {
   document.getElementById('silver-count').textContent = inventory.silver;
   document.getElementById('gold-count').textContent   = inventory.gold;
-  document.getElementById('silver-card').classList.toggle('disabled', inventory.silver === 0);
-  document.getElementById('gold-card').classList.toggle('disabled',   inventory.gold   === 0);
+
+  const canOpen = isSeasonOpen();
+  document.getElementById('silver-card').classList.toggle('disabled', inventory.silver === 0 || !canOpen);
+  document.getElementById('gold-card').classList.toggle('disabled',   inventory.gold   === 0 || !canOpen);
 }
 
 /* ── History ── */
@@ -267,23 +373,18 @@ async function loadHistory() {
 /* ── Select box ── */
 function selectBox(type) {
   if (busy) return;
-  if (inventory[type] === 0) return;
+  if (inventory[type] === 0 || !isSeasonOpen()) return;
 
   const emoji = type === 'silver' ? '📦' : '🏅';
   const stage = document.getElementById('stage');
   stage.innerHTML = `
     <div style="text-align:center">
       <div id="opening-box" class="opening-box" onclick="doOpen('${type}')">${emoji}</div>
-      <p style="color:#64748b;font-size:0.85rem;margin-top:14px">
-        แตะกล่องเพื่อเปิด!
-      </p>
+      <p style="color:#64748b;font-size:0.85rem;margin-top:14px">แตะกล่องเพื่อเปิด!</p>
     </div>`;
 
-  // idle bounce on hover
   const box = document.getElementById('opening-box');
-  box.addEventListener('mouseenter', () => {
-    if (!busy) { box.classList.add('shaking'); }
-  });
+  box.addEventListener('mouseenter', () => { if (!busy) box.classList.add('shaking'); });
   box.addEventListener('animationend', () => box.classList.remove('shaking'));
 }
 
@@ -294,7 +395,6 @@ async function doOpen(type) {
 
   const box = document.getElementById('opening-box');
   if (box) {
-    // shake a bit, then burst
     box.classList.remove('shaking');
     void box.offsetWidth;
     box.classList.add('shaking');
@@ -334,12 +434,16 @@ function showResult(reward, boxType) {
   const stage = document.getElementById('stage');
   const icon  = rewardIcon(reward.type);
   const label = rewardLabel(reward.type, reward.amount, reward.rewardName);
-  const sub   = rewardSub(reward.type, reward.amount, reward.rewardName, reward.rewardDesc);
+  const sub   = rewardSub(reward.type);
   const cls   = `result-${reward.type}`;
-  const hasMore = inventory[boxType] > 0;
+  const hasMore = inventory[boxType] > 0 && isSeasonOpen();
 
-  const claimHtml = reward.claimRef
-    ? `<div class="claim-ref">🔖 รหัสรางวัล: ${reward.claimRef}</div>` : '';
+  // สำหรับของรางวัลพิเศษ — แสดงข้อความให้ติดต่อครู/admin
+  const specialNote = reward.type === 'reward'
+    ? `<div class="result-reward-note">
+        🎀 ยินดีด้วย! ของรางวัลพิเศษของคุณถูกบันทึกเรียบร้อยแล้ว<br>
+        กรุณาแจ้งครูหรือผู้ดูแลระบบเพื่อรับของรางวัล
+       </div>` : '';
 
   stage.innerHTML = `
     <div class="result-card">
@@ -347,8 +451,7 @@ function showResult(reward, boxType) {
       <div class="result-title">${boxType === 'silver' ? '📦 กล่องเงิน' : '🏅 กล่องทอง'} · ได้รับ</div>
       <div class="result-value ${cls}">${label}</div>
       ${sub ? `<div class="result-sub">${sub}</div>` : ''}
-      ${claimHtml}
-      <br>
+      ${specialNote}
       <button class="open-again-btn" onclick="${hasMore ? `selectBox('${boxType}')` : 'resetStage()'}">
         ${hasMore ? `เปิดอีกครั้ง (เหลือ ${inventory[boxType]})` : '← กลับหน้าเลือกกล่อง'}
       </button>
@@ -357,8 +460,7 @@ function showResult(reward, boxType) {
 
 function showError(msg) {
   busy = false;
-  const stage = document.getElementById('stage');
-  stage.innerHTML = `
+  document.getElementById('stage').innerHTML = `
     <div style="text-align:center;color:#f87171">
       <div style="font-size:2.5rem;margin-bottom:10px">⚠️</div>
       <div>${msg}</div>

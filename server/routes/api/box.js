@@ -67,14 +67,36 @@ function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min
 }
 
+// ── Season helper ─────────────────────────────────────────────────────────────
+async function getActiveSeason() {
+  return prisma.leaderboardSeason.findFirst({
+    where: { status: 'active' },
+    orderBy: { startDate: 'desc' },
+  })
+}
+
+function daysUntil(dateObj) {
+  const nowICT = new Date(Date.now() + 7 * 3600000)
+  return Math.ceil((new Date(dateObj) - nowICT) / 86400000)
+}
+
 // ── GET /api/box/inventory ────────────────────────────────────────────────────
 router.get('/inventory', requireLogin, async (req, res) => {
   try {
     const userId = req.session.userId
-    const inv = await prisma.boxInventory.findUnique({ where: { userId } })
+    const [inv, season] = await Promise.all([
+      prisma.boxInventory.findUnique({ where: { userId } }),
+      getActiveSeason(),
+    ])
+
+    const seasonInfo = season
+      ? { status: season.status, endsAt: season.endDate, daysLeft: daysUntil(season.endDate) }
+      : null
+
     res.json({
       silver: inv?.silverCount ?? 0,
       gold:   inv?.goldCount   ?? 0,
+      season: seasonInfo,
     })
   } catch (err) {
     console.error('❌ box inventory error:', err)
@@ -90,6 +112,12 @@ router.post('/open', requireLogin, async (req, res) => {
 
     if (!['silver', 'gold'].includes(boxType)) {
       return res.status(400).json({ error: 'boxType ไม่ถูกต้อง' })
+    }
+
+    // ตรวจ active season
+    const season = await getActiveSeason()
+    if (!season) {
+      return res.status(403).json({ error: 'ปัจจุบันอยู่นอกช่วงปีการศึกษา ไม่สามารถเปิดกล่องได้', code: 'NO_ACTIVE_SEASON' })
     }
 
     // ตรวจ inventory

@@ -1,10 +1,11 @@
 /**
- * maintenance.js — งาน 22:00 ICT ทุกคืน
+ * maintenance.js — งาน 04:00 ICT ทุกคืน (21:00 UTC)
  *
- * 1. Aggregate LoginLog → DailyUsageStat (school-level + classroom-level)
- * 2. Aggregate ExamAnswer → questionsAnswered ใน DailyUsageStat
- * 3. ลบ LoginLog ที่ process แล้ว
- * 4. ลบ ExamAnswer ที่ process แล้ว
+ * 1. [วันอาทิตย์เท่านั้น] Settle weekly leaderboard → HallOfFame
+ * 2. Aggregate LoginLog → DailyUsageStat (school-level + classroom-level)
+ * 3. Aggregate ExamAnswer → questionsAnswered ใน DailyUsageStat
+ * 4. ลบ LoginLog ที่ process แล้ว
+ * 5. ลบ ExamAnswer ที่ process แล้ว
  */
 
 const { PrismaClient } = require('@prisma/client');
@@ -33,9 +34,89 @@ function ictDateToUTCRange(dateStr) {
   return { start, end };
 }
 
+// ── Settle Weekly (เฉพาะวันอาทิตย์ 04:00 ICT) ──────────────────────────────
+// weekKey ของสัปดาห์ที่เพิ่งจบ = อาทิตย์ก่อน 7 วัน
+function prevWeekKey() {
+  const now = new Date();
+  const ict = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+  // ต้นสัปดาห์ปัจจุบัน (อาทิตย์นี้)
+  const day = ict.getUTCDay();
+  ict.setUTCDate(ict.getUTCDate() - day);       // อาทิตย์นี้
+  ict.setUTCDate(ict.getUTCDate() - 7);          // ถอยไป 7 วัน = อาทิตย์ที่แล้ว
+  return ict.toISOString().slice(0, 10);
+}
+
+async function settleWeekly() {
+  const weekKey = prevWeekKey();
+  console.log(`📊 Settling weekly leaderboard: ${weekKey}`);
+
+  // หา LeaderboardPeriod ที่ตรงกับ weekKey นี้
+  const period = await prisma.leaderboardPeriod.findFirst({
+    where: { type: 'weekly', weekKey },
+  });
+
+  if (!period) {
+    console.log(`   ⚠️ ไม่พบ LeaderboardPeriod สำหรับ ${weekKey} — ข้าม`);
+    return;
+  }
+
+  if (period.settled) {
+    console.log(`   ℹ️ ${weekKey} settled แล้ว — ข้าม`);
+    return;
+  }
+
+  // ── Time Trial ──────────────────────────────────────────────────────────
+  const ttScores = await prisma.timeTrialScore.findMany({
+    where: { weekKey },
+    orderBy: [{ score: 'desc' }, { createdAt: 'asc' }],
+  });
+  // best score per user
+  const ttSeen = new Set();
+  const ttRanked = [];
+  for (const s of ttScores) {
+    if (!ttSeen.has(s.userId)) { ttSeen.add(s.userId); ttRanked.push(s); }
+  }
+
+  // ── Saturday Quiz ────────────────────────────────────────────────────────
+  const sqAttempts = await prisma.saturdayQuizAttempt.findMany({
+    where: { weekKey },
+    orderBy: [{ score: 'desc' }, { timeUsed: 'asc' }],
+  });
+
+  // เขียน HallOfFame (upsert เผื่อ run ซ้ำ)
+  let hofCount = 0;
+  for (const [idx, s] of ttRanked.entries()) {
+    await prisma.hallOfFame.upsert({
+      where: { userId_periodId_activity: { userId: s.userId, periodId: period.id, activity: 'time_trial' } },
+      create: { userId: s.userId, periodId: period.id, activity: 'time_trial', totalScore: s.score, totalTime: s.createdAt?.getTime?.() ?? 0, rank: idx + 1 },
+      update: { totalScore: s.score, rank: idx + 1 },
+    });
+    hofCount++;
+  }
+  for (const [idx, a] of sqAttempts.entries()) {
+    await prisma.hallOfFame.upsert({
+      where: { userId_periodId_activity: { userId: a.userId, periodId: period.id, activity: 'saturday_quiz' } },
+      create: { userId: a.userId, periodId: period.id, activity: 'saturday_quiz', totalScore: a.score, totalTime: a.timeUsed, rank: idx + 1 },
+      update: { totalScore: a.score, totalTime: a.timeUsed, rank: idx + 1 },
+    });
+    hofCount++;
+  }
+
+  // mark settled
+  await prisma.leaderboardPeriod.update({ where: { id: period.id }, data: { settled: true } });
+
+  console.log(`✅ Settled ${weekKey}: TT=${ttRanked.length}, SQ=${sqAttempts.length}, HoF=${hofCount} records`);
+}
+
 async function runMaintenance() {
   const date = yesterdayICT();
   const { start, end } = ictDateToUTCRange(date);
+
+  // ── Settle weekly (เฉพาะวันอาทิตย์ ICT) ─────────────────────────────────
+  const ict = new Date(Date.now() + 7 * 60 * 60 * 1000);
+  if (ict.getUTCDay() === 0) {   // 0 = อาทิตย์
+    await settleWeekly().catch(e => console.error('❌ settleWeekly error:', e));
+  }
   console.log(`🔧 Maintenance: aggregating ${date} (UTC ${start.toISOString()} – ${end.toISOString()})`);
 
   try {

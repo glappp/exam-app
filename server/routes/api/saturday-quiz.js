@@ -156,6 +156,19 @@ router.get('/questions', requireLogin, async (req, res) => {
       });
     }
 
+    // ตรวจ active season
+    if (!devBypass) {
+      const activeSeason = await prisma.leaderboardSeason.findFirst({
+        where: { status: 'active' },
+      });
+      if (!activeSeason) {
+        return res.status(403).json({
+          error: 'ขณะนี้ปิด Season แล้ว — สอบประจำสัปดาห์จะเปิดอีกครั้งเมื่อเริ่ม Season ใหม่',
+          code: 'NO_ACTIVE_SEASON',
+        });
+      }
+    }
+
     // ตรวจว่าสอบแล้วหรือยัง
     const existing = await prisma.saturdayQuizAttempt.findUnique({
       where: { userId_weekKey: { userId, weekKey } },

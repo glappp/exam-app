@@ -202,6 +202,18 @@
 </head>
 <body>
 
+<!-- ── No Active Season Screen ── -->
+<div id="screen-no-season" class="screen">
+  <div class="center-card">
+    <div class="info-box">
+      <div class="icon">🔒</div>
+      <h2>ปิด Season แล้ว</h2>
+      <p>สอบประจำสัปดาห์จะเปิดอีกครั้งเมื่อเริ่ม Season ใหม่<br>ในภาคเรียนหน้า</p>
+      <button class="btn-back" onclick="location.href='dashboard.html'">← กลับหน้าหลัก</button>
+    </div>
+  </div>
+</div>
+
 <!-- ── Not Saturday Screen ── -->
 <div id="screen-not-saturday" class="screen">
   <div class="center-card">
@@ -336,6 +348,11 @@ async function init() {
   const devParam = location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? '?dev=1' : '';
   const res = await fetch('/api/saturday-quiz/questions' + devParam, { credentials: 'include' });
   const data = await res.json();
+
+  if (res.status === 403 && data.code === 'NO_ACTIVE_SEASON') {
+    showScreen('no-season');
+    return;
+  }
 
   if (res.status === 403 && data.code === 'NOT_SATURDAY') {
     const d = new Date(data.opensAt);

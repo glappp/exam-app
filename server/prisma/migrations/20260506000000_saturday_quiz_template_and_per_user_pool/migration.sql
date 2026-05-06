@@ -1,10 +1,11 @@
 -- SaturdayQuizTemplate: บันทึก candidates ทุกตัวต่อ slot (1 root + ≤5 variants)
 CREATE TABLE "SaturdayQuizTemplate" (
-    "id"            INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id"            SERIAL NOT NULL,
     "weekKey"       TEXT NOT NULL,
     "slot"          INTEGER NOT NULL,
     "questionId"    TEXT NOT NULL,
     "isCompetitive" BOOLEAN NOT NULL DEFAULT false,
+    CONSTRAINT "SaturdayQuizTemplate_pkey" PRIMARY KEY ("id"),
     CONSTRAINT "SaturdayQuizTemplate_questionId_fkey"
         FOREIGN KEY ("questionId") REFERENCES "Question" ("id")
         ON DELETE RESTRICT ON UPDATE CASCADE
@@ -17,42 +18,22 @@ CREATE INDEX "SaturdayQuizTemplate_weekKey_slot_idx"
 -- ล้างข้อมูลเก่า SaturdayQuizPool (format เปลี่ยน — ต้องล้างก่อนเพิ่ม NOT NULL column)
 DELETE FROM "SaturdayQuizPool";
 
--- SaturdayQuizPool: per-student (userId + slot ต่างจากเดิมที่เป็น shared pool)
+-- SaturdayQuizPool: เพิ่ม userId + slot, ลบ sortOrder, เปลี่ยน index
 DROP INDEX "SaturdayQuizPool_weekKey_questionId_key";
 DROP INDEX "SaturdayQuizPool_weekKey_idx";
+ALTER TABLE "SaturdayQuizPool" DROP CONSTRAINT IF EXISTS "SaturdayQuizPool_questionId_fkey";
+ALTER TABLE "SaturdayQuizPool" DROP COLUMN IF EXISTS "sortOrder";
 
-CREATE TABLE "SaturdayQuizPool_new" (
-    "id"         INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "weekKey"    TEXT NOT NULL,
-    "userId"     INTEGER NOT NULL,
-    "slot"       INTEGER NOT NULL,
-    "questionId" TEXT NOT NULL,
-    CONSTRAINT "SaturdayQuizPool_questionId_fkey"
-        FOREIGN KEY ("questionId") REFERENCES "Question" ("id")
-        ON DELETE RESTRICT ON UPDATE CASCADE
-);
+ALTER TABLE "SaturdayQuizPool" ADD COLUMN "userId" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "SaturdayQuizPool" ADD COLUMN "slot"   INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "SaturdayQuizPool" ALTER COLUMN "userId" DROP DEFAULT;
+ALTER TABLE "SaturdayQuizPool" ALTER COLUMN "slot"   DROP DEFAULT;
+
 CREATE UNIQUE INDEX "SaturdayQuizPool_weekKey_userId_slot_key"
-    ON "SaturdayQuizPool_new"("weekKey", "userId", "slot");
+    ON "SaturdayQuizPool"("weekKey", "userId", "slot");
 CREATE INDEX "SaturdayQuizPool_weekKey_userId_idx"
-    ON "SaturdayQuizPool_new"("weekKey", "userId");
+    ON "SaturdayQuizPool"("weekKey", "userId");
 
-DROP TABLE "SaturdayQuizPool";
-ALTER TABLE "SaturdayQuizPool_new" RENAME TO "SaturdayQuizPool";
-
--- SaturdayQuizAttempt (ถ้ายังไม่มี)
-CREATE TABLE IF NOT EXISTS "SaturdayQuizAttempt" (
-    "id"          INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "userId"      INTEGER NOT NULL,
-    "weekKey"     TEXT NOT NULL,
-    "score"       INTEGER NOT NULL,
-    "timeUsed"    INTEGER NOT NULL,
-    "answers"     TEXT NOT NULL DEFAULT '{}',
-    "completedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "SaturdayQuizAttempt_userId_fkey"
-        FOREIGN KEY ("userId") REFERENCES "User" ("id")
-        ON DELETE RESTRICT ON UPDATE CASCADE
-);
-CREATE UNIQUE INDEX IF NOT EXISTS "SaturdayQuizAttempt_userId_weekKey_key"
-    ON "SaturdayQuizAttempt"("userId", "weekKey");
-CREATE INDEX IF NOT EXISTS "SaturdayQuizAttempt_weekKey_idx"
-    ON "SaturdayQuizAttempt"("weekKey");
+ALTER TABLE "SaturdayQuizPool" ADD CONSTRAINT "SaturdayQuizPool_questionId_fkey"
+    FOREIGN KEY ("questionId") REFERENCES "Question" ("id")
+    ON DELETE RESTRICT ON UPDATE CASCADE;

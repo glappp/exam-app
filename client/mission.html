@@ -472,16 +472,25 @@ async function submitDaily() {
 }
 
 // ── Weekly Challenge ──────────────────────────────────────────────────────────
+let weeklySubmitted = false  // ป้องกันส่งซ้ำ
+
 document.getElementById('btn-weekly').addEventListener('click', async () => {
   const data = await fetch('/api/mission/weekly').then(r => r.json()).catch(e => ({ error: e.message }))
   if (data.error) { alert(data.error); return }
+
+  // ทำไปแล้วสัปดาห์นี้ — ไม่เปิดให้ทำซ้ำ
+  if (data.attempts > 0) {
+    alert(`ทำ Weekly Challenge สัปดาห์นี้ไปแล้ว (${data.bestScore}/10 คะแนน)\nจะเปิดรอบใหม่สัปดาห์หน้า`)
+    return
+  }
 
   currentMode    = 'weekly'
   questions      = data.questions
   weeklyAnswers  = {}
   weeklyTimeLeft = data.timeLimitSec
+  weeklySubmitted = false
 
-  openQuiz('🏆 Weekly Challenge', `${data.attempts > 0 ? `ครั้งที่ ${data.attempts + 1}` : 'สัปดาห์นี้'}`)
+  openQuiz('🏆 Weekly Challenge', 'สัปดาห์นี้')
   renderWeeklyQuestions()
   startWeeklyTimer()
 })
@@ -495,11 +504,14 @@ function renderWeeklyQuestions() {
         ${q.image ? `<img class="q-img" src="/uploads/${q.image}">` : ''}
         <div class="q-text">${q.textTh}</div>
         <div class="choices" id="choices-${i}">
-          ${Array.isArray(q.choices) ? q.choices.map((c, ci) => `
-            <button class="choice-btn" data-qi="${i}" data-qid="${q.id}" data-val="${'abcd'[ci]}"
-              onclick="weeklySelect(this)">${'ABCD'[ci]}. ${c.textTh || c}</button>
-          `).join('') : `<input type="text" id="short-${i}" placeholder="คำตอบ" style="border:1.5px solid #e5e7eb;border-radius:8px;padding:9px;font-size:14px;width:100%"
-            oninput="weeklyAnswers['${q.id}'] = this.value">`}
+          ${q.type === 'numeric'
+            ? `<input type="text" inputmode="decimal" id="short-${i}" placeholder="พิมพ์คำตอบตัวเลข..." style="border:1.5px solid #e5e7eb;border-radius:8px;padding:9px;font-size:14px;width:100%"
+                oninput="weeklyAnswers['${q.id}'] = this.value">`
+            : (Array.isArray(q.choices) ? q.choices : []).map((c, ci) => `
+                <button class="choice-btn" data-qi="${i}" data-qid="${q.id}" data-val="${'abcd'[ci]}"
+                  onclick="weeklySelect(this)">${'ABCD'[ci]}. ${c.textTh || c}</button>
+              `).join('')
+          }
         </div>
       </div>
     `).join('') +
@@ -529,6 +541,8 @@ function startWeeklyTimer() {
 }
 
 async function submitWeekly() {
+  if (weeklySubmitted) return
+  weeklySubmitted = true
   clearInterval(weeklyTimer)
   const answers = questions.map(q => ({
     questionId: q.id,
@@ -584,6 +598,11 @@ function closeQuiz() {
 document.getElementById('btn-close-quiz').addEventListener('click', () => {
   if (currentMode === 'daily' && qIndex > 0) {
     if (!confirm('ออกจาก Daily Mission? ความก้าวหน้าจะหาย')) return
+  }
+  if (currentMode === 'weekly' && !weeklySubmitted) {
+    if (!confirm('ถ้าออกตอนนี้ จะไม่สามารถกลับมาทำ Weekly Challenge ได้อีกสัปดาห์นี้\nคะแนนจะถูกบันทึกเป็น 0\n\nยืนยันออก?')) return
+    submitWeekly()
+    return
   }
   closeQuiz()
 })

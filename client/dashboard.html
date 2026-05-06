@@ -320,6 +320,7 @@
     const res = await fetch('/api/me', { credentials: 'include' });
     if (!res.ok) { location.href = 'login.html'; return; }
     const me = await res.json();
+    if (me.mustChangePassword) { location.href = 'change-password.html'; return; }
 
     document.getElementById('topbar-name').textContent = me.firstName || me.username || '';
     if (['admin','school_admin','teacher'].includes(me.role)) {

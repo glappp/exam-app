@@ -65,6 +65,25 @@ app.use(session({
 app.get('/', (req, res) => res.redirect('/index.html'));
 app.use(express.static(path.join(__dirname, '..', 'client'))); // สำหรับไฟล์ static
 
+// ── mustChangePassword guard ───────────────────────────────────────────────
+// ถ้า user ต้องเปลี่ยน password → block ทุก API ยกเว้น auth และ /api/me
+const CHANGE_PWD_EXEMPT = ['/me', '/login', '/logout', '/register'];
+app.use('/api', async (req, res, next) => {
+  if (!req.session?.userId) return next();
+  const exempted = CHANGE_PWD_EXEMPT.includes(req.path) || req.path.startsWith('/auth');
+  if (exempted) return next();
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.session.userId },
+      select: { mustChangePassword: true, role: true },
+    });
+    if (user?.mustChangePassword && user.role === 'student') {
+      return res.status(403).json({ error: 'กรุณาเปลี่ยนรหัสผ่านก่อนใช้งาน', code: 'MUST_CHANGE_PASSWORD' });
+    }
+  } catch { /* ถ้า query fail ให้ผ่านไปก่อน */ }
+  next();
+});
+
 const attributeDictRoute = require('./routes/api/attributeDictRoute');
 app.use('/api', attributeDictRoute);
 

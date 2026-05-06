@@ -146,7 +146,8 @@ router.get('/questions', requireLogin, async (req, res) => {
     const weekKey = getWeekKey();
     const userId  = req.session.userId;
 
-    if (!isSaturday()) {
+    const devBypass = process.env.NODE_ENV !== 'production' && req.query.dev === '1';
+    if (!isSaturday() && !devBypass) {
       const saturday = getSaturdayDate(weekKey);
       return res.status(403).json({
         error: 'สอบได้เฉพาะวันเสาร์เท่านั้น',

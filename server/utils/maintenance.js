@@ -17,6 +17,14 @@ function toICTDateStr(d) {
   return ict.toISOString().slice(0, 10);
 }
 
+// weekKey = วันอาทิตย์ต้นสัปดาห์ (YYYY-MM-DD)
+function getWeekKey(date = new Date()) {
+  const d = new Date(date);
+  const day = d.getUTCDay();
+  d.setUTCDate(d.getUTCDate() - day);
+  return d.toISOString().slice(0, 10);
+}
+
 // วันก่อนหน้า (ICT)
 function yesterdayICT() {
   const now = new Date();
@@ -277,9 +285,18 @@ async function runMaintenance() {
   const date = yesterdayICT();
   const { start, end } = ictDateToUTCRange(date);
 
-  // ── Settle weekly + monthly (เฉพาะวันอาทิตย์ ICT) ──────────────────────
   const ict = new Date(Date.now() + 7 * 60 * 60 * 1000);
-  if (ict.getUTCDay() === 0) {   // 0 = อาทิตย์
+  const ictDay = ict.getUTCDay(); // 0=อาทิตย์ 6=เสาร์
+
+  // ── วันเสาร์ ICT (= ปิดคืนวันศุกร์): สร้าง template สอบประจำสัปดาห์ ────
+  if (ictDay === 6) {
+    const { generateWeekTemplate } = require('../routes/api/saturday-quiz');
+    const weekKey = getWeekKey();
+    await generateWeekTemplate(weekKey).catch(e => console.error('❌ generateWeekTemplate error:', e));
+  }
+
+  // ── Settle weekly + monthly (เฉพาะวันอาทิตย์ ICT) ──────────────────────
+  if (ictDay === 0) {   // 0 = อาทิตย์
     await settleWeekly().catch(e => console.error('❌ settleWeekly error:', e));
     await settleMonthlyIfDue().catch(e => console.error('❌ settleMonthly error:', e));
     await closeSeasonIfDue().catch(e => console.error('❌ closeSeasonIfDue error:', e));

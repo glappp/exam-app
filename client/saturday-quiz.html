@@ -333,7 +333,8 @@ async function init() {
   const me = await fetch('/api/me', { credentials: 'include' }).then(r => r.json()).catch(() => null);
   if (!me?.loggedIn) { location.href = 'login.html'; return; }
 
-  const res = await fetch('/api/saturday-quiz/questions', { credentials: 'include' });
+  const devParam = location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? '?dev=1' : '';
+  const res = await fetch('/api/saturday-quiz/questions' + devParam, { credentials: 'include' });
   const data = await res.json();
 
   if (res.status === 403 && data.code === 'NOT_SATURDAY') {

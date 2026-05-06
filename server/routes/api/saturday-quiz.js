@@ -19,12 +19,11 @@ function isAfterMaintenance() {
 // weekKey = วันอาทิตย์ต้นสัปดาห์ (YYYY-MM-DD)
 function getWeekKey(date = new Date()) {
   const d = new Date(date);
-  const day = d.getUTCDay(); // 0=อาทิตย์
+  const day = d.getUTCDay();
   d.setUTCDate(d.getUTCDate() - day);
   return d.toISOString().slice(0, 10);
 }
 
-// วันเสาร์ของสัปดาห์นี้ (UTC+7)
 function getSaturdayDate(weekKey) {
   const sun = new Date(weekKey + 'T00:00:00Z');
   sun.setUTCDate(sun.getUTCDate() + 6);
@@ -32,86 +31,122 @@ function getSaturdayDate(weekKey) {
 }
 
 function isSaturday() {
-  // ตรวจตาม ICT (UTC+7)
-  const now = new Date();
-  const ict = new Date(now.getTime() + 7 * 60 * 60 * 1000);
+  const ict = new Date(Date.now() + 7 * 60 * 60 * 1000);
   return ict.getUTCDay() === 6;
 }
 
-// สุ่ม 8 ข้อฝึกหัด + 2 ข้อแข่งขัน สำหรับสัปดาห์นี้ (เหมือนกันทุกคน)
-async function generateWeekPool(weekKey) {
-  // 8 ข้อฝึกหัด — ข้อหลัก (ไม่มี parentQuestionId), isOfficial=false
-  const practiceQuestions = await prisma.question.findMany({
-    where: {
-      attributes: { path: ['parentQuestionId'], equals: null },
-    },
-    select: { id: true, attributes: true, source: true },
-  });
+// ── สร้าง template (คืนวันศุกร์ = maintenance วันเสาร์ 04:00 ICT) ──────────
+// บันทึก candidates ทุกตัวของแต่ละ slot ไว้ล่วงหน้า
+// practice slot: 1 root + ≤5 variants = สูงสุด 6 candidates
+// competitive slot: 1 ข้อตรงๆ — ไม่มี family
+async function generateWeekTemplate(weekKey) {
+  const existing = await prisma.saturdayQuizTemplate.count({ where: { weekKey } });
+  if (existing > 0) {
+    console.log(`ℹ️  SaturdayQuiz template มีแล้ว: ${weekKey}`);
+    return;
+  }
 
-  // ดึง source ของ official sets
+  // ดึง official sources
   const officialSets = await prisma.examSetMetadata.findMany({
     where: { isOfficial: true },
     select: { questionSource: true },
   });
   const officialSources = officialSets.map(s => s.questionSource).filter(Boolean);
 
-  const practice = practiceQuestions.filter(q => {
+  // ── 8 ข้อฝึกหัด: เลือก family root ──────────────────────────────────────
+  const practiceRoots = await prisma.question.findMany({
+    where: { parentQuestionId: null },
+    select: { id: true, attributes: true, source: true },
+    include: { variants: { select: { id: true } } },
+  });
+
+  const practiceFiltered = practiceRoots.filter(q => {
     if (!q.source) return true;
     return !officialSources.some(src => q.source.startsWith(src));
   });
 
-  // กรอง parent duplicates — ใช้ตัวแรกของแต่ละ parentGroup
-  const seenParents = new Set();
-  const uniquePractice = [];
-  for (const q of practice) {
-    const parent = q.attributes?.parentGroup || q.id;
-    if (!seenParents.has(parent)) {
-      seenParents.add(parent);
-      uniquePractice.push(q);
+  // dedupe ตาม parentGroup
+  const seenFamilies = new Set();
+  const familyPool = [];
+  for (const q of practiceFiltered) {
+    const fk = q.attributes?.parentGroup || q.id;
+    if (!seenFamilies.has(fk)) {
+      seenFamilies.add(fk);
+      // candidates = root + variants (≤5 variants → สูงสุด 6)
+      familyPool.push({
+        candidates: [{ id: q.id }, ...q.variants].slice(0, 6),
+      });
     }
   }
 
-  // สุ่ม 8 จาก uniquePractice
-  const shuffledPractice = uniquePractice.sort(() => Math.random() - 0.5).slice(0, 8);
+  const shuffledFamilies = familyPool.sort(() => Math.random() - 0.5).slice(0, 8);
 
-  // 2 ข้อแข่งขัน
-  const competitiveQuestions = await prisma.question.findMany({
-    where: {},
-    select: { id: true, source: true },
+  // ── 2 ข้อแข่งขัน ─────────────────────────────────────────────────────────
+  const allQ = await prisma.question.findMany({ select: { id: true, source: true } });
+  const competitive = allQ
+    .filter(q => q.source && officialSources.some(src => q.source.startsWith(src)))
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 2);
+
+  // ── บันทึก template ───────────────────────────────────────────────────────
+  const rows = [];
+  shuffledFamilies.forEach((f, i) => {
+    f.candidates.forEach(c => {
+      rows.push({ weekKey, slot: i + 1, questionId: c.id, isCompetitive: false });
+    });
   });
-  const competitive = competitiveQuestions.filter(q => {
-    if (!q.source) return false;
-    return officialSources.some(src => q.source.startsWith(src));
-  });
-  const shuffledCompetitive = competitive.sort(() => Math.random() - 0.5).slice(0, 2);
-
-  const pool = [...shuffledPractice, ...shuffledCompetitive];
-
-  // ล้างข้อมูลสัปดาห์เก่าก่อนสร้างใหม่
-  await prisma.saturdayQuizAttempt.deleteMany({ where: { weekKey: { not: weekKey } } });
-  await prisma.saturdayQuizPool.deleteMany({ where: { weekKey: { not: weekKey } } });
-
-  // บันทึก pool ลง DB
-  await prisma.saturdayQuizPool.createMany({
-    data: pool.map((q, i) => ({
-      weekKey,
-      questionId: q.id,
-      sortOrder: i + 1,
-    })),
-    skipDuplicates: true,
+  competitive.forEach((q, i) => {
+    rows.push({ weekKey, slot: 9 + i, questionId: q.id, isCompetitive: true });
   });
 
-  console.log(`✅ SaturdayQuiz pool สร้างใหม่: ${weekKey} (ล้างข้อมูลเก่าแล้ว)`);
-  return weekKey;
+  await prisma.saturdayQuizTemplate.deleteMany({ where: { weekKey: { not: weekKey } } });
+  await prisma.saturdayQuizTemplate.createMany({ data: rows, skipDuplicates: true });
+
+  const practiceCount = shuffledFamilies.length;
+  const candidateCount = rows.filter(r => !r.isCompetitive).length;
+  console.log(`✅ SaturdayQuiz template: ${weekKey} — ${practiceCount} slots, ${candidateCount} practice candidates, ${competitive.length} competitive`);
 }
 
-// GET /api/saturday-quiz/questions — ดึงโจทย์สัปดาห์นี้
+// ── สร้าง pool สำหรับนักเรียนคนนี้ (ตอนเริ่มสอบ) ──────────────────────────
+// สุ่ม 1 candidate ต่อ slot จาก template ที่เตรียมไว้แล้ว
+async function generateStudentPool(weekKey, userId) {
+  const templateRows = await prisma.saturdayQuizTemplate.findMany({
+    where: { weekKey },
+    orderBy: { slot: 'asc' },
+  });
+
+  if (templateRows.length === 0) {
+    // fallback: สร้าง template ถ้าไม่มี
+    await generateWeekTemplate(weekKey);
+    return generateStudentPool(weekKey, userId);
+  }
+
+  // group candidates ตาม slot
+  const bySlot = new Map();
+  for (const row of templateRows) {
+    if (!bySlot.has(row.slot)) bySlot.set(row.slot, []);
+    bySlot.get(row.slot).push(row);
+  }
+
+  const poolData = [];
+  for (const [slot, candidates] of [...bySlot.entries()].sort((a, b) => a[0] - b[0])) {
+    // สุ่ม 1 จาก candidates ของ slot นี้
+    const picked = candidates[Math.floor(Math.random() * candidates.length)];
+    poolData.push({ weekKey, userId, slot, questionId: picked.questionId });
+  }
+
+  await prisma.saturdayQuizPool.createMany({ data: poolData, skipDuplicates: true });
+  console.log(`✅ SaturdayQuiz pool userId=${userId}: ${weekKey} (${poolData.length} questions)`);
+  return poolData;
+}
+
+// GET /api/saturday-quiz/questions
 router.get('/questions', requireLogin, async (req, res) => {
   try {
     const weekKey = getWeekKey();
+    const userId  = req.session.userId;
 
     if (!isSaturday()) {
-      // นอกวันเสาร์ — บอกวันที่จะเปิด
       const saturday = getSaturdayDate(weekKey);
       return res.status(403).json({
         error: 'สอบได้เฉพาะวันเสาร์เท่านั้น',
@@ -122,7 +157,7 @@ router.get('/questions', requireLogin, async (req, res) => {
 
     // ตรวจว่าสอบแล้วหรือยัง
     const existing = await prisma.saturdayQuizAttempt.findUnique({
-      where: { userId_weekKey: { userId: req.session.userId, weekKey } },
+      where: { userId_weekKey: { userId, weekKey } },
     });
     if (existing) {
       return res.status(409).json({
@@ -132,19 +167,19 @@ router.get('/questions', requireLogin, async (req, res) => {
       });
     }
 
-    // ดึง pool (สร้างถ้ายังไม่มี)
+    // ดึง pool ของนักเรียนคนนี้ (สร้างถ้ายังไม่มี)
     let pool = await prisma.saturdayQuizPool.findMany({
-      where: { weekKey },
+      where: { weekKey, userId },
       include: { question: true },
-      orderBy: { sortOrder: 'asc' },
+      orderBy: { slot: 'asc' },
     });
 
     if (pool.length === 0) {
-      await generateWeekPool(weekKey);
+      await generateStudentPool(weekKey, userId);
       pool = await prisma.saturdayQuizPool.findMany({
-        where: { weekKey },
+        where: { weekKey, userId },
         include: { question: true },
-        orderBy: { sortOrder: 'asc' },
+        orderBy: { slot: 'asc' },
       });
     }
 
@@ -161,8 +196,7 @@ router.get('/questions', requireLogin, async (req, res) => {
   }
 });
 
-// GET /api/saturday-quiz/review — ดูเฉลย (เปิดวันอาทิตย์ 05:00+ ICT หลัง maintenance)
-// เฉพาะคนที่สอบแล้วเท่านั้น
+// GET /api/saturday-quiz/review — ดูเฉลย (เปิดวันอาทิตย์ 05:00+ ICT)
 router.get('/review', requireLogin, async (req, res) => {
   try {
     if (!isAfterMaintenance()) {
@@ -172,15 +206,14 @@ router.get('/review', requireLogin, async (req, res) => {
       });
     }
 
-    // weekKey ของสัปดาห์ที่สอบ (= weekKey ก่อนหน้า 7 วัน จากต้นสัปดาห์ปัจจุบัน)
-    const currentWeekKey = getWeekKey(); // อาทิตย์นี้
+    const currentWeekKey = getWeekKey();
     const prevSun = new Date(currentWeekKey + 'T00:00:00Z');
     prevSun.setUTCDate(prevSun.getUTCDate() - 7);
     const reviewWeekKey = req.query.weekKey || prevSun.toISOString().slice(0, 10);
+    const userId = req.session.userId;
 
-    // ตรวจว่าผู้ใช้สอบแล้วหรือยัง
     const attempt = await prisma.saturdayQuizAttempt.findUnique({
-      where: { userId_weekKey: { userId: req.session.userId, weekKey: reviewWeekKey } },
+      where: { userId_weekKey: { userId, weekKey: reviewWeekKey } },
     });
     if (!attempt) {
       return res.status(403).json({
@@ -189,11 +222,11 @@ router.get('/review', requireLogin, async (req, res) => {
       });
     }
 
-    // ดึงข้อสอบพร้อมเฉลย
+    // ดึง pool ของนักเรียนคนนี้ พร้อม answer
     const pool = await prisma.saturdayQuizPool.findMany({
-      where: { weekKey: reviewWeekKey },
-      include: { question: true }, // รวม answer + shortAnswer ด้วย
-      orderBy: { sortOrder: 'asc' },
+      where: { weekKey: reviewWeekKey, userId },
+      include: { question: true },
+      orderBy: { slot: 'asc' },
     });
 
     const userAnswers = attempt.answers || {};
@@ -207,11 +240,7 @@ router.get('/review', requireLogin, async (req, res) => {
         const accepted = Array.isArray(q.shortAnswer) ? q.shortAnswer : [q.shortAnswer];
         correct = accepted.includes(String(userAns));
       }
-      return {
-        ...q,                         // รวม answer + shortAnswer (unhide แล้ว)
-        userAnswer: userAns ?? null,
-        isCorrect: correct,
-      };
+      return { ...q, userAnswer: userAns ?? null, isCorrect: correct };
     });
 
     res.json({
@@ -227,24 +256,24 @@ router.get('/review', requireLogin, async (req, res) => {
 });
 
 // POST /api/saturday-quiz/submit
-// Body: { weekKey, answers: { questionId: selectedAnswer }, timeUsed }
 router.post('/submit', requireLogin, async (req, res) => {
   try {
     const { weekKey, answers = {}, timeUsed } = req.body;
+    const userId = req.session.userId;
     if (!weekKey || timeUsed == null) {
       return res.status(400).json({ error: 'ข้อมูลไม่ครบ' });
     }
 
-    // ตรวจซ้ำ
     const existing = await prisma.saturdayQuizAttempt.findUnique({
-      where: { userId_weekKey: { userId: req.session.userId, weekKey } },
+      where: { userId_weekKey: { userId, weekKey } },
     });
     if (existing) return res.status(409).json({ error: 'ส่งคำตอบแล้ว', attempt: existing });
 
-    // ดึง pool + คำเฉลย
+    // ดึง pool ของนักเรียนคนนี้ พร้อม answer
     const pool = await prisma.saturdayQuizPool.findMany({
-      where: { weekKey },
+      where: { weekKey, userId },
       include: { question: { select: { id: true, answer: true, shortAnswer: true, type: true } } },
+      orderBy: { slot: 'asc' },
     });
 
     let score = 0;
@@ -264,13 +293,7 @@ router.post('/submit', requireLogin, async (req, res) => {
     }
 
     const attempt = await prisma.saturdayQuizAttempt.create({
-      data: {
-        userId: req.session.userId,
-        weekKey,
-        score,
-        timeUsed: Math.round(timeUsed),
-        answers,
-      },
+      data: { userId, weekKey, score, timeUsed: Math.round(timeUsed), answers },
     });
 
     res.json({ ok: true, score, total: pool.length, timeUsed, result, attempt });
@@ -280,4 +303,4 @@ router.post('/submit', requireLogin, async (req, res) => {
   }
 });
 
-module.exports = router;
+module.exports = { router, generateWeekTemplate };

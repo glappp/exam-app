@@ -96,11 +96,9 @@
       flex: 1; padding: 11px; border-radius: 8px; border: none;
       font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.15s;
     }
-    .btn-prev { background: #e2e8f0; color: #4a5568; }
-    .btn-prev:hover { background: #cbd5e0; }
     .btn-next { background: #2b6cb0; color: white; }
     .btn-next:hover { background: #2c5282; }
-    .btn-submit { background: #38a169; color: white; flex: 2; }
+    .btn-submit { background: #38a169; color: white; }
     .btn-submit:hover { background: #276749; }
     .btn-submit:disabled { background: #a0aec0; cursor: not-allowed; }
 
@@ -272,7 +270,7 @@
       <img class="q-image" id="q-image" style="display:none">
       <div class="choices" id="choices-area"></div>
       <div class="numeric-input" id="numeric-area" style="display:none">
-        <input type="number" id="numeric-input" placeholder="พิมพ์คำตอบ..." oninput="recordNumeric()" step="any">
+        <input type="text" inputmode="decimal" id="numeric-input" placeholder="พิมพ์คำตอบ..." oninput="recordNumeric()">
       </div>
     </div>
   </div>
@@ -405,7 +403,7 @@ function renderDots() {
   const container = document.getElementById('progress-dots');
   container.innerHTML = questions.map((q, i) => {
     const cls = i === currentIdx ? 'dot current' : (answers[q.id] != null ? 'dot answered' : 'dot');
-    return `<div class="${cls}" onclick="jumpTo(${i})">${i+1}</div>`;
+    return `<div class="${cls}">${i+1}</div>`;
   }).join('');
 }
 
@@ -480,27 +478,20 @@ function recordNumeric() {
 }
 
 function updateNav() {
-  const isFirst = currentIdx === 0;
-  const isLast  = currentIdx === questions.length - 1;
-  document.getElementById('btn-prev').style.display = isFirst ? 'none' : '';
-  const btnNext = document.getElementById('btn-next');
+  const isLast = currentIdx === questions.length - 1;
+  const answered = Object.keys(answers).filter(k => answers[k] != null).length;
   if (isLast) {
-    // แสดงปุ่ม submit
     document.getElementById('nav-row').innerHTML = `
-      <button class="nav-btn btn-prev" onclick="goPrev()">← ก่อนหน้า</button>
       <button class="nav-btn btn-submit" id="btn-submit" onclick="confirmSubmit()">
-        ส่งคำตอบ (${Object.keys(answers).filter(k => answers[k] != null).length}/${questions.length})
+        ส่งคำตอบ (${answered}/${questions.length})
       </button>`;
   } else {
     document.getElementById('nav-row').innerHTML = `
-      <button class="nav-btn btn-prev" ${isFirst ? 'style="display:none"' : ''} onclick="goPrev()">← ก่อนหน้า</button>
-      <button class="nav-btn btn-next" onclick="goNext()">ถัดไป →</button>`;
+      <button class="nav-btn btn-next" id="btn-next" onclick="goNext()">ถัดไป →</button>`;
   }
 }
 
 function goNext() { if (currentIdx < questions.length-1) renderQuestion(currentIdx+1); }
-function goPrev() { if (currentIdx > 0) renderQuestion(currentIdx-1); }
-function jumpTo(i) { renderQuestion(i); }
 
 // ── Submit ─────────────────────────────────────────────────────────────────
 function confirmSubmit() {

@@ -272,7 +272,7 @@
       <img class="q-image" id="q-image" style="display:none">
       <div class="choices" id="choices-area"></div>
       <div class="numeric-input" id="numeric-area" style="display:none">
-        <input type="number" id="numeric-input" placeholder="พิมพ์คำตอบ..." oninput="recordNumeric()" step="any">
+        <input type="text" inputmode="decimal" id="numeric-input" placeholder="พิมพ์คำตอบ..." oninput="recordNumeric()">
       </div>
     </div>
   </div>
@@ -482,19 +482,17 @@ function recordNumeric() {
 function updateNav() {
   const isFirst = currentIdx === 0;
   const isLast  = currentIdx === questions.length - 1;
-  document.getElementById('btn-prev').style.display = isFirst ? 'none' : '';
-  const btnNext = document.getElementById('btn-next');
+  const answered = Object.keys(answers).filter(k => answers[k] != null).length;
   if (isLast) {
-    // แสดงปุ่ม submit
     document.getElementById('nav-row').innerHTML = `
-      <button class="nav-btn btn-prev" onclick="goPrev()">← ก่อนหน้า</button>
+      <button class="nav-btn btn-prev" id="btn-prev" onclick="goPrev()">← ก่อนหน้า</button>
       <button class="nav-btn btn-submit" id="btn-submit" onclick="confirmSubmit()">
-        ส่งคำตอบ (${Object.keys(answers).filter(k => answers[k] != null).length}/${questions.length})
+        ส่งคำตอบ (${answered}/${questions.length})
       </button>`;
   } else {
     document.getElementById('nav-row').innerHTML = `
-      <button class="nav-btn btn-prev" ${isFirst ? 'style="display:none"' : ''} onclick="goPrev()">← ก่อนหน้า</button>
-      <button class="nav-btn btn-next" onclick="goNext()">ถัดไป →</button>`;
+      <button class="nav-btn btn-prev" id="btn-prev" style="${isFirst ? 'display:none' : ''}" onclick="goPrev()">← ก่อนหน้า</button>
+      <button class="nav-btn btn-next" id="btn-next" onclick="goNext()">ถัดไป →</button>`;
   }
 }
 

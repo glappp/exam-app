@@ -368,8 +368,10 @@ router.get('/weekly', requireLogin, async (req, res) => {
   const userId  = req.session.userId
   const weekKey = getWeekKey()
 
+  const isAdmin = ['admin', 'school_admin', 'teacher'].includes(req.session.role)
+
   // ดึงสถานะ
-  const existing = await prisma.weeklyChallengeResult.findUnique({
+  const existing = isAdmin ? null : await prisma.weeklyChallengeResult.findUnique({
     where: { userId_weekKey: { userId, weekKey } },
   })
 

@@ -146,8 +146,11 @@ router.get('/questions', requireLogin, async (req, res) => {
     const weekKey = getWeekKey();
     const userId  = req.session.userId;
 
+    const isAdmin = ['admin', 'school_admin', 'teacher'].includes(req.session.role);
     const devBypass = process.env.NODE_ENV !== 'production' && req.query.dev === '1';
-    if (!isSaturday() && !devBypass) {
+    const bypass = isAdmin || devBypass;
+
+    if (!isSaturday() && !bypass) {
       const saturday = getSaturdayDate(weekKey);
       return res.status(403).json({
         error: 'สอบได้เฉพาะวันเสาร์เท่านั้น',
@@ -157,7 +160,7 @@ router.get('/questions', requireLogin, async (req, res) => {
     }
 
     // ตรวจ active season
-    if (!devBypass) {
+    if (!bypass) {
       const activeSeason = await prisma.leaderboardSeason.findFirst({
         where: { status: 'active' },
       });

@@ -36,7 +36,9 @@ function isSaturday() {
 }
 
 // ── สร้าง template (คืนวันศุกร์ = maintenance วันเสาร์ 04:00 ICT) ──────────
-// เลือก family ที่จะออกสัปดาห์นี้ — ทำครั้งเดียว ใช้ร่วมกันทุกคน
+// บันทึก candidates ทุกตัวของแต่ละ slot ไว้ล่วงหน้า
+// practice slot: 1 root + ≤5 variants = สูงสุด 6 candidates
+// competitive slot: 1 ข้อตรงๆ — ไม่มี family
 async function generateWeekTemplate(weekKey) {
   const existing = await prisma.saturdayQuizTemplate.count({ where: { weekKey } });
   if (existing > 0) {
@@ -51,11 +53,11 @@ async function generateWeekTemplate(weekKey) {
   });
   const officialSources = officialSets.map(s => s.questionSource).filter(Boolean);
 
-  // ── 8 ข้อฝึกหัด: เลือก family (parentGroup) ──────────────────────────────
-  // ดึงทุกข้อที่ไม่ใช่ official + ไม่มี parentQuestionId (= root ของแต่ละ family)
+  // ── 8 ข้อฝึกหัด: เลือก family root ──────────────────────────────────────
   const practiceRoots = await prisma.question.findMany({
     where: { parentQuestionId: null },
     select: { id: true, attributes: true, source: true },
+    include: { variants: { select: { id: true } } },
   });
 
   const practiceFiltered = practiceRoots.filter(q => {
@@ -63,93 +65,78 @@ async function generateWeekTemplate(weekKey) {
     return !officialSources.some(src => q.source.startsWith(src));
   });
 
-  // dedupe ตาม parentGroup — เก็บ root แต่ละ family ไว้หนึ่งตัว
+  // dedupe ตาม parentGroup
   const seenFamilies = new Set();
-  const familyCandidates = [];
+  const familyPool = [];
   for (const q of practiceFiltered) {
     const fk = q.attributes?.parentGroup || q.id;
     if (!seenFamilies.has(fk)) {
       seenFamilies.add(fk);
-      familyCandidates.push({ familyKey: fk, isCompetitive: false });
+      // candidates = root + variants (≤5 variants → สูงสุด 6)
+      familyPool.push({
+        candidates: [{ id: q.id }, ...q.variants].slice(0, 6),
+      });
     }
   }
 
-  const shuffledPractice = familyCandidates.sort(() => Math.random() - 0.5).slice(0, 8);
+  const shuffledFamilies = familyPool.sort(() => Math.random() - 0.5).slice(0, 8);
 
-  // ── 2 ข้อแข่งขัน: ใช้ questionId โดยตรง (ไม่มี family) ───────────────────
+  // ── 2 ข้อแข่งขัน ─────────────────────────────────────────────────────────
   const allQ = await prisma.question.findMany({ select: { id: true, source: true } });
-  const competitive = allQ.filter(q => q.source && officialSources.some(src => q.source.startsWith(src)));
-  const shuffledComp = competitive.sort(() => Math.random() - 0.5).slice(0, 2);
+  const competitive = allQ
+    .filter(q => q.source && officialSources.some(src => q.source.startsWith(src)))
+    .sort(() => Math.random() - 0.5)
+    .slice(0, 2);
 
-  const templateData = [
-    ...shuffledPractice.map((f, i) => ({ weekKey, slot: i + 1, ...f })),
-    ...shuffledComp.map((q, i) => ({ weekKey, slot: 9 + i, familyKey: q.id, isCompetitive: true })),
-  ];
+  // ── บันทึก template ───────────────────────────────────────────────────────
+  const rows = [];
+  shuffledFamilies.forEach((f, i) => {
+    f.candidates.forEach(c => {
+      rows.push({ weekKey, slot: i + 1, questionId: c.id, isCompetitive: false });
+    });
+  });
+  competitive.forEach((q, i) => {
+    rows.push({ weekKey, slot: 9 + i, questionId: q.id, isCompetitive: true });
+  });
 
-  // ล้าง template เก่า (เก็บไว้แค่สัปดาห์นี้)
   await prisma.saturdayQuizTemplate.deleteMany({ where: { weekKey: { not: weekKey } } });
-  await prisma.saturdayQuizTemplate.createMany({ data: templateData, skipDuplicates: true });
+  await prisma.saturdayQuizTemplate.createMany({ data: rows, skipDuplicates: true });
 
-  console.log(`✅ SaturdayQuiz template สร้างใหม่: ${weekKey} (practice=${shuffledPractice.length}, comp=${shuffledComp.length})`);
+  const practiceCount = shuffledFamilies.length;
+  const candidateCount = rows.filter(r => !r.isCompetitive).length;
+  console.log(`✅ SaturdayQuiz template: ${weekKey} — ${practiceCount} slots, ${candidateCount} practice candidates, ${competitive.length} competitive`);
 }
 
 // ── สร้าง pool สำหรับนักเรียนคนนี้ (ตอนเริ่มสอบ) ──────────────────────────
-// สุ่มข้อจาก family ที่ template กำหนด — แต่ละคนได้ variant ต่างกัน
+// สุ่ม 1 candidate ต่อ slot จาก template ที่เตรียมไว้แล้ว
 async function generateStudentPool(weekKey, userId) {
-  const template = await prisma.saturdayQuizTemplate.findMany({
+  const templateRows = await prisma.saturdayQuizTemplate.findMany({
     where: { weekKey },
     orderBy: { slot: 'asc' },
   });
 
-  if (template.length === 0) {
-    // fallback: สร้าง template ถ้าไม่มี (ไม่ควรเกิดในระบบปกติ)
+  if (templateRows.length === 0) {
+    // fallback: สร้าง template ถ้าไม่มี
     await generateWeekTemplate(weekKey);
     return generateStudentPool(weekKey, userId);
   }
 
+  // group candidates ตาม slot
+  const bySlot = new Map();
+  for (const row of templateRows) {
+    if (!bySlot.has(row.slot)) bySlot.set(row.slot, []);
+    bySlot.get(row.slot).push(row);
+  }
+
   const poolData = [];
-  for (const t of template) {
-    let questionId;
-    if (t.isCompetitive) {
-      // ข้อแข่งขัน: ใช้ questionId โดยตรง — ทุกคนได้ข้อเดียวกัน
-      questionId = t.familyKey;
-    } else {
-      // ข้อฝึกหัด: สุ่มหนึ่งข้อจาก family เดียวกัน (root + variants)
-      const rootQ = await prisma.question.findFirst({
-        where: {
-          OR: [
-            { id: t.familyKey },
-            { attributes: { path: ['parentGroup'], equals: t.familyKey } },
-          ],
-        },
-        select: { id: true },
-      });
-
-      // ดึง variants ของ root ด้วย
-      const variantQ = rootQ
-        ? await prisma.question.findMany({
-            where: { parentQuestionId: rootQ.id },
-            select: { id: true },
-          })
-        : [];
-
-      const family = [
-        ...(rootQ ? [rootQ] : []),
-        ...variantQ,
-      ];
-
-      if (family.length === 0) {
-        // fallback: ใช้ familyKey โดยตรง
-        questionId = t.familyKey;
-      } else {
-        questionId = family[Math.floor(Math.random() * family.length)].id;
-      }
-    }
-    poolData.push({ weekKey, userId, slot: t.slot, questionId });
+  for (const [slot, candidates] of [...bySlot.entries()].sort((a, b) => a[0] - b[0])) {
+    // สุ่ม 1 จาก candidates ของ slot นี้
+    const picked = candidates[Math.floor(Math.random() * candidates.length)];
+    poolData.push({ weekKey, userId, slot, questionId: picked.questionId });
   }
 
   await prisma.saturdayQuizPool.createMany({ data: poolData, skipDuplicates: true });
-  console.log(`✅ SaturdayQuiz pool สร้างให้ userId=${userId}: ${weekKey}`);
+  console.log(`✅ SaturdayQuiz pool userId=${userId}: ${weekKey} (${poolData.length} questions)`);
   return poolData;
 }
 

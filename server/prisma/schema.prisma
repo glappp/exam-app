@@ -183,8 +183,9 @@ model Question {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  examAnswers        ExamAnswer[]
-  saturdayQuizPools  SaturdayQuizPool[]
+  examAnswers           ExamAnswer[]
+  saturdayQuizPools     SaturdayQuizPool[]
+  saturdayQuizTemplates SaturdayQuizTemplate[]
 }
 
 // ─── Exam Set & Curriculum ────────────────────────────────────────────────────
@@ -523,16 +524,17 @@ model LeaderboardPeriod {
 }
 
 // Saturday Quiz — template (per week, shared) สร้างคืนวันศุกร์
+// 1 slot มีหลาย row = ทุก candidate ของ slot นั้น (1 หลัก + ≤5 variant)
 model SaturdayQuizTemplate {
-  id            Int     @id @default(autoincrement())
-  weekKey       String  // "2026-05-04" (วันอาทิตย์ต้นสัปดาห์)
-  slot          Int     // 1–10
-  familyKey     String  // practice: attributes.parentGroup (หรือ questionId ถ้าไม่มี family)
-                        // competitive: questionId โดยตรง
-  isCompetitive Boolean @default(false)
+  id            Int      @id @default(autoincrement())
+  weekKey       String   // "2026-05-04"
+  slot          Int      // 1–10
+  questionId    String   // candidate question ของ slot นี้
+  question      Question @relation(fields: [questionId], references: [id])
+  isCompetitive Boolean  @default(false)
 
-  @@unique([weekKey, slot])
-  @@index([weekKey])
+  @@unique([weekKey, slot, questionId])
+  @@index([weekKey, slot])
 }
 
 // Saturday Quiz — pool (per student) สุ่มจาก family ตอนเริ่มสอบ

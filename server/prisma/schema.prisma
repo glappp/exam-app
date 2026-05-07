@@ -655,6 +655,7 @@ model LoginLog {
   id        Int      @id @default(autoincrement())
   userId    Int
   schoolId  Int?
+  ip        String?
   loginAt   DateTime @default(now())
 
   @@index([loginAt])

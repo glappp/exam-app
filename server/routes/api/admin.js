@@ -192,6 +192,98 @@ router.post('/users/:id/reset-password', requireAdmin, async (req, res) => {
   }
 });
 
+// ── Bulk User Import ─────────────────────────────────────────
+
+// POST /api/admin/users/bulk-import
+// Body: { rows: [{firstName, lastName, username, password, grade, academicYear, school, district, province, classroom?, studentCode?, email?}], preview: bool }
+router.post('/users/bulk-import', requireAdmin, async (req, res) => {
+  try {
+    const bcrypt = require('bcryptjs');
+    const { rows, preview = false } = req.body;
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return res.status(400).json({ error: 'ไม่มีข้อมูลให้นำเข้า' });
+    }
+
+    const REQUIRED = ['firstName', 'lastName', 'username', 'password', 'grade', 'academicYear', 'school', 'district', 'province'];
+    const results = [];
+
+    // ดึง username ที่มีอยู่แล้ว
+    const usernames = rows.map(r => (r.username || '').trim()).filter(Boolean);
+    const existing = await prisma.user.findMany({
+      where: { username: { in: usernames } },
+      select: { username: true }
+    });
+    const existingSet = new Set(existing.map(u => u.username));
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      const rowNum = i + 1;
+      const errors = [];
+
+      for (const field of REQUIRED) {
+        if (!row[field] || !String(row[field]).trim()) {
+          errors.push(`ขาดฟิลด์ ${field}`);
+        }
+      }
+      if (row.username && existingSet.has(row.username.trim())) {
+        errors.push('username ซ้ำในระบบ');
+      }
+      if (row.password && String(row.password).trim().length < 4) {
+        errors.push('password สั้นเกินไป (ต้องมีอย่างน้อย 4 ตัว)');
+      }
+
+      results.push({
+        row: rowNum,
+        username: row.username,
+        firstName: row.firstName,
+        lastName: row.lastName,
+        grade: row.grade,
+        school: row.school,
+        errors,
+        status: errors.length ? 'error' : 'ok'
+      });
+    }
+
+    if (preview) {
+      return res.json({ results, canImport: results.every(r => r.status === 'ok') });
+    }
+
+    // ทำ import จริง — เฉพาะ row ที่ ok
+    const okRows = rows.filter((_, i) => results[i].status === 'ok');
+    let imported = 0;
+    for (const row of okRows) {
+      const hashed = await bcrypt.hash(String(row.password).trim(), 10);
+      await prisma.user.create({
+        data: {
+          username: row.username.trim(),
+          password: hashed,
+          firstName: row.firstName.trim(),
+          lastName: row.lastName.trim(),
+          email: row.email?.trim() || '',
+          role: 'student',
+          studentProfiles: {
+            create: {
+              academicYear: String(row.academicYear).trim(),
+              school: row.school.trim(),
+              district: row.district.trim(),
+              province: row.province.trim(),
+              grade: row.grade.trim(),
+              classroom: row.classroom?.trim() || null,
+              studentCode: row.studentCode?.trim() || null
+            }
+          }
+        }
+      });
+      imported++;
+    }
+
+    res.json({ success: true, imported, skipped: rows.length - imported });
+  } catch (err) {
+    console.error('bulk-import error:', err);
+    res.status(500).json({ error: 'นำเข้าผู้ใช้ล้มเหลว: ' + err.message });
+  }
+});
+
 // ── Invite Codes ─────────────────────────────────────────────
 
 // GET /api/admin/invite-codes
@@ -235,6 +327,97 @@ router.patch('/invite-codes/:id/deactivate', requireAdmin, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: 'ปิด invite code ล้มเหลว' });
+  }
+});
+
+// ── Admin Test Mode (Impersonation) ──────────────────────────
+
+// GET /api/admin/test-accounts — list accounts username รูปแบบ a1, a2, ... (a ตามด้วยตัวเลข)
+router.get('/test-accounts', requireAdmin, async (req, res) => {
+  try {
+    const all = await prisma.user.findMany({
+      where: { username: { startsWith: 'a' } },
+      select: { id: true, username: true, firstName: true, lastName: true, role: true }
+    });
+    const users = all
+      .filter(u => /^a\d+$/.test(u.username))
+      .sort((a, b) => {
+        const na = parseInt(a.username.slice(1)), nb = parseInt(b.username.slice(1));
+        return na - nb;
+      });
+    res.json({ users });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/impersonate/:userId — สลับ session ไปเป็น user นั้น
+router.post('/impersonate/:userId', requireAdmin, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const target = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, username: true, role: true, firstName: true, lastName: true }
+    });
+    if (!target) return res.status(404).json({ error: 'ไม่พบผู้ใช้' });
+
+    // บันทึก admin session ก่อนสลับ
+    req.session.adminBackup = {
+      userId: req.session.userId,
+      username: req.session.username,
+      role: req.session.role,
+      user: req.session.user,
+      firstName: req.session.firstName
+    };
+
+    // สลับเป็น target user
+    req.session.userId = target.id;
+    req.session.username = target.username;
+    req.session.role = target.role;
+    req.session.firstName = target.firstName;
+    req.session.user = { id: target.id, username: target.username, role: target.role, firstName: target.firstName, lastName: target.lastName };
+
+    res.json({ success: true, impersonating: target.username });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/admin/impersonate/exit — คืน session admin
+router.post('/impersonate/exit', async (req, res) => {
+  const backup = req.session.adminBackup;
+  if (!backup) return res.status(400).json({ error: 'ไม่ได้อยู่ใน impersonate mode' });
+
+  req.session.userId = backup.userId;
+  req.session.username = backup.username;
+  req.session.role = backup.role;
+  req.session.user = backup.user;
+  req.session.firstName = backup.firstName;
+  delete req.session.adminBackup;
+
+  res.json({ success: true });
+});
+
+// ── Login Logs ─────────────────────────────────────────────
+
+// GET /api/admin/login-logs — ประวัติ login ล่าสุด 200 รายการ
+router.get('/login-logs', requireAdmin, async (req, res) => {
+  try {
+    const logs = await prisma.loginLog.findMany({
+      orderBy: { loginAt: 'desc' },
+      take: 200
+    });
+    // join user info
+    const userIds = [...new Set(logs.map(l => l.userId))];
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, username: true, firstName: true, lastName: true, role: true }
+    });
+    const userMap = Object.fromEntries(users.map(u => [u.id, u]));
+    const result = logs.map(l => ({ ...l, user: userMap[l.userId] || null }));
+    res.json({ logs: result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

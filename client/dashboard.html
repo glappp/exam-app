@@ -111,6 +111,14 @@
 </head>
 <body>
 
+<!-- Impersonation banner — แสดงเมื่อ admin กำลังทดสอบในฐานะ user อื่น -->
+<div id="impersonate-banner" style="display:none;background:#f59e0b;color:#1c1917;padding:8px 20px;font-size:13px;font-weight:600;align-items:center;justify-content:space-between;gap:12px">
+  <span id="impersonate-label">⚠️ กำลังทดสอบในฐานะ: <strong id="impersonate-username"></strong></span>
+  <button onclick="exitImpersonate()" style="background:#1c1917;color:#fef3c7;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer">
+    ออกโหมดทดสอบ → Admin
+  </button>
+</div>
+
 <div class="topbar">
   <span class="topbar-title">SchoolPL</span>
   <div class="topbar-right">
@@ -321,6 +329,13 @@
     if (!res.ok) { location.href = 'login.html'; return; }
     const me = await res.json();
     if (me.mustChangePassword) { location.href = 'change-password.html'; return; }
+
+    // แสดง banner ถ้า admin กำลัง impersonate
+    if (me.impersonating) {
+      const banner = document.getElementById('impersonate-banner');
+      document.getElementById('impersonate-username').textContent = me.username;
+      banner.style.display = 'flex';
+    }
 
     document.getElementById('topbar-name').textContent = me.firstName || me.username || '';
     if (['admin','school_admin','teacher'].includes(me.role)) {
@@ -735,6 +750,12 @@
     }
 
     document.getElementById('score-tab-body').innerHTML = aggHtml + rowsHtml;
+  }
+
+  async function exitImpersonate() {
+    const r = await fetch('/api/admin/impersonate/exit', { method: 'POST', credentials: 'include' });
+    if (r.ok) location.href = 'admin.html';
+    else alert('ออกโหมดทดสอบไม่สำเร็จ');
   }
 
   async function logout() {

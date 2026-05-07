@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 router.post('/', async (req, res) => {
   const { username, password } = req.body;
 
-  const user = await prisma.user.findUnique({ where: { username } });
+  const user = await prisma.user.findUnique({ where: { username }, select: { id: true, username: true, password: true, firstName: true, lastName: true, role: true, schoolId: true, firstLoginAt: true, mustChangePassword: true } });
   if (!user) return res.status(404).json({ message: 'ไม่พบผู้ใช้นี้' });
 
   const isMatch = await bcrypt.compare(password, user.password);
@@ -30,6 +30,10 @@ router.post('/', async (req, res) => {
   if (!user.firstLoginAt) {
     await prisma.user.update({ where: { id: user.id }, data: { firstLoginAt: new Date() } });
   }
+
+  // บันทึก login log
+  const ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.ip || null;
+  prisma.loginLog.create({ data: { userId: user.id, schoolId: user.schoolId || null, ip } }).catch(() => {});
 
   res.json({
     user: req.session.user,

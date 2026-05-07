@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>นำเข้าผู้ใช้จำนวนมาก — Admin</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .page-wrap { max-width: 960px; margin: 28px auto; padding: 0 16px 80px; }
+    .back-link { font-size: 13px; color: var(--blue); text-decoration: none; display: inline-flex; align-items: center; gap: 4px; margin-bottom: 16px; }
+    .back-link:hover { text-decoration: underline; }
+
+    .step-row { display: flex; gap: 8px; align-items: center; margin-bottom: 24px; }
+    .step-dot {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--border); color: #888;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; flex-shrink: 0;
+    }
+    .step-dot.active { background: var(--navy); color: #fff; }
+    .step-dot.done { background: #16a34a; color: #fff; }
+    .step-label { font-size: 13px; color: var(--muted); }
+    .step-label.active { color: var(--navy); font-weight: 600; }
+    .step-sep { flex: 1; height: 1px; background: var(--border); }
+
+    .upload-zone {
+      border: 2px dashed var(--border); border-radius: 10px;
+      padding: 40px; text-align: center; cursor: pointer;
+      transition: border-color .2s; margin-bottom: 16px;
+    }
+    .upload-zone:hover, .upload-zone.drag { border-color: var(--blue); background: #f0f7ff; }
+    .upload-zone input { display: none; }
+    .upload-icon { font-size: 36px; margin-bottom: 8px; }
+    .upload-text { font-size: 14px; color: var(--navy); font-weight: 600; }
+    .upload-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    .template-hint { font-size: 12px; color: var(--muted); margin-bottom: 24px; }
+    .template-hint a { color: var(--blue); cursor: pointer; }
+
+    .preview-wrap { overflow-x: auto; }
+    table.preview-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .preview-table th { background: #f3f4f6; padding: 8px 10px; text-align: left; font-weight: 600; white-space: nowrap; }
+    .preview-table td { padding: 7px 10px; border-bottom: 1px solid #f0f0f0; }
+    .preview-table tr.row-error td { background: #fff5f5; }
+    .preview-table tr.row-ok td { background: #f0fdf4; }
+    .err-badge { display: inline-block; background: #fee2e2; color: #dc2626; font-size: 11px; padding: 1px 7px; border-radius: 10px; margin: 1px; }
+    .ok-badge { display: inline-block; background: #dcfce7; color: #16a34a; font-size: 11px; padding: 1px 7px; border-radius: 10px; }
+
+    .summary-bar { display: flex; gap: 16px; margin: 16px 0; font-size: 13px; flex-wrap: wrap; }
+    .sum-item { display: flex; align-items: center; gap: 6px; }
+    .sum-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+    .action-row { display: flex; gap: 10px; margin-top: 20px; align-items: center; flex-wrap: wrap; }
+    .result-msg { margin-top: 16px; padding: 12px 16px; border-radius: 8px; font-size: 13px; display: none; }
+    .result-msg.ok { background: #dcfce7; color: #166534; }
+    .result-msg.err { background: #fee2e2; color: #b91c1c; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <span class="topbar-title">Admin Panel</span>
+    <div class="topbar-nav">
+      <a href="admin.html">← Admin</a>
+      <a href="#" onclick="logout()">ออกจากระบบ</a>
+    </div>
+  </div>
+
+  <div class="page-wrap">
+    <a href="admin.html" class="back-link">← กลับ Admin Panel</a>
+    <h2 style="font-size:20px;font-weight:700;margin-bottom:6px">นำเข้าผู้ใช้จำนวนมาก</h2>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:24px">อัปโหลด CSV เพื่อเพิ่มนักเรียนหลายคนพร้อมกัน</p>
+
+    <!-- Steps -->
+    <div class="step-row" id="steps">
+      <div class="step-dot active" id="step1-dot">1</div>
+      <span class="step-label active" id="step1-lbl">อัปโหลด CSV</span>
+      <div class="step-sep"></div>
+      <div class="step-dot" id="step2-dot">2</div>
+      <span class="step-label" id="step2-lbl">ตรวจสอบข้อมูล</span>
+      <div class="step-sep"></div>
+      <div class="step-dot" id="step3-dot">3</div>
+      <span class="step-label" id="step3-lbl">นำเข้า</span>
+    </div>
+
+    <!-- Step 1: Upload -->
+    <div id="section-upload" class="card">
+      <div class="card-title">Step 1 — อัปโหลดไฟล์ CSV</div>
+
+      <div class="template-hint">
+        ยังไม่มีไฟล์? <a onclick="downloadTemplate()">⬇ ดาวน์โหลด template CSV</a>
+        <span style="margin-left:12px">คอลัมน์ที่ต้องการ: <code>firstName, lastName, username, password, grade, academicYear, school, district, province</code>
+        &nbsp; (optional: <code>classroom, studentCode, email</code>)</span>
+      </div>
+
+      <div class="upload-zone" id="drop-zone" onclick="document.getElementById('csv-file').click()">
+        <div class="upload-icon">📄</div>
+        <div class="upload-text">คลิกหรือลากไฟล์ CSV มาวางที่นี่</div>
+        <div class="upload-sub">รองรับไฟล์ .csv เท่านั้น</div>
+        <input type="file" id="csv-file" accept=".csv">
+      </div>
+
+      <div id="parse-error" style="color:#dc2626;font-size:13px;display:none"></div>
+    </div>
+
+    <!-- Step 2: Preview -->
+    <div id="section-preview" class="card" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="card-title" style="margin:0">Step 2 — ตรวจสอบข้อมูล</div>
+        <button onclick="resetUpload()" style="font-size:12px;padding:5px 12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer">เปลี่ยนไฟล์</button>
+      </div>
+
+      <div class="summary-bar" id="summary-bar"></div>
+      <div class="preview-wrap" id="preview-wrap"></div>
+
+      <div class="action-row">
+        <button class="btn btn-navy" id="import-btn" onclick="doImport()" disabled>นำเข้าผู้ใช้</button>
+        <span id="import-note" style="font-size:12px;color:var(--muted)"></span>
+      </div>
+      <div class="result-msg" id="result-msg"></div>
+    </div>
+  </div>
+
+  <script>
+    let parsedRows = [];
+    let previewResults = [];
+
+    // ── Auth check ──────────────────────────────────────
+    async function init() {
+      const me = await fetch('/api/me', { credentials: 'include' });
+      if (!me.ok) { location.href = 'login.html'; return; }
+      const d = await me.json();
+      if (d.role !== 'admin') { alert('สิทธิ์ไม่พอ'); location.href = 'admin.html'; return; }
+    }
+    init();
+
+    function logout() {
+      fetch('/api/logout', { method: 'POST', credentials: 'include' });
+      location.href = 'login.html';
+    }
+
+    // ── Template download ───────────────────────────────
+    function downloadTemplate() {
+      const header = 'firstName,lastName,username,password,grade,academicYear,school,district,province,classroom,studentCode,email';
+      const sample = 'สมชาย,ใจดี,somchai001,pass1234,ป.6,2568,โรงเรียนตัวอย่าง,เมือง,กรุงเทพมหานคร,6/1,12345,somchai@example.com';
+      const blob = new Blob(['﻿' + header + '\n' + sample], { type: 'text/csv;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'bulk-import-template.csv';
+      a.click();
+    }
+
+    // ── Drag & drop ──────────────────────────────────────
+    const dropZone = document.getElementById('drop-zone');
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag');
+      const file = e.dataTransfer.files[0];
+      if (file) processFile(file);
+    });
+    document.getElementById('csv-file').addEventListener('change', e => {
+      if (e.target.files[0]) processFile(e.target.files[0]);
+    });
+
+    // ── CSV Parse ────────────────────────────────────────
+    function processFile(file) {
+      if (!file.name.endsWith('.csv')) {
+        showParseError('กรุณาอัปโหลดไฟล์ .csv เท่านั้น');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          parsedRows = parseCSV(e.target.result);
+          if (parsedRows.length === 0) { showParseError('ไม่พบข้อมูลในไฟล์'); return; }
+          sendPreview();
+        } catch (err) {
+          showParseError('อ่านไฟล์ไม่ได้: ' + err.message);
+        }
+      };
+      reader.readAsText(file, 'UTF-8');
+    }
+
+    function parseCSV(text) {
+      // ลบ BOM ถ้ามี
+      text = text.replace(/^﻿/, '');
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length < 2) throw new Error('ต้องมีอย่างน้อย 1 แถวข้อมูล (ไม่นับ header)');
+
+      const headers = lines[0].split(',').map(h => h.trim());
+      const rows = [];
+      for (let i = 1; i < lines.length; i++) {
+        const vals = splitCSVLine(lines[i]);
+        const obj = {};
+        headers.forEach((h, j) => obj[h] = (vals[j] || '').trim());
+        rows.push(obj);
+      }
+      return rows;
+    }
+
+    function splitCSVLine(line) {
+      const result = [];
+      let cur = '';
+      let inQuote = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') { inQuote = !inQuote; continue; }
+        if (ch === ',' && !inQuote) { result.push(cur); cur = ''; continue; }
+        cur += ch;
+      }
+      result.push(cur);
+      return result;
+    }
+
+    function showParseError(msg) {
+      const el = document.getElementById('parse-error');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    // ── Preview ──────────────────────────────────────────
+    async function sendPreview() {
+      try {
+        const r = await fetch('/api/admin/users/bulk-import', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rows: parsedRows, preview: true })
+        });
+        const d = await r.json();
+        if (!r.ok) { showParseError(d.error || 'เกิดข้อผิดพลาด'); return; }
+        previewResults = d.results;
+        renderPreview(d);
+      } catch (err) {
+        showParseError('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+      }
+    }
+
+    function renderPreview(d) {
+      document.getElementById('section-upload').style.display = 'none';
+      document.getElementById('section-preview').style.display = 'block';
+      setStep(2);
+
+      const okCount  = d.results.filter(r => r.status === 'ok').length;
+      const errCount = d.results.filter(r => r.status === 'error').length;
+
+      document.getElementById('summary-bar').innerHTML = `
+        <div class="sum-item"><div class="sum-dot" style="background:#16a34a"></div>${okCount} รายการพร้อมนำเข้า</div>
+        ${errCount ? `<div class="sum-item"><div class="sum-dot" style="background:#dc2626"></div>${errCount} รายการมีข้อผิดพลาด (จะข้าม)</div>` : ''}
+      `;
+
+      const cols = ['row', 'username', 'firstName', 'lastName', 'grade', 'school', 'สถานะ'];
+      document.getElementById('preview-wrap').innerHTML = `
+        <table class="preview-table">
+          <thead><tr>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+          <tbody>
+            ${d.results.map(r => `
+              <tr class="row-${r.status}">
+                <td>${r.row}</td>
+                <td>${r.username || '—'}</td>
+                <td>${r.firstName || '—'}</td>
+                <td>${r.lastName || '—'}</td>
+                <td>${r.grade || '—'}</td>
+                <td>${r.school || '—'}</td>
+                <td>${r.errors.length
+                  ? r.errors.map(e => `<span class="err-badge">${e}</span>`).join(' ')
+                  : '<span class="ok-badge">✓ พร้อมนำเข้า</span>'
+                }</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+
+      const importBtn = document.getElementById('import-btn');
+      const note = document.getElementById('import-note');
+      if (okCount === 0) {
+        importBtn.disabled = true;
+        note.textContent = 'ไม่มีรายการที่นำเข้าได้ กรุณาแก้ไขข้อมูลแล้วอัปโหลดใหม่';
+      } else {
+        importBtn.disabled = false;
+        note.textContent = errCount ? `จะนำเข้า ${okCount} รายการ (ข้าม ${errCount} รายการที่มีข้อผิดพลาด)` : `จะนำเข้า ${okCount} รายการ`;
+      }
+    }
+
+    // ── Import ────────────────────────────────────────────
+    async function doImport() {
+      const btn = document.getElementById('import-btn');
+      const msg = document.getElementById('result-msg');
+      btn.disabled = true;
+      btn.textContent = 'กำลังนำเข้า...';
+      msg.style.display = 'none';
+
+      try {
+        const r = await fetch('/api/admin/users/bulk-import', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ rows: parsedRows, preview: false })
+        });
+        const d = await r.json();
+        if (r.ok && d.success) {
+          msg.className = 'result-msg ok';
+          msg.textContent = `✅ นำเข้าสำเร็จ ${d.imported} ราย${d.skipped ? ` (ข้าม ${d.skipped} ราย)` : ''}`;
+          msg.style.display = 'block';
+          btn.textContent = 'นำเข้าเสร็จแล้ว';
+          setStep(3, true);
+        } else {
+          msg.className = 'result-msg err';
+          msg.textContent = d.error || 'นำเข้าไม่สำเร็จ';
+          msg.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'นำเข้าผู้ใช้';
+        }
+      } catch {
+        msg.className = 'result-msg err';
+        msg.textContent = 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้';
+        msg.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'นำเข้าผู้ใช้';
+      }
+    }
+
+    function resetUpload() {
+      parsedRows = [];
+      previewResults = [];
+      document.getElementById('csv-file').value = '';
+      document.getElementById('parse-error').style.display = 'none';
+      document.getElementById('section-upload').style.display = 'block';
+      document.getElementById('section-preview').style.display = 'none';
+      document.getElementById('result-msg').style.display = 'none';
+      setStep(1);
+    }
+
+    function setStep(n, done = false) {
+      [1, 2, 3].forEach(i => {
+        const dot = document.getElementById(`step${i}-dot`);
+        const lbl = document.getElementById(`step${i}-lbl`);
+        if (i < n) { dot.className = 'step-dot done'; dot.textContent = '✓'; lbl.className = 'step-label'; }
+        else if (i === n) {
+          dot.className = done ? 'step-dot done' : 'step-dot active';
+          dot.textContent = done ? '✓' : String(i);
+          lbl.className = 'step-label active';
+        } else { dot.className = 'step-dot'; dot.textContent = String(i); lbl.className = 'step-label'; }
+      });
+    }
+  </script>
+</body>
+</html>

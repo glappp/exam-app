@@ -294,7 +294,9 @@ app.get('/api/me', (req, res) => {
       loggedIn: true,
       userId: req.session.userId,
       role: req.session.role,
-      firstName: req.session.firstName
+      firstName: req.session.firstName,
+      username: req.session.username,
+      impersonating: req.session.adminBackup?.username || null
     });
   } else {
     res.status(401).json({ loggedIn: false });

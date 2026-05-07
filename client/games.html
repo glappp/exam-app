@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>เกม</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; color: #222; min-height: 100vh; }
+
+    .topbar {
+      background: #1e3a5f; color: #fff;
+      padding: 0 24px; height: 52px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .topbar-title { font-weight: 600; font-size: 16px; }
+    .topbar-back { color: #93c5fd; text-decoration: none; font-size: 13px; }
+    .topbar-back:hover { color: #fff; }
+
+    .container { max-width: 600px; margin: 40px auto; padding: 0 16px; }
+    h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .subtitle { color: #666; font-size: 14px; margin-bottom: 32px; }
+
+    .game-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 480px) { .game-grid { grid-template-columns: 1fr; } }
+
+    .game-card {
+      background: #fff;
+      border-radius: 14px;
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+      text-decoration: none;
+      color: inherit;
+      display: block;
+      transition: transform .15s, box-shadow .15s;
+      border-top: 4px solid transparent;
+    }
+    .game-card:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0,0,0,.12); }
+    .game-card.yellow { border-top-color: #f59e0b; }
+    .game-card.purple { border-top-color: #8b5cf6; }
+
+    .game-icon { font-size: 48px; margin-bottom: 12px; }
+    .game-name { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+    .game-desc { font-size: 13px; color: #666; line-height: 1.5; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-title">🎮 เกม</div>
+  <a href="dashboard.html" class="topbar-back">← กลับ Dashboard</a>
+</div>
+
+<div class="container">
+  <h2>เลือกเกม</h2>
+  <p class="subtitle">เกมฝึกทักษะคณิตศาสตร์แบบสนุก</p>
+
+  <div class="game-grid">
+    <a href="grand-prix.html" class="game-card yellow">
+      <div class="game-icon">🏎️</div>
+      <div class="game-name">สูตรคูณ Grand Prix</div>
+      <div class="game-desc">แข่งความเร็วตอบสูตรคูณกับเพื่อน</div>
+    </a>
+    <a href="time-trial.html" class="game-card purple">
+      <div class="game-icon">⏱️</div>
+      <div class="game-name">Time Trial</div>
+      <div class="game-desc">สูตรคูณ 90 วินาที ทำคะแนนให้สูงสุด</div>
+    </a>
+  </div>
+</div>
+
+</body>
+</html>

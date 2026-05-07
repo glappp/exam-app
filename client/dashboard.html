@@ -62,6 +62,8 @@
     }
     .mode-btn:hover { opacity: .85; }
     .mode-btn .icon { font-size: 22px; }
+    .mode-btn .mode-label { font-size: 14px; font-weight: 600; }
+    .mode-btn .mode-sub { font-size: 11px; opacity: .7; font-weight: 400; }
     .mode-btn.green  { background: #dcfce7; color: #166534; }
     .mode-btn.blue   { background: #dbeafe; color: #1e40af; }
     .mode-btn.orange { background: #ffedd5; color: #9a3412; }
@@ -215,43 +217,53 @@
         <div class="card-title">เริ่มเรียน / สอบ</div>
         <div class="mode-grid">
           <button class="mode-btn" style="background:#fef9c3;color:#854d0e;grid-column:1/-1" onclick="location.href='mission.html'">
-            <span class="icon">🎯</span>ภารกิจประจำวัน
-          </button>
-          <button class="mode-btn" style="background:#744210;color:#fefcbf;border:1px solid #975a16" onclick="location.href='saturday-quiz.html'">
-            <span class="icon">📝</span>สอบประจำสัปดาห์
-          </button>
-          <button class="mode-btn" style="background:#0f172a;color:#fbbf24;border:1px solid #334155" onclick="location.href='leaderboard.html'">
-            <span class="icon">🏆</span>Leaderboard
-          </button>
-          <button class="mode-btn" style="background:#1e293b;color:#e2e8f0;border:1px solid #334155" onclick="location.href='box.html'">
-            <span class="icon">🎁</span>กล่องรางวัล
-          </button>
-          <button class="mode-btn" style="background:#eff6ff;color:#1e40af;border:1.5px solid #bfdbfe" onclick="location.href='parent-corner.html'">
-            <span class="icon">⭐</span>มุมผู้ปกครอง
+            <span class="icon">🎯</span>
+            <span class="mode-label">ภารกิจประจำวัน</span>
           </button>
           <button class="mode-btn green" onclick="location.href='practice.html'">
-            <span class="icon">📗</span>ฝึกหัด
+            <span class="icon">✏️</span>
+            <span class="mode-label">ฝึกตามหัวข้อ</span>
+            <span class="mode-sub">เลือกเรื่องที่อยากฝึกเอง</span>
           </button>
           <button class="mode-btn blue" onclick="location.href='rally.html'">
-            <span class="icon">⚡</span>ตะลุยโจทย์
+            <span class="icon">🧠</span>
+            <span class="mode-label">โจทย์ฝึกเฉพาะคุณ</span>
+            <span class="mode-sub">ระบบเลือกโจทย์ตามจุดอ่อนให้</span>
           </button>
           <button class="mode-btn orange" onclick="location.href='exam.html'">
-            <span class="icon">🏅</span>สอบแข่งขัน
+            <span class="icon">🏅</span>
+            <span class="mode-label">สอบแข่งขัน</span>
+            <span class="mode-sub">จับเวลา ใช้ตั๋ว รับ XP</span>
           </button>
-          <button class="mode-btn" style="background:#fce7f3;color:#9d174d" onclick="location.href='parent.html'">
-            <span class="icon">👨‍👩‍👧</span>ผู้ปกครอง
+          <button class="mode-btn" style="background:#744210;color:#fefcbf;border:1px solid #975a16" onclick="location.href='saturday-quiz.html'">
+            <span class="icon">📝</span>
+            <span class="mode-label">สอบประจำสัปดาห์</span>
+            <span class="mode-sub">เปิดเฉพาะวันเสาร์</span>
+          </button>
+          <button class="mode-btn" style="background:#fce7f3;color:#9d174d" onclick="location.href='games.html'">
+            <span class="icon">🎮</span>
+            <span class="mode-label">เกม</span>
+            <span class="mode-sub">Grand Prix · Time Trial</span>
+          </button>
+          <button class="mode-btn" style="background:#0f172a;color:#fbbf24;border:1px solid #334155" onclick="location.href='leaderboard.html'">
+            <span class="icon">🏆</span>
+            <span class="mode-label">Leaderboard</span>
+          </button>
+          <button class="mode-btn" style="background:#1e293b;color:#e2e8f0;border:1px solid #334155" onclick="location.href='box.html'">
+            <span class="icon">🎁</span>
+            <span class="mode-label">กล่องรางวัล</span>
+          </button>
+          <button class="mode-btn" style="background:#eff6ff;color:#1e40af;border:1.5px solid #bfdbfe" onclick="location.href='parent-corner.html'">
+            <span class="icon">👨‍👩‍👧</span>
+            <span class="mode-label">มุมผู้ปกครอง</span>
           </button>
           <button class="mode-btn" id="teacher-btn" style="display:none;background:#f0fdf4;color:#166534" onclick="location.href='teacher-report.html'">
-            <span class="icon">👩‍🏫</span>รายงานครู
+            <span class="icon">👩‍🏫</span>
+            <span class="mode-label">รายงานครู</span>
           </button>
           <button class="mode-btn" id="teacher-dashboard-btn" style="display:none;background:#ebf8ff;color:#2c5282" onclick="location.href='teacher-dashboard.html'">
-            <span class="icon">📊</span>ภาพรวมห้องเรียน
-          </button>
-          <button class="mode-btn" style="background:#fef3c7;color:#92400e;grid-column:1/-1" onclick="location.href='grand-prix.html'">
-            <span class="icon">🏎️</span>สูตรคูณ Grand Prix
-          </button>
-          <button class="mode-btn" style="background:#ede9fe;color:#4c1d95;grid-column:1/-1" onclick="location.href='time-trial.html'">
-            <span class="icon">⏱️</span>Time Trial — สูตรคูณ 90 วิ
+            <span class="icon">📊</span>
+            <span class="mode-label">ภาพรวมห้องเรียน</span>
           </button>
         </div>
       </div>

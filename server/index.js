@@ -101,8 +101,8 @@ app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 if (useR2) {
   // ถ้าไฟล์มีอยู่ใน local (committed ใน git เช่น chulabhorn images) → serve ตรง
   // ถ้าไม่มี → redirect ไป R2 (user-uploaded files)
-  app.get('/uploads/*', (req, res) => {
-    const relPath   = req.params[0];
+  app.use('/uploads', (req, res) => {
+    const relPath   = req.path.replace(/^\//, '');
     const localPath = path.join(__dirname, 'uploads', relPath);
     if (fs.existsSync(localPath)) {
       return res.sendFile(localPath);

@@ -99,11 +99,17 @@ app.use('/api/admin', adminRoute);
 // ✅ Static files
 app.use('/images', express.static(path.join(__dirname, 'public', 'images')));
 if (useR2) {
-  // Redirect /uploads/:filename → R2 public URL
-  app.get('/uploads/:filename', (req, res) => {
+  // ถ้าไฟล์มีอยู่ใน local (committed ใน git เช่น chulabhorn images) → serve ตรง
+  // ถ้าไม่มี → redirect ไป R2 (user-uploaded files)
+  app.get('/uploads/*', (req, res) => {
+    const relPath   = req.params[0];
+    const localPath = path.join(__dirname, 'uploads', relPath);
+    if (fs.existsSync(localPath)) {
+      return res.sendFile(localPath);
+    }
     const base = (process.env.R2_PUBLIC_URL || '').replace(/\/$/, '');
     if (!base) return res.status(503).send('R2_PUBLIC_URL ยังไม่ได้ตั้งค่า');
-    res.redirect(`${base}/uploads/${req.params.filename}`);
+    res.redirect(`${base}/uploads/${relPath}`);
   });
 } else {
   app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

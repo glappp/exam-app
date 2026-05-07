@@ -14,183 +14,170 @@
       padding: 0 32px; height: 54px;
       display: flex; align-items: center; justify-content: space-between;
     }
-    .topbar-title { font-weight: 700; font-size: 17px; letter-spacing: .2px; }
+    .topbar-title { font-weight: 700; font-size: 17px; }
     .topbar-right { display: flex; align-items: center; gap: 20px; font-size: 13px; }
     .topbar-right a { color: #93c5fd; text-decoration: none; }
     .topbar-right a:hover { color: #fff; }
     #topbar-name { color: #e2e8f0; font-weight: 600; }
 
     /* ── PAGE ── */
-    .page { max-width: 1200px; margin: 0 auto; padding: 24px 32px 60px; }
-    @media (max-width: 760px) { .page { padding: 16px 14px 48px; } }
+    .page { max-width: 1200px; margin: 0 auto; padding: 20px 28px 60px; }
+    @media (max-width: 800px) { .page { padding: 14px 14px 48px; } }
 
-    /* ── WELCOME ── */
-    .welcome { margin-bottom: 20px; }
-    .welcome h2 { font-size: 22px; font-weight: 700; }
-    .welcome p { color: #64748b; font-size: 14px; margin-top: 3px; }
+    /* ── WELCOME + PROFILE STRIP ── */
+    .welcome-bar {
+      display: flex; align-items: baseline; justify-content: space-between;
+      margin-bottom: 6px;
+    }
+    .welcome-bar h2 { font-size: 21px; font-weight: 700; }
+    .welcome-bar p  { color: #64748b; font-size: 13px; margin-top: 2px; }
+    .toggle-btn {
+      background: none; border: 1px solid #cbd5e1; border-radius: 6px;
+      color: #64748b; font-size: 12px; padding: 4px 10px; cursor: pointer;
+      white-space: nowrap; transition: background .12s;
+    }
+    .toggle-btn:hover { background: #f1f5f9; }
+
+    /* Profile info panel */
+    .profile-panel {
+      background: #fff; border-radius: 10px;
+      padding: 12px 18px; margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+      display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center;
+    }
+    .profile-chip {
+      display: flex; flex-direction: column;
+    }
+    .profile-chip .lbl { font-size: 10px; color: #94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+    .profile-chip .val { font-size: 13px; font-weight: 600; color: #1e293b; }
 
     /* ── STATS STRIP ── */
     .stats-strip {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      margin-bottom: 20px;
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px; margin-bottom: 18px;
     }
     .stat-box {
-      background: #fff; border-radius: 10px;
-      padding: 14px 18px;
-      box-shadow: 0 1px 3px rgba(0,0,0,.07);
-      display: flex; align-items: center; gap: 12px;
+      background: #fff; border-radius: 10px; padding: 12px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+      display: flex; align-items: center; gap: 10px;
     }
-    .stat-num { font-size: 26px; font-weight: 800; color: #1e3a5f; line-height: 1; }
-    .stat-label { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+    .stat-num   { font-size: 24px; font-weight: 800; color: #1e3a5f; line-height: 1; }
+    .stat-label { font-size: 11px; color: #94a3b8; margin-top: 2px; }
 
-    /* ── MAIN GRID ── */
+    /* ── 3-COLUMN GRID ── */
     .main-grid {
       display: grid;
-      grid-template-columns: 1fr 300px;
-      gap: 20px;
+      grid-template-columns: 240px 1fr 300px;
+      gap: 16px;
       align-items: start;
     }
-    @media (max-width: 900px) {
-      .main-grid { grid-template-columns: 1fr; }
-      .right-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    }
-    @media (max-width: 600px) {
-      .right-col { grid-template-columns: 1fr; }
-    }
+    @media (max-width: 1050px) { .main-grid { grid-template-columns: 220px 1fr; } .right-col { display: none; } }
+    @media (max-width: 760px)  { .main-grid { grid-template-columns: 1fr; } }
 
-    .left-col  { display: flex; flex-direction: column; gap: 16px; }
-    .right-col { display: flex; flex-direction: column; gap: 16px; }
+    .left-col   { display: flex; flex-direction: column; gap: 14px; }
+    .center-col { display: flex; flex-direction: column; gap: 14px; }
+    .right-col  { display: flex; flex-direction: column; gap: 14px; }
 
     /* ── CARD ── */
     .card {
       background: #fff; border-radius: 12px;
-      padding: 20px 22px;
+      padding: 18px 20px;
       box-shadow: 0 1px 3px rgba(0,0,0,.07);
     }
     .card-title {
       font-size: 11px; font-weight: 700; color: #94a3b8;
-      text-transform: uppercase; letter-spacing: .7px; margin-bottom: 14px;
+      text-transform: uppercase; letter-spacing: .7px; margin-bottom: 12px;
     }
 
     /* ── MISSION CARD ── */
     .mission-card-inner {
       background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
-      border-radius: 12px; padding: 20px 22px; color: #fff;
+      border-radius: 12px; padding: 18px 20px; color: #fff;
       box-shadow: 0 4px 14px rgba(30,58,95,.2);
     }
-    .mission-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-    .mission-title { font-size: 15px; font-weight: 700; }
-    .mission-pts { font-size: 12px; color: #93c5fd; margin-top: 3px; }
-    .mission-progress-bg { background: rgba(255,255,255,.2); border-radius: 99px; height: 10px; margin-bottom: 12px; }
-    .mission-progress-fill { height: 10px; border-radius: 99px; transition: width .4s; }
-    .mission-bottom { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-    .mission-count { font-size: 13px; color: #bfdbfe; }
-    .mission-status-text { font-size: 12px; }
+    .mission-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .mission-title { font-size: 14px; font-weight: 700; }
+    .mission-pts   { font-size: 12px; color: #93c5fd; margin-top: 2px; }
+    .mission-progress-bg   { background: rgba(255,255,255,.2); border-radius: 99px; height: 8px; margin-bottom: 10px; }
+    .mission-progress-fill { height: 8px; border-radius: 99px; transition: width .4s; }
+    .mission-bottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .mission-count  { font-size: 13px; color: #bfdbfe; }
     .mission-go-btn {
       background: #10b981; color: #fff; border: none;
-      border-radius: 8px; padding: 8px 18px;
-      font-size: 13px; font-weight: 700; cursor: pointer;
-      white-space: nowrap; transition: opacity .15s;
+      border-radius: 7px; padding: 7px 16px;
+      font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
+      transition: opacity .15s;
     }
     .mission-go-btn:hover { opacity: .88; }
 
-    /* ── ACTION BUTTONS (เรียนและสอบ) ── */
-    .action-3col {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
-      margin-bottom: 10px;
-    }
-    .action-2col {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-    }
-    @media (max-width: 600px) {
-      .action-3col { grid-template-columns: 1fr 1fr; }
-    }
+    /* ── ACTION BUTTONS ── */
+    .action-stack { display: flex; flex-direction: column; gap: 8px; }
 
     .mode-btn {
-      background: #fff; border: none; border-radius: 11px;
-      padding: 16px 12px; cursor: pointer;
-      display: flex; flex-direction: column; align-items: center; gap: 7px;
-      box-shadow: 0 1px 3px rgba(0,0,0,.07);
-      transition: transform .12s, box-shadow .12s;
-      text-align: center;
-    }
-    .mode-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.11); }
-    .mode-btn .icon { font-size: 26px; }
-    .mode-label { font-size: 13px; font-weight: 700; line-height: 1.2; }
-    .mode-sub   { font-size: 11px; color: #94a3b8; font-weight: 400; line-height: 1.3; }
-
-    .mode-btn.green  { background: #f0fdf4; border-top: 3px solid #10b981; }
-    .mode-btn.blue   { background: #eff6ff; border-top: 3px solid #3b82f6; }
-    .mode-btn.orange { background: #fff7ed; border-top: 3px solid #f59e0b; }
-
-    .mode-btn-sm {
-      background: #fff; border: none; border-radius: 11px;
-      padding: 14px 16px; cursor: pointer;
+      width: 100%; background: #fff; border: none; border-radius: 10px;
+      padding: 13px 14px; cursor: pointer;
       display: flex; align-items: center; gap: 12px;
       box-shadow: 0 1px 3px rgba(0,0,0,.07);
       transition: transform .12s, box-shadow .12s;
       text-align: left;
     }
-    .mode-btn-sm:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.11); }
-    .mode-btn-sm .icon { font-size: 22px; flex-shrink: 0; }
-    .mode-btn-sm.sat  { border-left: 3px solid #8b5cf6; }
-    .mode-btn-sm.game { border-left: 3px solid #ec4899; }
+    .mode-btn:hover { transform: translateY(-1px); box-shadow: 0 3px 10px rgba(0,0,0,.1); }
+    .mode-btn .icon { font-size: 22px; flex-shrink: 0; }
+    .mode-label { font-size: 13px; font-weight: 700; line-height: 1.2; }
+    .mode-sub   { font-size: 11px; color: #94a3b8; margin-top: 2px; }
 
-    /* ── CHARACTER CARD ── */
-    .char-row { display: flex; align-items: center; gap: 14px; }
-    .char-icon-big { font-size: 40px; line-height: 1; }
-    .char-xp-bar-bg { background: #f0f0f0; border-radius: 99px; height: 6px; margin-top: 6px; }
-    .char-xp-bar-fill { background: #7c3aed; height: 6px; border-radius: 99px; width: 0%; transition: width .4s; }
+    .mode-btn.green  { border-left: 3px solid #10b981; }
+    .mode-btn.blue   { border-left: 3px solid #3b82f6; }
+    .mode-btn.orange { border-left: 3px solid #f59e0b; }
+    .mode-btn.purple { border-left: 3px solid #8b5cf6; }
+    .mode-btn.pink   { border-left: 3px solid #ec4899; }
+    .mode-btn.mission-style {
+      background: #fef9c3; border-left: 3px solid #ca8a04;
+    }
 
-    /* ── PROFILE ── */
-    .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .profile-item label { font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px; }
-    .profile-value { font-size: 13px; font-weight: 600; color: #1e293b; }
-    .profile-item.full { grid-column: 1 / -1; }
+    .util-divider { height: 1px; background: #f1f5f9; margin: 4px 0; }
 
-    /* ── UTILITY ROW ── */
-    .util-row { display: flex; gap: 10px; }
+    .util-row { display: flex; gap: 8px; }
     .util-btn {
-      flex: 1; background: #fff;
-      border: 1px solid #e2e8f0; border-radius: 10px;
-      padding: 12px 6px; cursor: pointer;
-      display: flex; flex-direction: column; align-items: center; gap: 5px;
+      flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+      padding: 10px 6px; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
       font-size: 11px; color: #64748b; font-weight: 600;
-      text-decoration: none; transition: background .12s, color .12s;
+      text-decoration: none; transition: background .12s;
     }
     .util-btn:hover { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
-    .util-btn .u-icon { font-size: 20px; }
+    .util-btn .u-icon { font-size: 18px; }
+
+    /* ── CHARACTER ── */
+    .char-row { display: flex; align-items: center; gap: 14px; }
+    .char-xp-bar-bg   { background: #f0f0f0; border-radius: 99px; height: 5px; margin-top: 5px; }
+    .char-xp-bar-fill { background: #7c3aed; height: 5px; border-radius: 99px; width: 0%; transition: width .4s; }
 
     /* ── WEAKNESS ── */
-    .weak-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-    .weak-label { font-size: 12px; color: #444; width: 140px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .weak-bar-bg { flex: 1; height: 7px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
-    .weak-bar-fill { height: 100%; border-radius: 4px; background: #3b82f6; }
+    .weak-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 7px; }
+    .weak-label   { font-size: 12px; color: #444; width: 100px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .weak-bar-bg  { flex: 1; height: 6px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
+    .weak-bar-fill        { height: 100%; border-radius: 4px; background: #3b82f6; }
     .weak-bar-fill.warn   { background: #f59e0b; }
     .weak-bar-fill.danger { background: #ef4444; }
-    .weak-pct { font-size: 12px; color: #888; width: 36px; text-align: right; }
+    .weak-pct { font-size: 11px; color: #888; width: 30px; text-align: right; }
 
     /* ── HISTORY TABLE ── */
     .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .history-table th { text-align: left; padding: 7px 8px; background: #f8fafc; color: #888; font-weight: 600; border-bottom: 1px solid #e8e8e8; }
-    .history-table td { padding: 7px 8px; border-bottom: 1px solid #f0f0f0; }
-    .badge { display: inline-block; padding: 2px 7px; border-radius: 99px; font-size: 10px; font-weight: 600; }
+    .history-table th { text-align: left; padding: 6px 7px; background: #f8fafc; color: #888; font-weight: 600; border-bottom: 1px solid #e8e8e8; }
+    .history-table td { padding: 6px 7px; border-bottom: 1px solid #f0f0f0; }
+    .badge { display: inline-block; padding: 1px 6px; border-radius: 99px; font-size: 10px; font-weight: 600; }
     .badge-practice    { background: #dcfce7; color: #166534; }
     .badge-competitive { background: #ffedd5; color: #9a3412; }
     .badge-adaptive    { background: #dbeafe; color: #1e40af; }
     .badge-official    { background: #f3e8ff; color: #6b21a8; }
 
     /* ── MISC ── */
-    .empty-msg { font-size: 13px; color: #aaa; font-style: italic; text-align: center; padding: 16px 0; }
-    .section-badge { display: inline-block; background: #eff6ff; color: #1e40af; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; margin-left: 8px; vertical-align: middle; }
-
-    /* Profile form (kept for compat) */
-    .form-group { margin-bottom: 10px; }
+    .empty-msg { font-size: 13px; color: #aaa; font-style: italic; text-align: center; padding: 14px 0; }
+    .form-row  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .form-group { margin-bottom: 0; }
     .form-group label { font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .profile-value-box { padding: 7px 10px; background: #f8fafc; border-radius: 6px; font-size: 13px; color: #1e293b; min-height: 32px; font-weight: 500; }
+    .profile-value-box { padding: 6px 10px; background: #f8fafc; border-radius: 6px; font-size: 13px; color: #1e293b; font-weight: 500; }
   </style>
 </head>
 <body>
@@ -226,53 +213,128 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════ PAGE ═══════════════════════════════ -->
+<!-- ════════════════════ PAGE ════════════════════ -->
 <div class="page">
 
-  <!-- Welcome -->
-  <div class="welcome">
-    <h2 id="welcome-name">กำลังโหลด...</h2>
-    <p id="welcome-sub"></p>
+  <!-- Welcome + toggle -->
+  <div class="welcome-bar">
+    <div>
+      <h2 id="welcome-name">กำลังโหลด...</h2>
+      <p id="welcome-sub"></p>
+    </div>
+    <button class="toggle-btn" id="profile-toggle" onclick="toggleProfile()">ข้อมูลนักเรียน ▼</button>
   </div>
 
-  <!-- Stats strip (shown by JS when data exists) -->
+  <!-- Student info panel (hidden by default, toggle บันทึก localStorage) -->
+  <div id="profile-panel" class="profile-panel" style="display:none">
+    <div class="profile-chip"><span class="lbl">ปีการศึกษา</span><span class="val" id="p-year">—</span></div>
+    <div class="profile-chip"><span class="lbl">ระดับชั้น</span><span class="val" id="p-grade">—</span></div>
+    <div class="profile-chip" style="flex:1;min-width:120px"><span class="lbl">โรงเรียน</span><span class="val" id="p-school">—</span></div>
+    <div class="profile-chip"><span class="lbl">อำเภอ / เขต</span><span class="val" id="p-district">—</span></div>
+    <div class="profile-chip"><span class="lbl">จังหวัด</span><span class="val" id="p-province">—</span></div>
+    <div class="profile-chip"><span class="lbl">ห้อง</span><span class="val" id="p-classroom">—</span></div>
+    <div class="profile-chip"><span class="lbl">เลขประจำตัว</span><span class="val" id="p-code">—</span></div>
+  </div>
+
+  <!-- Stats strip -->
   <div class="stats-strip" id="stats-row" style="display:none">
     <div class="stat-box">
-      <div style="font-size:24px">🏅</div>
-      <div>
-        <div class="stat-num" id="stat-total">0</div>
-        <div class="stat-label">ครั้งที่สอบ</div>
-      </div>
+      <div style="font-size:22px">🏅</div>
+      <div><div class="stat-num" id="stat-total">0</div><div class="stat-label">ครั้งที่สอบ</div></div>
     </div>
     <div class="stat-box">
-      <div style="font-size:24px">✅</div>
-      <div>
-        <div class="stat-num" id="stat-avg">—</div>
-        <div class="stat-label">คะแนนเฉลี่ย</div>
-      </div>
+      <div style="font-size:22px">✅</div>
+      <div><div class="stat-num" id="stat-avg">—</div><div class="stat-label">คะแนนเฉลี่ย</div></div>
     </div>
     <div class="stat-box">
-      <div style="font-size:24px">⭐</div>
-      <div>
-        <div class="stat-num" id="stat-best">—</div>
-        <div class="stat-label">สูงสุด</div>
-      </div>
+      <div style="font-size:22px">⭐</div>
+      <div><div class="stat-num" id="stat-best">—</div><div class="stat-label">สูงสุด</div></div>
     </div>
   </div>
 
-  <!-- Main 2-column layout -->
+  <!-- 3-COLUMN GRID -->
   <div class="main-grid">
 
-    <!-- ═══ LEFT COLUMN ═══ -->
+    <!-- ═══ LEFT: Action buttons ═══ -->
     <div class="left-col">
+      <div class="card">
+        <div class="card-title">เรียนและสอบ</div>
+        <div class="action-stack">
+
+          <button class="mode-btn mission-style" onclick="location.href='mission.html'">
+            <span class="icon">🎯</span>
+            <div><div class="mode-label">ภารกิจประจำวัน</div></div>
+          </button>
+
+          <div class="util-divider"></div>
+
+          <button class="mode-btn green" onclick="location.href='practice.html'">
+            <span class="icon">✏️</span>
+            <div>
+              <div class="mode-label">ฝึกตามหัวข้อ</div>
+              <div class="mode-sub">เลือกเรื่องที่อยากฝึกเอง</div>
+            </div>
+          </button>
+          <button class="mode-btn blue" onclick="location.href='rally.html'">
+            <span class="icon">🧠</span>
+            <div>
+              <div class="mode-label">โจทย์ฝึกเฉพาะคุณ</div>
+              <div class="mode-sub">ระบบเลือกโจทย์ตามจุดอ่อนให้</div>
+            </div>
+          </button>
+          <button class="mode-btn orange" onclick="location.href='exam.html'">
+            <span class="icon">🏅</span>
+            <div>
+              <div class="mode-label">สอบแข่งขัน</div>
+              <div class="mode-sub">จับเวลา ใช้ตั๋ว รับ XP</div>
+            </div>
+          </button>
+          <button class="mode-btn purple" onclick="location.href='saturday-quiz.html'">
+            <span class="icon">📝</span>
+            <div>
+              <div class="mode-label">สอบประจำสัปดาห์</div>
+              <div class="mode-sub">เปิดเฉพาะวันเสาร์</div>
+            </div>
+          </button>
+          <button class="mode-btn pink" onclick="location.href='games.html'">
+            <span class="icon">🎮</span>
+            <div>
+              <div class="mode-label">เกม</div>
+              <div class="mode-sub">Grand Prix · Time Trial</div>
+            </div>
+          </button>
+
+          <!-- Teacher buttons (shown by JS) -->
+          <button id="teacher-btn" class="mode-btn" style="display:none;border-left:3px solid #166534" onclick="location.href='teacher-report.html'">
+            <span class="icon">👩‍🏫</span>
+            <div><div class="mode-label">รายงานครู</div></div>
+          </button>
+          <button id="teacher-dashboard-btn" class="mode-btn" style="display:none;border-left:3px solid #2c5282" onclick="location.href='teacher-dashboard.html'">
+            <span class="icon">📊</span>
+            <div><div class="mode-label">ภาพรวมห้องเรียน</div></div>
+          </button>
+
+        </div>
+
+        <div class="util-divider" style="margin-top:10px"></div>
+        <div class="util-row" style="margin-top:10px">
+          <a href="leaderboard.html" class="util-btn"><span class="u-icon">🏆</span>อันดับ</a>
+          <a href="box.html"         class="util-btn"><span class="u-icon">🎁</span>รางวัล</a>
+          <a href="parent-corner.html" class="util-btn"><span class="u-icon">👨‍👩‍👧</span>ผู้ปกครอง</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CENTER: Mission + Character + Recommend ═══ -->
+    <div class="center-col">
 
       <!-- Character card (shown by JS) -->
       <div class="card" id="char-card" style="display:none">
         <div class="char-row">
-          <div id="char-icon" class="char-icon-big"></div>
+          <div id="char-icon" style="font-size:38px;line-height:1"></div>
           <div style="flex:1">
             <div style="font-weight:700;font-size:15px" id="char-name"></div>
-            <div style="font-size:12px;color:#94a3b8;margin:4px 0" id="char-xp"></div>
+            <div style="font-size:12px;color:#94a3b8;margin:3px 0" id="char-xp"></div>
             <div class="char-xp-bar-bg">
               <div id="char-bar" class="char-xp-bar-fill"></div>
             </div>
@@ -295,159 +357,66 @@
           </div>
           <div class="mission-bottom">
             <span id="mission-label" class="mission-count">ทำโจทย์ 0/10 ข้อ</span>
-            <span id="mission-status" class="mission-status-text"></span>
+            <span id="mission-status"></span>
           </div>
-          <!-- Ticket balance -->
-          <div id="ticket-row" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:space-between">
-            <div style="font-size:13px;color:#bfdbfe">
-              🎟️ ตั๋วแข่งขัน
-              <span id="ticket-balance" style="font-weight:700;color:#fff;margin-left:6px">—</span> ใบ
-            </div>
-            <div style="font-size:12px;color:#93c5fd">
-              ใช้แล้ววันนี้ <span id="ticket-used">—</span>/5 ใบ
-            </div>
+          <div id="ticket-row" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:13px;color:#bfdbfe">🎟️ ตั๋วแข่งขัน <span id="ticket-balance" style="font-weight:700;color:#fff;margin-left:4px">—</span> ใบ</div>
+            <div style="font-size:12px;color:#93c5fd">ใช้แล้ววันนี้ <span id="ticket-used">—</span>/5 ใบ</div>
           </div>
         </div>
-      </div>
-
-      <!-- Learning & Exam buttons -->
-      <div class="card">
-        <div class="card-title">เรียนและสอบ</div>
-        <div class="action-3col">
-          <button class="mode-btn green" onclick="location.href='practice.html'">
-            <span class="icon">✏️</span>
-            <span class="mode-label">ฝึกตามหัวข้อ</span>
-            <span class="mode-sub">เลือกเรื่องที่อยากฝึกเอง</span>
-          </button>
-          <button class="mode-btn blue" onclick="location.href='rally.html'">
-            <span class="icon">🧠</span>
-            <span class="mode-label">โจทย์ฝึกเฉพาะคุณ</span>
-            <span class="mode-sub">ระบบเลือกโจทย์ตามจุดอ่อนให้</span>
-          </button>
-          <button class="mode-btn orange" onclick="location.href='exam.html'">
-            <span class="icon">🏅</span>
-            <span class="mode-label">สอบแข่งขัน</span>
-            <span class="mode-sub">จับเวลา ใช้ตั๋ว รับ XP</span>
-          </button>
-        </div>
-        <div class="action-2col">
-          <button class="mode-btn-sm sat" onclick="location.href='saturday-quiz.html'">
-            <span class="icon">📝</span>
-            <div>
-              <div class="mode-label">สอบประจำสัปดาห์</div>
-              <div class="mode-sub">เปิดเฉพาะวันเสาร์</div>
-            </div>
-          </button>
-          <button class="mode-btn-sm game" onclick="location.href='games.html'">
-            <span class="icon">🎮</span>
-            <div>
-              <div class="mode-label">เกม</div>
-              <div class="mode-sub">Grand Prix · Time Trial</div>
-            </div>
-          </button>
-        </div>
-        <!-- Teacher buttons (hidden, shown by JS for teacher/admin) -->
-        <div id="teacher-btns" style="display:none;margin-top:10px;display:none">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <button id="teacher-btn" style="display:none" class="mode-btn-sm" onclick="location.href='teacher-report.html'">
-              <span class="icon">👩‍🏫</span>
-              <div><div class="mode-label">รายงานครู</div></div>
-            </button>
-            <button id="teacher-dashboard-btn" style="display:none" class="mode-btn-sm" onclick="location.href='teacher-dashboard.html'">
-              <span class="icon">📊</span>
-              <div><div class="mode-label">ภาพรวมห้องเรียน</div></div>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Weakness card -->
-      <div class="card" id="weakness-card">
-        <div class="card-title">จุดอ่อน (Top 5)</div>
-        <div id="weakness-content"><div class="empty-msg">ยังไม่มีข้อมูล</div></div>
       </div>
 
       <!-- Recommend card (shown by JS) -->
       <div class="card" id="recommend-card" style="display:none">
         <div class="card-title">แนะนำให้ฝึก</div>
         <div id="recommend-content"></div>
-        <button style="margin-top:12px;width:100%;padding:10px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer" onclick="location.href='rally.html'">
+        <button style="margin-top:10px;width:100%;padding:9px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer" onclick="location.href='rally.html'">
           🧠 โจทย์ฝึกเฉพาะคุณ
         </button>
       </div>
 
-      <!-- Score section anchor (JS appends score card here) -->
-      <div id="score-anchor"></div>
+    </div>
 
-    </div><!-- /left-col -->
-
-    <!-- ═══ RIGHT SIDEBAR ═══ -->
+    <!-- ═══ RIGHT: จุดอ่อน + ประวัติ + ผลการเรียน ═══ -->
     <div class="right-col">
 
-      <!-- Profile -->
-      <div class="card">
-        <div class="card-title">ข้อมูลนักเรียน</div>
-        <div class="form-row" style="margin-bottom:8px">
-          <div class="form-group">
-            <label>ปีการศึกษา</label>
-            <div class="profile-value-box" id="p-year">—</div>
-          </div>
-          <div class="form-group">
-            <label>ระดับชั้น</label>
-            <div class="profile-value-box" id="p-grade">—</div>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>โรงเรียน</label>
-          <div class="profile-value-box" id="p-school">—</div>
-        </div>
-        <div class="form-row" style="margin-bottom:8px">
-          <div class="form-group">
-            <label>อำเภอ / เขต</label>
-            <div class="profile-value-box" id="p-district">—</div>
-          </div>
-          <div class="form-group">
-            <label>จังหวัด</label>
-            <div class="profile-value-box" id="p-province">—</div>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>ห้อง</label>
-            <div class="profile-value-box" id="p-classroom">—</div>
-          </div>
-          <div class="form-group">
-            <label>เลขประจำตัว</label>
-            <div class="profile-value-box" id="p-code">—</div>
-          </div>
-        </div>
+      <!-- Weakness card -->
+      <div class="card" id="weakness-card">
+        <div class="card-title">จุดอ่อน</div>
+        <div id="weakness-content"><div class="empty-msg">ยังไม่มีข้อมูล</div></div>
       </div>
 
-      <!-- Utility buttons -->
-      <div class="util-row">
-        <a href="leaderboard.html" class="util-btn">
-          <span class="u-icon">🏆</span>อันดับ
-        </a>
-        <a href="box.html" class="util-btn">
-          <span class="u-icon">🎁</span>รางวัล
-        </a>
-        <a href="parent-corner.html" class="util-btn">
-          <span class="u-icon">👨‍👩‍👧</span>ผู้ปกครอง
-        </a>
-      </div>
-
-      <!-- Exam history -->
+      <!-- History card -->
       <div class="card">
         <div class="card-title">ประวัติการสอบ</div>
         <div id="history-content"><div class="empty-msg">ยังไม่มีประวัติ</div></div>
       </div>
 
-    </div><!-- /right-col -->
+      <!-- Score section anchor (JS appends here) -->
+      <div id="score-anchor"></div>
+
+    </div>
 
   </div><!-- /main-grid -->
 </div><!-- /page -->
 
 <script>
+  // ── Profile hide/unhide ──────────────────────────────────────
+  function toggleProfile() {
+    const panel = document.getElementById('profile-panel');
+    const btn   = document.getElementById('profile-toggle');
+    const isHidden = panel.style.display === 'none';
+    panel.style.display = isHidden ? '' : 'none';
+    btn.textContent = isHidden ? 'ซ่อนข้อมูล ▲' : 'ข้อมูลนักเรียน ▼';
+    localStorage.setItem('profileHidden', isHidden ? '0' : '1');
+  }
+  // restore state on load
+  if (localStorage.getItem('profileHidden') === '0') {
+    document.getElementById('profile-panel').style.display = '';
+    document.getElementById('profile-toggle').textContent = 'ซ่อนข้อมูล ▲';
+  }
+
+  // ── Main init ────────────────────────────────────────────────
   let studentData = null;
 
   async function init() {
@@ -456,11 +425,9 @@
     const me = await res.json();
     if (me.mustChangePassword) { location.href = 'change-password.html'; return; }
 
-    // แสดง banner ถ้า admin กำลัง impersonate
     if (me.impersonating) {
-      const banner = document.getElementById('impersonate-banner');
       document.getElementById('impersonate-username').textContent = me.username;
-      banner.style.display = 'flex';
+      document.getElementById('impersonate-banner').style.display = 'flex';
     }
 
     document.getElementById('topbar-name').textContent = me.firstName || me.username || '';
@@ -471,11 +438,10 @@
     }
     document.getElementById('welcome-name').textContent = `สวัสดี, ${me.firstName || 'นักเรียน'} 👋`;
 
-    // Load full student data + daily mission + ticket balance พร้อมกัน
     const [r2, r3, r7] = await Promise.all([
-      fetch('/api/student/me', { credentials: 'include' }),
-      fetch('/api/student/daily-mission', { credentials: 'include' }),
-      fetch('/api/tickets/balance', { credentials: 'include' })
+      fetch('/api/student/me',           { credentials: 'include' }),
+      fetch('/api/student/daily-mission',{ credentials: 'include' }),
+      fetch('/api/tickets/balance',      { credentials: 'include' })
     ]);
     if (r2.ok) {
       studentData = await r2.json();
@@ -489,92 +455,72 @@
           `${studentData.profile.grade} • ${studentData.profile.school} • ปีการศึกษา ${studentData.profile.academicYear}`;
       }
     }
-    if (r3.ok) {
-      const mission = await r3.json();
-      renderMission(mission);
-    }
+    if (r3.ok) renderMission(await r3.json());
     if (r7.ok) {
       const t = await r7.json();
       document.getElementById('ticket-balance').textContent = t.balance;
-      document.getElementById('ticket-used').textContent = t.usedToday;
-      document.getElementById('ticket-row').style.display = 'flex';
+      document.getElementById('ticket-used').textContent   = t.usedToday;
+      document.getElementById('ticket-row').style.display  = 'flex';
     }
 
-    // โหลด character
     const r6 = await fetch('/api/student/character', { credentials: 'include' });
-    if (r6.ok) {
-      const char = await r6.json();
-      renderCharacter(char);
-    }
+    if (r6.ok) renderCharacter(await r6.json());
 
-    // โหลดประกาศที่ยังไม่ได้อ่าน
     const r4 = await fetch('/api/announcements', { credentials: 'include' });
     if (r4.ok) {
       const { announcements } = await r4.json();
       if (announcements.length) showAnnouncements(announcements);
     }
 
-    // โหลดคะแนนจากครู + ผลการเรียนอย่างเป็นทางการ พร้อมกัน
     const [r5, rAc] = await Promise.all([
-      fetch('/api/classroom/my-scores',    { credentials: 'include' }),
-      fetch('/api/academic-records/mine',  { credentials: 'include' }),
+      fetch('/api/classroom/my-scores',   { credentials: 'include' }),
+      fetch('/api/academic-records/mine', { credentials: 'include' }),
     ]);
-    const classroomData = r5.ok    ? await r5.json()   : null;
-    const academicData  = rAc.ok   ? await rAc.json()  : null;
-    const hasClassroom  = !!(classroomData?.results?.length > 0 ||
-                              Object.keys(classroomData?.aggregates || {}).length > 0);
+    const classroomData = r5.ok  ? await r5.json()  : null;
+    const academicData  = rAc.ok ? await rAc.json() : null;
+    const hasClassroom  = !!(classroomData?.results?.length > 0 || Object.keys(classroomData?.aggregates || {}).length > 0);
     const hasAcademic   = academicData?.total > 0;
     if (hasClassroom || hasAcademic) renderScoreSection(classroomData, academicData);
   }
 
   function applyProfile(p) {
     if (!p) return;
-    document.getElementById('p-year').textContent     = p.academicYear || '—';
-    document.getElementById('p-grade').textContent    = p.grade || '—';
-    document.getElementById('p-school').textContent   = p.school || '—';
-    document.getElementById('p-district').textContent = p.district || '—';
-    document.getElementById('p-province').textContent = p.province || '—';
-    document.getElementById('p-classroom').textContent = p.classroom || '—';
-    document.getElementById('p-code').textContent     = p.studentCode || '—';
+    document.getElementById('p-year').textContent      = p.academicYear || '—';
+    document.getElementById('p-grade').textContent     = p.grade        || '—';
+    document.getElementById('p-school').textContent    = p.school       || '—';
+    document.getElementById('p-district').textContent  = p.district     || '—';
+    document.getElementById('p-province').textContent  = p.province     || '—';
+    document.getElementById('p-classroom').textContent = p.classroom    || '—';
+    document.getElementById('p-code').textContent      = p.studentCode  || '—';
   }
 
   function renderStats(results) {
     if (!results.length) return;
     document.getElementById('stats-row').style.display = 'grid';
-    document.getElementById('stat-total').textContent = results.length;
+    document.getElementById('stat-total').textContent  = results.length;
     const pcts = results.map(r => r.total ? Math.round(r.score / r.total * 100) : 0);
-    const avg = Math.round(pcts.reduce((a, b) => a + b, 0) / pcts.length);
-    const best = Math.max(...pcts);
-    document.getElementById('stat-avg').textContent = avg + '%';
-    document.getElementById('stat-best').textContent = best + '%';
+    document.getElementById('stat-avg').textContent  = Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length) + '%';
+    document.getElementById('stat-best').textContent = Math.max(...pcts) + '%';
   }
 
   function renderHistory(results) {
-    const el = document.getElementById('history-content');
     if (!results.length) return;
-    const rows = results.slice(0, 8).map(r => {
-      const pct = r.total ? Math.round(r.score / r.total * 100) : 0;
-      const date = new Date(r.createdAt).toLocaleDateString('th-TH', { day: '2-digit', month: 'short', year: '2-digit' });
-      const badgeClass = { practice: 'badge-practice', competitive: 'badge-competitive', adaptive: 'badge-adaptive', official: 'badge-official' }[r.mode] || 'badge-practice';
-      return `<tr>
-        <td>${date}</td>
-        <td><span class="badge ${badgeClass}">${modeLabel(r.mode)}</span></td>
-        <td>${r.score}/${r.total}</td>
-        <td>${pct}%</td>
-      </tr>`;
+    const rows = results.slice(0, 10).map(r => {
+      const pct  = r.total ? Math.round(r.score / r.total * 100) : 0;
+      const date = new Date(r.createdAt).toLocaleDateString('th-TH', { day:'2-digit', month:'short', year:'2-digit' });
+      const bc   = { practice:'badge-practice', competitive:'badge-competitive', adaptive:'badge-adaptive', official:'badge-official' }[r.mode] || 'badge-practice';
+      return `<tr><td>${date}</td><td><span class="badge ${bc}">${modeLabel(r.mode)}</span></td><td>${r.score}/${r.total}</td><td>${pct}%</td></tr>`;
     }).join('');
-    el.innerHTML = `<table class="history-table">
-      <thead><tr><th>วันที่</th><th>โหมด</th><th>คะแนน</th><th>%</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>`;
+    document.getElementById('history-content').innerHTML =
+      `<table class="history-table"><thead><tr><th>วันที่</th><th>โหมด</th><th>คะแนน</th><th>%</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   function renderMission(m) {
     document.getElementById('mission-card').style.display = '';
     const count = Math.min(m.questionsCount, m.dailyGoal);
-    const pct = Math.round(count / m.dailyGoal * 100);
+    const pct   = Math.round(count / m.dailyGoal * 100);
     document.getElementById('mission-label').textContent = `ทำโจทย์ ${count}/${m.dailyGoal} ข้อ`;
-    document.getElementById('mission-bar').style.width = pct + '%';
+    document.getElementById('mission-bar').style.width      = pct + '%';
     document.getElementById('mission-bar').style.background = m.baseCompleted ? '#10b981' : '#60a5fa';
     document.getElementById('mission-status').innerHTML = m.baseCompleted
       ? `<span style="color:#6ee7b7;font-weight:700">✅ ครบแล้ว! +${m.pointsEarnedToday} ⭐</span>`
@@ -584,279 +530,204 @@
 
   function renderRecommendation(results) {
     const tally = {};
-    results.forEach(r => {
-      if (!Array.isArray(r.weakAttributes)) return;
-      r.weakAttributes.forEach(tag => { tally[tag] = (tally[tag] || 0) + 1; });
-    });
-    const topTopics = Object.entries(tally)
-      .filter(([k]) => k.startsWith('topic:'))
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3);
-    if (!topTopics.length) return;
-    const card = document.getElementById('recommend-card');
-    const el = document.getElementById('recommend-content');
-    el.innerHTML = topTopics.map(([tag, count], i) => {
-      const label = tag.replace('topic:', '');
-      const medal = ['🥇','🥈','🥉'][i] || '';
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;${i < topTopics.length-1 ? 'border-bottom:1px solid #f1f5f9' : ''}">
-        <span style="font-size:13px">${medal} <strong>${label}</strong>
-          <span style="font-size:11px;color:#94a3b8;margin-left:4px">ผิด ${count} ครั้ง</span>
-        </span>
-        <a href="practice.html?mode=targeted&topic=${encodeURIComponent(tag)}"
-           style="font-size:12px;color:#fff;background:#3b82f6;border-radius:6px;padding:3px 10px;text-decoration:none;font-weight:600;white-space:nowrap">ฝึกเลย</a>
+    results.forEach(r => (r.weakAttributes||[]).forEach(t => { tally[t] = (tally[t]||0)+1; }));
+    const top = Object.entries(tally).filter(([k])=>k.startsWith('topic:')).sort((a,b)=>b[1]-a[1]).slice(0,3);
+    if (!top.length) return;
+    document.getElementById('recommend-content').innerHTML = top.map(([tag,cnt],i) => {
+      const lbl   = tag.replace('topic:','');
+      const medal = ['🥇','🥈','🥉'][i]||'';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;${i<top.length-1?'border-bottom:1px solid #f1f5f9':''}">
+        <span style="font-size:13px">${medal} <strong>${lbl}</strong> <span style="font-size:11px;color:#94a3b8">ผิด ${cnt} ครั้ง</span></span>
+        <a href="practice.html?mode=targeted&topic=${encodeURIComponent(tag)}" style="font-size:12px;color:#fff;background:#3b82f6;border-radius:6px;padding:2px 9px;text-decoration:none;font-weight:600">ฝึกเลย</a>
       </div>`;
     }).join('');
-    card.style.display = 'block';
+    document.getElementById('recommend-card').style.display = 'block';
   }
 
   function renderWeakness(results) {
-    const el = document.getElementById('weakness-content');
-    const timedResult = results.find(r => r.mode === 'competitive' || r.mode === 'official');
+    const timedResult = results.find(r => r.mode==='competitive'||r.mode==='official');
     const tags = Array.isArray(timedResult?.weakAttributes) ? timedResult.weakAttributes : [];
     if (!tags.length) return;
     const grouped = {};
     tags.forEach(tag => {
       const type = tag.split(':')[0];
-      if (!grouped[type]) grouped[type] = [];
-      grouped[type].push(tag.replace(/^[^:]+:/, ''));
+      (grouped[type] = grouped[type]||[]).push(tag.replace(/^[^:]+:/,''));
     });
-    el.innerHTML = Object.entries(grouped).map(([type, items]) => {
-      const typeLabel = { topic: 'หัวข้อ', skill: 'ทักษะ', trap: 'กับดัก' }[type] || type;
-      return `<div style="margin-bottom:10px">
-        <div style="font-size:11px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:6px">${typeLabel}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:6px">
-          ${items.map(item => `
-            <span style="display:inline-flex;align-items:center;gap:4px;background:#fff7ed;border:1px solid #fed7aa;border-radius:99px;padding:3px 10px;font-size:12px">
-              <span style="color:#9a3412">${item}</span>
-              <a href="practice.html?mode=targeted&topic=${encodeURIComponent(type+':'+item)}"
-                 style="color:#3b82f6;font-size:11px;text-decoration:none;font-weight:600">ซ่อม</a>
-            </span>`).join('')}
+    document.getElementById('weakness-content').innerHTML = Object.entries(grouped).map(([type,items]) => {
+      const tl = {topic:'หัวข้อ',skill:'ทักษะ',trap:'กับดัก'}[type]||type;
+      return `<div style="margin-bottom:9px">
+        <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:5px">${tl}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px">
+          ${items.map(item=>`<span style="display:inline-flex;align-items:center;gap:3px;background:#fff7ed;border:1px solid #fed7aa;border-radius:99px;padding:2px 9px;font-size:11px">
+            <span style="color:#9a3412">${item}</span>
+            <a href="practice.html?mode=targeted&topic=${encodeURIComponent(type+':'+item)}" style="color:#3b82f6;font-size:10px;text-decoration:none;font-weight:600">ซ่อม</a>
+          </span>`).join('')}
         </div>
       </div>`;
     }).join('');
   }
 
   function modeLabel(m) {
-    return { practice: 'ฝึกหัด', competitive: 'แข่งขัน', adaptive: 'ปรับจุดอ่อน', official: 'ข้อสอบจริง' }[m] || m;
+    return {practice:'ฝึกหัด',competitive:'แข่งขัน',adaptive:'ปรับจุดอ่อน',official:'ข้อสอบจริง'}[m]||m;
   }
 
   function renderCharacter(c) {
     document.getElementById('char-card').style.display = '';
-    document.getElementById('char-icon').textContent = c.classIcon;
-    document.getElementById('char-name').textContent = `LV ${c.level} ${c.className}`;
-    document.getElementById('char-xp').textContent = `${c.xpProgress} / ${c.xpNeeded} XP`;
-    const pct = Math.min(Math.round(c.xpProgress / c.xpNeeded * 100), 100);
-    document.getElementById('char-bar').style.width = pct + '%';
+    document.getElementById('char-icon').textContent   = c.classIcon;
+    document.getElementById('char-name').textContent   = `LV ${c.level} ${c.className}`;
+    document.getElementById('char-xp').textContent     = `${c.xpProgress} / ${c.xpNeeded} XP`;
+    document.getElementById('char-bar').style.width    = Math.min(Math.round(c.xpProgress/c.xpNeeded*100),100) + '%';
   }
 
-  // Announcement popup
-  let annQueue = [], annIndex = 0;
-  function showAnnouncements(list) {
-    annQueue = list; annIndex = 0;
-    showAnn(0);
-    document.getElementById('ann-overlay').style.display = 'flex';
-  }
+  // Announcements
+  let annQueue=[], annIndex=0;
+  function showAnnouncements(list) { annQueue=list; annIndex=0; showAnn(0); document.getElementById('ann-overlay').style.display='flex'; }
   function showAnn(i) {
-    const a = annQueue[i];
-    document.getElementById('ann-title').textContent = a.title;
-    document.getElementById('ann-body').textContent = a.body;
-    document.getElementById('ann-counter').textContent = annQueue.length > 1 ? `${i+1}/${annQueue.length}` : '';
-    document.getElementById('ann-next').style.display = annQueue.length > 1 && i < annQueue.length - 1 ? '' : 'none';
-    fetch(`/api/announcements/${a.id}/read`, { method: 'POST', credentials: 'include' });
+    const a=annQueue[i];
+    document.getElementById('ann-title').textContent   = a.title;
+    document.getElementById('ann-body').textContent    = a.body;
+    document.getElementById('ann-counter').textContent = annQueue.length>1?`${i+1}/${annQueue.length}`:'';
+    document.getElementById('ann-next').style.display  = annQueue.length>1&&i<annQueue.length-1?'':'none';
+    fetch(`/api/announcements/${a.id}/read`,{method:'POST',credentials:'include'});
   }
-  document.getElementById('ann-next').onclick = () => { annIndex++; showAnn(annIndex); };
-  document.getElementById('ann-close').onclick = () => { document.getElementById('ann-overlay').style.display = 'none'; };
+  document.getElementById('ann-next').onclick  = () => { annIndex++; showAnn(annIndex); };
+  document.getElementById('ann-close').onclick = () => { document.getElementById('ann-overlay').style.display='none'; };
 
-  // ── ผลการเรียน ──────────────────────────────────────────────────────────────
+  // ── ผลการเรียน ────────────────────────────────────────────────
   function renderScoreSection(classroomData, academicData) {
-    const GRADE_LBL = { p1:'ป.1', p2:'ป.2', p3:'ป.3', p4:'ป.4', p5:'ป.5', p6:'ป.6' };
-    const timeline = {};
-
+    const GRADE_LBL = {p1:'ป.1',p2:'ป.2',p3:'ป.3',p4:'ป.4',p5:'ป.5',p6:'ป.6'};
+    const timeline  = {};
     if (classroomData?.results) {
       for (const r of classroomData.results) {
-        const key = `${r.academicYear}|${r.term || '1'}`;
-        if (!timeline[key]) timeline[key] = {};
+        const key = `${r.academicYear}|${r.term||'1'}`;
+        if (!timeline[key]) timeline[key]={};
         if (r.isMulti) {
-          if (!timeline[key].multiRows) timeline[key].multiRows = [];
-          const ss = r.myData?.subjectScores || {};
-          for (const [subj, score] of Object.entries(ss)) {
-            const rank = r.ranks?.[subj];
-            timeline[key].multiRows.push({ subject: subj, score: parseFloat(score) || 0, rank, total: r.total });
-          }
+          if (!timeline[key].multiRows) timeline[key].multiRows=[];
+          for (const [subj,score] of Object.entries(r.myData?.subjectScores||{}))
+            timeline[key].multiRows.push({subject:subj,score:parseFloat(score)||0,rank:r.ranks?.[subj],total:r.total});
         } else {
-          if (!timeline[key].classroom) timeline[key].classroom = [];
-          timeline[key].classroom.push(r);
+          (timeline[key].classroom=timeline[key].classroom||[]).push(r);
         }
       }
-      for (const [key, agg] of Object.entries(classroomData.aggregates || {})) {
-        if (!timeline[key]) timeline[key] = {};
-        timeline[key].aggregate = agg;
+      for (const [key,agg] of Object.entries(classroomData.aggregates||{})) {
+        if (!timeline[key]) timeline[key]={};
+        timeline[key].aggregate=agg;
       }
     }
-
     if (academicData?.records) {
-      for (const [year, terms] of Object.entries(academicData.records)) {
-        const sumItem = (academicData.summary || []).find(s => s.year === year);
-        for (const [term, subjects] of Object.entries(terms)) {
-          const key = `${year}|${term}`;
-          if (!timeline[key]) timeline[key] = {};
-          timeline[key].academic = subjects;
-          timeline[key].gradeKey = sumItem?.grade || '';
-          timeline[key].gpa      = sumItem?.gpa ?? null;
+      for (const [year,terms] of Object.entries(academicData.records)) {
+        const sumItem=(academicData.summary||[]).find(s=>s.year===year);
+        for (const [term,subjects] of Object.entries(terms)) {
+          const key=`${year}|${term}`;
+          if (!timeline[key]) timeline[key]={};
+          timeline[key].academic=subjects;
+          timeline[key].gradeKey=sumItem?.grade||'';
+          timeline[key].gpa=sumItem?.gpa??null;
         }
       }
     }
-
-    const keys = Object.keys(timeline).sort((a, b) => b.localeCompare(a));
+    const keys=Object.keys(timeline).sort((a,b)=>b.localeCompare(a));
     if (!keys.length) return;
 
-    const card = document.createElement('div');
-    card.className = 'card';
-
-    const tabsHtml = keys.map(k => {
-      const [y, t] = k.split('|');
-      const g = timeline[k].gradeKey;
-      const gpa = timeline[k].gpa;
-      const lbl = (g ? GRADE_LBL[g] + ' · ' : '') + y + ' ภาค ' + t + (gpa ? ` (${gpa})` : '');
+    const card=document.createElement('div');
+    card.className='card';
+    const tabsHtml=keys.map(k=>{
+      const [y,t]=k.split('|'), g=timeline[k].gradeKey, gpa=timeline[k].gpa;
+      const lbl=(g?GRADE_LBL[g]+' · ':'')+y+' ภาค '+t+(gpa?` (${gpa})`:'');
       return `<button onclick="showScoreTab('${k}')" id="stab-${k.replace('|','-')}"
-        style="padding:5px 13px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;
-               color:#64748b;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s">${lbl}</button>`;
+        style="padding:4px 11px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;color:#64748b;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s">${lbl}</button>`;
     }).join('');
-
-    card.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    card.innerHTML=`
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <div class="card-title" style="margin:0">📋 ผลการเรียน</div>
-        <a href="student-report.html" style="font-size:12px;color:#3b82f6;text-decoration:none;font-weight:600">รายงานเต็ม →</a>
+        <a href="student-report.html" style="font-size:12px;color:#3b82f6;text-decoration:none;font-weight:600">ดูทั้งหมด →</a>
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px" id="score-tabs">${tabsHtml}</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px" id="score-tabs">${tabsHtml}</div>
       <div id="score-tab-body"></div>`;
-
     document.getElementById('score-anchor').after(card);
-    window._scoreTL   = timeline;
-    window._scoreKeys = keys;
+    window._scoreTL=timeline; window._scoreKeys=keys;
     showScoreTab(keys[0]);
   }
 
   function showScoreTab(key) {
-    const tl   = window._scoreTL;
-    const keys = window._scoreKeys;
+    const tl=window._scoreTL, keys=window._scoreKeys;
     if (!tl?.[key]) return;
-    keys.forEach(k => {
-      const btn = document.getElementById('stab-' + k.replace('|', '-'));
+    keys.forEach(k=>{
+      const btn=document.getElementById('stab-'+k.replace('|','-'));
       if (!btn) return;
-      const on = k === key;
-      btn.style.background  = on ? '#1d4ed8' : '#fff';
-      btn.style.color       = on ? '#fff'    : '#64748b';
-      btn.style.borderColor = on ? '#1d4ed8' : '#e2e8f0';
+      const on=k===key;
+      btn.style.background=on?'#1d4ed8':'#fff';
+      btn.style.color=on?'#fff':'#64748b';
+      btn.style.borderColor=on?'#1d4ed8':'#e2e8f0';
     });
-
-    const data = tl[key];
-    const agg  = data.aggregate;
-    let aggHtml = '';
+    const data=tl[key], agg=data.aggregate;
+    let aggHtml='';
     if (agg) {
-      const pct = Math.round(agg.myTotal / agg.fullTotal * 100);
-      const pc  = pct >= 80 ? '#16a34a' : pct >= 60 ? '#d97706' : '#dc2626';
-      const pb  = pct >= 80 ? '#f0fdf4' : pct >= 60 ? '#fffbeb' : '#fff1f2';
-      const re  = agg.rank === 1 ? '🥇' : agg.rank === 2 ? '🥈' : agg.rank === 3 ? '🥉' : '#' + agg.rank;
-      aggHtml = `
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
-          <div style="background:${pb};border-radius:10px;padding:14px 10px;text-align:center">
-            <div style="font-size:28px;font-weight:800;color:${pc};line-height:1">${pct}%</div>
-            <div style="font-size:11px;color:#64748b;margin-top:4px">รวม ${agg.myTotal}/${agg.fullTotal}</div>
-          </div>
-          <div style="background:#eff6ff;border-radius:10px;padding:14px 10px;text-align:center">
-            <div style="font-size:28px;font-weight:800;color:#1e40af;line-height:1">${re}</div>
-            <div style="font-size:11px;color:#64748b;margin-top:4px">อันดับ ${agg.rank}/${agg.total} คน</div>
-          </div>
-          <div style="background:#f8fafc;border-radius:10px;padding:14px 10px;text-align:center">
-            <div style="font-size:28px;font-weight:800;color:#475569;line-height:1">${agg.classMeanTotal}</div>
-            <div style="font-size:11px;color:#64748b;margin-top:4px">เฉลี่ยห้อง (SD ${agg.classSDTotal})</div>
-          </div>
-        </div>`;
+      const pct=Math.round(agg.myTotal/agg.fullTotal*100);
+      const pc=pct>=80?'#16a34a':pct>=60?'#d97706':'#dc2626';
+      const pb=pct>=80?'#f0fdf4':pct>=60?'#fffbeb':'#fff1f2';
+      const re=agg.rank===1?'🥇':agg.rank===2?'🥈':agg.rank===3?'🥉':'#'+agg.rank;
+      aggHtml=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+        <div style="background:${pb};border-radius:9px;padding:12px 8px;text-align:center"><div style="font-size:22px;font-weight:800;color:${pc};line-height:1">${pct}%</div><div style="font-size:10px;color:#64748b;margin-top:3px">รวม ${agg.myTotal}/${agg.fullTotal}</div></div>
+        <div style="background:#eff6ff;border-radius:9px;padding:12px 8px;text-align:center"><div style="font-size:22px;font-weight:800;color:#1e40af;line-height:1">${re}</div><div style="font-size:10px;color:#64748b;margin-top:3px">อันดับ ${agg.rank}/${agg.total}</div></div>
+        <div style="background:#f8fafc;border-radius:9px;padding:12px 8px;text-align:center"><div style="font-size:22px;font-weight:800;color:#475569;line-height:1">${agg.classMeanTotal}</div><div style="font-size:10px;color:#64748b;margin-top:3px">เฉลี่ยห้อง</div></div>
+      </div>`;
     }
-
-    let rowsHtml = '';
+    let rowsHtml='';
     if (data.academic?.length) {
-      const crBySubj = {};
-      for (const r of (data.classroom || [])) crBySubj[r.subject] = r;
-      const subs = data.academic.slice(0, 10);
-      rowsHtml = subs.map((s, i) => {
-        const cr  = crBySubj[s.subjectName];
-        const gv  = parseFloat(s.gradeValue);
-        const gc  = gv >= 3.5 ? '#15803d' : gv >= 2.5 ? '#d97706' : gv >= 1 ? '#b91c1c' : '#94a3b8';
-        const gbg = gv >= 3.5 ? '#dcfce7' : gv >= 2.5 ? '#fef3c7' : gv >= 1 ? '#fee2e2' : '#f1f5f9';
-        const pct = s.totalScore ?? 0;
-        const bc  = pct >= 80 ? '#16a34a' : pct >= 60 ? '#f59e0b' : '#ef4444';
-        const sep = i < subs.length - 1 ? 'border-bottom:1px solid #f8fafc' : '';
-        return `<div style="padding:8px 0;${sep}">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
-            <span style="font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.subjectName}</span>
-            <span style="font-size:11px;color:#94a3b8">กลาง <b style="color:#475569">${s.midScore ?? '—'}</b></span>
-            <span style="font-size:11px;color:#94a3b8">ปลาย <b style="color:#475569">${s.finalScore ?? '—'}</b></span>
-            <span style="font-size:14px;font-weight:700;color:#1e293b">${s.totalScore ?? '—'}</span>
-            <span style="font-weight:800;font-size:12px;color:${gc};background:${gbg};padding:1px 8px;border-radius:6px">${s.gradeValue ?? '—'}</span>
+      rowsHtml=data.academic.slice(0,10).map((s,i)=>{
+        const gv=parseFloat(s.gradeValue);
+        const gc=gv>=3.5?'#15803d':gv>=2.5?'#d97706':gv>=1?'#b91c1c':'#94a3b8';
+        const gbg=gv>=3.5?'#dcfce7':gv>=2.5?'#fef3c7':gv>=1?'#fee2e2':'#f1f5f9';
+        const pct=s.totalScore??0, bc=pct>=80?'#16a34a':pct>=60?'#f59e0b':'#ef4444';
+        const sep=i<Math.min(data.academic.length,10)-1?'border-bottom:1px solid #f8fafc':'';
+        return `<div style="padding:7px 0;${sep}">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+            <span style="font-size:12px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.subjectName}</span>
+            <span style="font-size:10px;color:#94a3b8">กลาง <b>${s.midScore??'—'}</b> ปลาย <b>${s.finalScore??'—'}</b></span>
+            <span style="font-size:13px;font-weight:700">${s.totalScore??'—'}</span>
+            <span style="font-size:11px;font-weight:800;color:${gc};background:${gbg};padding:1px 6px;border-radius:5px">${s.gradeValue??'—'}</span>
           </div>
-          <div style="background:#e2e8f0;border-radius:3px;height:3px">
-            <div style="background:${bc};width:${Math.min(100,pct)}%;height:3px;border-radius:3px"></div>
-          </div>
+          <div style="background:#e2e8f0;border-radius:3px;height:3px"><div style="background:${bc};width:${Math.min(100,pct)}%;height:3px;border-radius:3px"></div></div>
         </div>`;
       }).join('');
-      if (data.academic.length > 10)
-        rowsHtml += `<div style="text-align:center;padding:8px 0;font-size:12px;color:#94a3b8">
-          และอีก ${data.academic.length - 10} วิชา — <a href="student-report.html" style="color:#3b82f6">ดูทั้งหมด</a></div>`;
     } else if (data.multiRows?.length) {
-      rowsHtml = data.multiRows.slice(0, 10).map((m, i) => {
-        const sp  = Math.min(100, Math.round(m.score));
-        const bc  = sp >= 80 ? '#16a34a' : sp >= 60 ? '#f59e0b' : '#ef4444';
-        const sep = i < Math.min(data.multiRows.length, 10) - 1 ? 'border-bottom:1px solid #f1f5f9' : '';
-        return `<div style="padding:10px 0;${sep}">
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-            <span style="font-size:14px;font-weight:600;flex:1">${m.subject}</span>
-            <span style="font-size:13px;font-weight:700;color:#1e293b">${m.score}</span>
-            ${m.rank ? `<span style="font-size:12px;color:#94a3b8">${m.rank}/${m.total}</span>` : ''}
-          </div>
-          <div style="background:#e2e8f0;border-radius:3px;height:4px">
-            <div style="background:${bc};width:${sp}%;height:4px;border-radius:3px"></div>
-          </div>
-        </div>`;
+      rowsHtml=data.multiRows.slice(0,10).map((m,i)=>{
+        const sp=Math.min(100,Math.round(m.score)), bc=sp>=80?'#16a34a':sp>=60?'#f59e0b':'#ef4444';
+        const sep=i<Math.min(data.multiRows.length,10)-1?'border-bottom:1px solid #f1f5f9':'';
+        return `<div style="padding:8px 0;${sep}"><div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+          <span style="font-size:13px;font-weight:600;flex:1">${m.subject}</span>
+          <span style="font-size:12px;font-weight:700">${m.score}</span>
+          ${m.rank?`<span style="font-size:11px;color:#94a3b8">${m.rank}/${m.total}</span>`:''}
+        </div><div style="background:#e2e8f0;border-radius:3px;height:3px"><div style="background:${bc};width:${sp}%;height:3px;border-radius:3px"></div></div></div>`;
       }).join('');
     } else if (data.classroom?.length) {
-      rowsHtml = data.classroom.slice(0, 8).map((r, i) => {
-        const d   = r.myData;
-        const rank = r.ranks?.['_'], total = r.total;
-        const re  = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '';
-        const sp  = d.fullScore > 0 ? Math.round(d.score / d.fullScore * 100) : 0;
-        const bc  = sp >= 80 ? '#16a34a' : sp >= 60 ? '#f59e0b' : '#ef4444';
-        const gc  = d.grade >= 3 ? '#15803d' : d.grade >= 2 ? '#b45309' : '#b91c1c';
-        const gbg = d.grade >= 3 ? '#dcfce7' : d.grade >= 2 ? '#fef3c7' : '#fee2e2';
-        const sep = i < Math.min(data.classroom.length, 8) - 1 ? 'border-bottom:1px solid #f1f5f9' : '';
-        return `<div style="padding:12px 0;${sep}">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;gap:8px">
-            <span style="font-size:15px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.subject}</span>
-            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-              <span style="font-size:13px;color:#64748b">${d.score}<span style="color:#cbd5e1">/${d.fullScore}</span></span>
-              <span style="font-size:15px;font-weight:800;color:${gc};background:${gbg};padding:3px 12px;border-radius:8px">${d.grade}</span>
-              <span style="font-size:13px;color:#94a3b8;min-width:44px;text-align:right">${re}${rank ? rank+'/'+total : '—'}</span>
-            </div>
-          </div>
-          <div style="background:#e2e8f0;border-radius:4px;height:7px">
-            <div style="background:${bc};width:${sp}%;height:7px;border-radius:4px;transition:width .4s"></div>
-          </div>
-        </div>`;
+      rowsHtml=data.classroom.slice(0,8).map((r,i)=>{
+        const d=r.myData, rank=r.ranks?.['_'], total=r.total;
+        const re=rank===1?'🥇':rank===2?'🥈':rank===3?'🥉':'';
+        const sp=d.fullScore>0?Math.round(d.score/d.fullScore*100):0;
+        const bc=sp>=80?'#16a34a':sp>=60?'#f59e0b':'#ef4444';
+        const gc=d.grade>=3?'#15803d':d.grade>=2?'#b45309':'#b91c1c';
+        const gbg=d.grade>=3?'#dcfce7':d.grade>=2?'#fef3c7':'#fee2e2';
+        const sep=i<Math.min(data.classroom.length,8)-1?'border-bottom:1px solid #f1f5f9':'';
+        return `<div style="padding:9px 0;${sep}"><div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+          <span style="font-size:13px;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.subject}</span>
+          <span style="font-size:12px;color:#64748b">${d.score}/${d.fullScore}</span>
+          <span style="font-size:13px;font-weight:800;color:${gc};background:${gbg};padding:2px 9px;border-radius:7px">${d.grade}</span>
+          <span style="font-size:12px;color:#94a3b8">${re}${rank?rank+'/'+total:'—'}</span>
+        </div><div style="background:#e2e8f0;border-radius:4px;height:6px"><div style="background:${bc};width:${sp}%;height:6px;border-radius:4px;transition:width .4s"></div></div></div>`;
       }).join('');
     }
-    document.getElementById('score-tab-body').innerHTML = aggHtml + rowsHtml;
+    document.getElementById('score-tab-body').innerHTML=aggHtml+rowsHtml;
   }
 
   async function exitImpersonate() {
-    const r = await fetch('/api/admin/impersonate/exit', { method: 'POST', credentials: 'include' });
-    if (r.ok) location.href = 'admin.html';
-    else alert('ออกโหมดทดสอบไม่สำเร็จ');
+    const r=await fetch('/api/admin/impersonate/exit',{method:'POST',credentials:'include'});
+    if (r.ok) location.href='admin.html'; else alert('ออกโหมดทดสอบไม่สำเร็จ');
   }
-
   async function logout() {
-    await fetch('/api/logout', { method: 'POST', credentials: 'include' });
-    location.href = 'login.html';
+    await fetch('/api/logout',{method:'POST',credentials:'include'});
+    location.href='login.html';
   }
 
   init();

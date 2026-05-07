@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard Mockup</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #eef2f7; color: #1a2332; min-height: 100vh; }
+
+/* ── TOP BAR ── */
+.topbar {
+  background: #1e3a5f;
+  color: #fff;
+  padding: 0 32px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.topbar-brand { font-size: 17px; font-weight: 700; letter-spacing: .3px; }
+.topbar-brand span { color: #60a5fa; }
+.topbar-user { display: flex; align-items: center; gap: 20px; font-size: 13px; }
+.topbar-user .name { color: #e2e8f0; }
+.topbar-user a { color: #93c5fd; text-decoration: none; }
+.topbar-user a:hover { color: #fff; }
+.xp-pill {
+  background: #1d4ed8;
+  color: #bfdbfe;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ── LAYOUT ── */
+.page { max-width: 1180px; margin: 0 auto; padding: 28px 24px 60px; }
+
+/* ── STATS STRIP ── */
+.stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.stat-box {
+  background: #fff;
+  border-radius: 10px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.07);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.stat-icon { font-size: 26px; }
+.stat-val { font-size: 22px; font-weight: 700; line-height: 1; }
+.stat-lbl { font-size: 11px; color: #888; margin-top: 3px; }
+
+/* ── MAIN GRID ── */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  align-items: start;
+}
+
+/* ── LEFT COLUMN ── */
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: #94a3b8;
+  margin-bottom: 10px;
+}
+
+/* Mission card */
+.mission-card {
+  background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+  color: #fff;
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(30,58,95,.25);
+}
+.mission-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.mission-title { font-size: 15px; font-weight: 700; }
+.mission-pts { font-size: 12px; color: #93c5fd; }
+.mission-bar-bg { background: rgba(255,255,255,.2); border-radius: 99px; height: 10px; margin-bottom: 10px; }
+.mission-bar-fill { background: #34d399; height: 10px; border-radius: 99px; width: 40%; }
+.mission-bottom { display: flex; justify-content: space-between; align-items: center; }
+.mission-count { font-size: 13px; color: #bfdbfe; }
+.mission-btn {
+  background: #10b981;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Action buttons */
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.action-btn {
+  background: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 20px 16px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  transition: transform .12s, box-shadow .12s;
+  text-decoration: none;
+  color: inherit;
+}
+.action-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.12); }
+.action-btn .btn-icon { font-size: 28px; }
+.action-btn .btn-label { font-size: 14px; font-weight: 700; }
+.action-btn .btn-sub { font-size: 11px; color: #94a3b8; }
+
+.btn-practice { border-top: 3px solid #10b981; }
+.btn-adaptive  { border-top: 3px solid #6366f1; }
+.btn-exam      { border-top: 3px solid #f59e0b; }
+
+/* Weekly quiz — subtle highlight only on Saturday */
+.action-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.action-btn-sm {
+  background: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  transition: transform .12s;
+  text-decoration: none;
+  color: inherit;
+}
+.action-btn-sm:hover { transform: translateY(-1px); }
+.action-btn-sm .sm-icon { font-size: 24px; }
+.action-btn-sm .sm-text {}
+.action-btn-sm .sm-label { font-size: 13px; font-weight: 700; }
+.action-btn-sm .sm-sub { font-size: 11px; color: #94a3b8; }
+.btn-sat { border-left: 3px solid #8b5cf6; }
+.btn-game { border-left: 3px solid #ec4899; }
+
+/* ── RIGHT COLUMN ── */
+.right-col { display: flex; flex-direction: column; gap: 16px; }
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.07);
+}
+.card-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: #94a3b8;
+  margin-bottom: 14px;
+}
+
+/* Streak */
+.streak-row { display: flex; align-items: center; gap: 10px; }
+.streak-num { font-size: 36px; font-weight: 800; color: #f59e0b; line-height: 1; }
+.streak-lbl { font-size: 13px; color: #64748b; }
+.streak-days { display: flex; gap: 5px; margin-top: 10px; }
+.streak-day { width: 28px; height: 28px; border-radius: 6px; background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #94a3b8; font-weight: 600; }
+.streak-day.done { background: #fef3c7; color: #d97706; }
+.streak-day.today { background: #f59e0b; color: #fff; }
+
+/* Weak topics */
+.weak-list { display: flex; flex-direction: column; gap: 8px; }
+.weak-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.weak-bar-bg { flex: 1; background: #f1f5f9; border-radius: 99px; height: 6px; }
+.weak-bar-fill { height: 6px; border-radius: 99px; background: #f87171; }
+.weak-pct { font-size: 11px; color: #94a3b8; width: 30px; text-align: right; }
+
+/* Leaderboard mini */
+.lb-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13px; }
+.lb-rank { width: 20px; font-weight: 700; color: #94a3b8; text-align: center; }
+.lb-rank.gold { color: #f59e0b; }
+.lb-name { flex: 1; }
+.lb-score { font-weight: 700; color: #1e3a5f; }
+
+/* util row */
+.util-row { display: flex; gap: 10px; }
+.util-btn {
+  flex: 1;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 600;
+  transition: background .12s;
+  text-decoration: none;
+}
+.util-btn:hover { background: #eff6ff; color: #1e40af; }
+.util-btn .u-icon { font-size: 20px; }
+
+.note {
+  font-size: 11px;
+  color: #94a3b8;
+  text-align: center;
+  margin-top: 4px;
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-brand">📚 School<span>Plus</span></div>
+  <div class="topbar-user">
+    <span class="xp-pill">⭐ 2,340 XP</span>
+    <span class="name">ด.ญ. มาลี รักเรียน</span>
+    <a href="#">ออกจากระบบ</a>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- STATS STRIP -->
+  <div class="stats-strip">
+    <div class="stat-box">
+      <div class="stat-icon">🏅</div>
+      <div>
+        <div class="stat-val">47</div>
+        <div class="stat-lbl">ครั้งที่สอบ</div>
+      </div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-icon">✅</div>
+      <div>
+        <div class="stat-val">72%</div>
+        <div class="stat-lbl">คะแนนเฉลี่ย</div>
+      </div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-icon">🎫</div>
+      <div>
+        <div class="stat-val">3</div>
+        <div class="stat-lbl">ตั๋วแข่งขัน</div>
+      </div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-icon">🎁</div>
+      <div>
+        <div class="stat-val">2</div>
+        <div class="stat-lbl">กล่องรางวัล</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- LEFT COLUMN -->
+    <div>
+      <!-- MISSION -->
+      <div class="section-title">ภารกิจประจำวัน</div>
+      <div class="mission-card">
+        <div class="mission-top">
+          <div class="mission-title">🎯 ทำโจทย์วันนี้ให้ครบ</div>
+          <div class="mission-pts">+50 XP เมื่อครบ 10 ข้อ</div>
+        </div>
+        <div class="mission-bar-bg">
+          <div class="mission-bar-fill"></div>
+        </div>
+        <div class="mission-bottom">
+          <div class="mission-count">4 / 10 ข้อ</div>
+          <button class="mission-btn">▶ เริ่มทำต่อ</button>
+        </div>
+      </div>
+
+      <!-- MAIN ACTIONS -->
+      <div class="section-title">เรียนและสอบ</div>
+      <div class="action-grid">
+        <a href="#" class="action-btn btn-practice">
+          <span class="btn-icon">✏️</span>
+          <span class="btn-label">เลือกเรื่องฝึก</span>
+          <span class="btn-sub">เลือกวิชา / บทเรียน</span>
+        </a>
+        <a href="#" class="action-btn btn-adaptive">
+          <span class="btn-icon">🧠</span>
+          <span class="btn-label">ฝึกจุดอ่อน</span>
+          <span class="btn-sub">ระบบเลือกโจทย์ให้เอง</span>
+        </a>
+        <a href="#" class="action-btn btn-exam">
+          <span class="btn-icon">🏅</span>
+          <span class="btn-label">สอบแข่งขัน</span>
+          <span class="btn-sub">จับเวลา / ใช้ตั๋ว</span>
+        </a>
+      </div>
+
+      <div class="action-grid-2">
+        <a href="#" class="action-btn-sm btn-sat">
+          <span class="sm-icon">📝</span>
+          <div class="sm-text">
+            <div class="sm-label">สอบประจำสัปดาห์</div>
+            <div class="sm-sub">เปิดทุกวันเสาร์</div>
+          </div>
+        </a>
+        <a href="#" class="action-btn-sm btn-game">
+          <span class="sm-icon">🎮</span>
+          <div class="sm-text">
+            <div class="sm-label">เกม</div>
+            <div class="sm-sub">Grand Prix · Time Trial</div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="right-col">
+
+      <!-- STREAK -->
+      <div class="card">
+        <div class="card-title">Streak ต่อเนื่อง</div>
+        <div class="streak-row">
+          <div class="streak-num">🔥 5</div>
+          <div class="streak-lbl">วันติดต่อกัน</div>
+        </div>
+        <div class="streak-days">
+          <div class="streak-day done">จ</div>
+          <div class="streak-day done">อ</div>
+          <div class="streak-day done">พ</div>
+          <div class="streak-day done">พฤ</div>
+          <div class="streak-day today">ศ</div>
+          <div class="streak-day">ส</div>
+          <div class="streak-day">อา</div>
+        </div>
+      </div>
+
+      <!-- WEAK TOPICS -->
+      <div class="card">
+        <div class="card-title">จุดอ่อนที่ควรฝึก</div>
+        <div class="weak-list">
+          <div class="weak-item">
+            <span style="font-size:12px;flex:0 0 80px;color:#374151">เศษส่วน</span>
+            <div class="weak-bar-bg"><div class="weak-bar-fill" style="width:65%"></div></div>
+            <span class="weak-pct">35%</span>
+          </div>
+          <div class="weak-item">
+            <span style="font-size:12px;flex:0 0 80px;color:#374151">เรขาคณิต</span>
+            <div class="weak-bar-bg"><div class="weak-bar-fill" style="width:50%"></div></div>
+            <span class="weak-pct">50%</span>
+          </div>
+          <div class="weak-item">
+            <span style="font-size:12px;flex:0 0 80px;color:#374151">สถิติ</span>
+            <div class="weak-bar-bg"><div class="weak-bar-fill" style="width:40%;background:#fb923c"></div></div>
+            <span class="weak-pct">60%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MINI LEADERBOARD -->
+      <div class="card">
+        <div class="card-title">อันดับห้องเรียน</div>
+        <div class="lb-row"><span class="lb-rank gold">1</span><span class="lb-name">ด.ช. ธีรภัทร</span><span class="lb-score">3,840</span></div>
+        <div class="lb-row"><span class="lb-rank">2</span><span class="lb-name">ด.ญ. มาลี (คุณ)</span><span class="lb-score" style="color:#1d4ed8">2,340</span></div>
+        <div class="lb-row"><span class="lb-rank">3</span><span class="lb-name">ด.ช. สมชาย</span><span class="lb-score">2,100</span></div>
+        <div class="note"><a href="#" style="color:#3b82f6;font-size:11px">ดูอันดับทั้งหมด →</a></div>
+      </div>
+
+      <!-- UTIL BUTTONS -->
+      <div class="util-row">
+        <a href="#" class="util-btn">
+          <span class="u-icon">🎁</span>กล่องรางวัล
+        </a>
+        <a href="#" class="util-btn">
+          <span class="u-icon">👨‍👩‍👧</span>ผู้ปกครอง
+        </a>
+        <a href="#" class="util-btn">
+          <span class="u-icon">📊</span>ประวัติสอบ
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

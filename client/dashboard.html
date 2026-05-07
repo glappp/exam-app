@@ -2,119 +2,201 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>แดชบอร์ด</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', sans-serif; background: #f5f7fa; color: #222; min-height: 100vh; }
+    body { font-family: 'Segoe UI', sans-serif; background: #eef2f7; color: #1a2332; min-height: 100vh; }
 
+    /* ── TOPBAR ── */
     .topbar {
-      background: #1e3a5f;
-      color: #fff;
-      padding: 0 24px;
-      height: 52px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      background: #1e3a5f; color: #fff;
+      padding: 0 32px; height: 54px;
+      display: flex; align-items: center; justify-content: space-between;
     }
-    .topbar-title { font-weight: 600; font-size: 16px; }
-    .topbar-right { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+    .topbar-title { font-weight: 700; font-size: 17px; letter-spacing: .2px; }
+    .topbar-right { display: flex; align-items: center; gap: 20px; font-size: 13px; }
     .topbar-right a { color: #93c5fd; text-decoration: none; }
     .topbar-right a:hover { color: #fff; }
+    #topbar-name { color: #e2e8f0; font-weight: 600; }
 
-    .container { max-width: 900px; margin: 28px auto; padding: 0 16px 64px; }
+    /* ── PAGE ── */
+    .page { max-width: 1200px; margin: 0 auto; padding: 24px 32px 60px; }
+    @media (max-width: 760px) { .page { padding: 16px 14px 48px; } }
 
-    .welcome { margin-bottom: 24px; }
+    /* ── WELCOME ── */
+    .welcome { margin-bottom: 20px; }
     .welcome h2 { font-size: 22px; font-weight: 700; }
-    .welcome p { color: #666; font-size: 14px; margin-top: 4px; }
+    .welcome p { color: #64748b; font-size: 14px; margin-top: 3px; }
 
-    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+    /* ── STATS STRIP ── */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-box {
+      background: #fff; border-radius: 10px;
+      padding: 14px 18px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.07);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .stat-num { font-size: 26px; font-weight: 800; color: #1e3a5f; line-height: 1; }
+    .stat-label { font-size: 11px; color: #94a3b8; margin-top: 3px; }
 
+    /* ── MAIN GRID ── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .main-grid { grid-template-columns: 1fr; }
+      .right-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    }
+    @media (max-width: 600px) {
+      .right-col { grid-template-columns: 1fr; }
+    }
+
+    .left-col  { display: flex; flex-direction: column; gap: 16px; }
+    .right-col { display: flex; flex-direction: column; gap: 16px; }
+
+    /* ── CARD ── */
     .card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 20px 24px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      background: #fff; border-radius: 12px;
+      padding: 20px 22px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.07);
     }
     .card-title {
-      font-size: 12px;
-      font-weight: 700;
-      color: #888;
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-      margin-bottom: 14px;
+      font-size: 11px; font-weight: 700; color: #94a3b8;
+      text-transform: uppercase; letter-spacing: .7px; margin-bottom: 14px;
     }
 
-    /* Mode buttons */
-    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    /* ── MISSION CARD ── */
+    .mission-card-inner {
+      background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+      border-radius: 12px; padding: 20px 22px; color: #fff;
+      box-shadow: 0 4px 14px rgba(30,58,95,.2);
+    }
+    .mission-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .mission-title { font-size: 15px; font-weight: 700; }
+    .mission-pts { font-size: 12px; color: #93c5fd; margin-top: 3px; }
+    .mission-progress-bg { background: rgba(255,255,255,.2); border-radius: 99px; height: 10px; margin-bottom: 12px; }
+    .mission-progress-fill { height: 10px; border-radius: 99px; transition: width .4s; }
+    .mission-bottom { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .mission-count { font-size: 13px; color: #bfdbfe; }
+    .mission-status-text { font-size: 12px; }
+    .mission-go-btn {
+      background: #10b981; color: #fff; border: none;
+      border-radius: 8px; padding: 8px 18px;
+      font-size: 13px; font-weight: 700; cursor: pointer;
+      white-space: nowrap; transition: opacity .15s;
+    }
+    .mission-go-btn:hover { opacity: .88; }
+
+    /* ── ACTION BUTTONS (เรียนและสอบ) ── */
+    .action-3col {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+      margin-bottom: 10px;
+    }
+    .action-2col {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    @media (max-width: 600px) {
+      .action-3col { grid-template-columns: 1fr 1fr; }
+    }
+
     .mode-btn {
-      padding: 14px 12px;
-      border: none;
-      border-radius: 10px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      transition: opacity .15s;
+      background: #fff; border: none; border-radius: 11px;
+      padding: 16px 12px; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 7px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.07);
+      transition: transform .12s, box-shadow .12s;
+      text-align: center;
     }
-    .mode-btn:hover { opacity: .85; }
-    .mode-btn .icon { font-size: 22px; }
-    .mode-btn .mode-label { font-size: 14px; font-weight: 600; }
-    .mode-btn .mode-sub { font-size: 11px; opacity: .7; font-weight: 400; }
-    .mode-btn.green  { background: #dcfce7; color: #166534; }
-    .mode-btn.blue   { background: #dbeafe; color: #1e40af; }
-    .mode-btn.orange { background: #ffedd5; color: #9a3412; }
-    .mode-btn.purple { background: #f3e8ff; color: #6b21a8; }
+    .mode-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.11); }
+    .mode-btn .icon { font-size: 26px; }
+    .mode-label { font-size: 13px; font-weight: 700; line-height: 1.2; }
+    .mode-sub   { font-size: 11px; color: #94a3b8; font-weight: 400; line-height: 1.3; }
 
-    /* Profile form */
-    .form-group { margin-bottom: 12px; }
-    .form-group label { font-size: 12px; color: #666; display: block; margin-bottom: 4px; }
-    .form-group input, .form-group select {
-      width: 100%; padding: 8px 10px; border: 1px solid #e0e0e0; border-radius: 6px;
-      font-size: 13px; font-family: inherit;
+    .mode-btn.green  { background: #f0fdf4; border-top: 3px solid #10b981; }
+    .mode-btn.blue   { background: #eff6ff; border-top: 3px solid #3b82f6; }
+    .mode-btn.orange { background: #fff7ed; border-top: 3px solid #f59e0b; }
+
+    .mode-btn-sm {
+      background: #fff; border: none; border-radius: 11px;
+      padding: 14px 16px; cursor: pointer;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.07);
+      transition: transform .12s, box-shadow .12s;
+      text-align: left;
     }
-    .form-group input:focus, .form-group select:focus { outline: none; border-color: #3b82f6; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .profile-value {
-      padding: 8px 10px; background: #f1f5f9; border-radius: 6px;
-      font-size: 14px; color: #1e293b; min-height: 36px;
+    .mode-btn-sm:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.11); }
+    .mode-btn-sm .icon { font-size: 22px; flex-shrink: 0; }
+    .mode-btn-sm.sat  { border-left: 3px solid #8b5cf6; }
+    .mode-btn-sm.game { border-left: 3px solid #ec4899; }
+
+    /* ── CHARACTER CARD ── */
+    .char-row { display: flex; align-items: center; gap: 14px; }
+    .char-icon-big { font-size: 40px; line-height: 1; }
+    .char-xp-bar-bg { background: #f0f0f0; border-radius: 99px; height: 6px; margin-top: 6px; }
+    .char-xp-bar-fill { background: #7c3aed; height: 6px; border-radius: 99px; width: 0%; transition: width .4s; }
+
+    /* ── PROFILE ── */
+    .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .profile-item label { font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px; }
+    .profile-value { font-size: 13px; font-weight: 600; color: #1e293b; }
+    .profile-item.full { grid-column: 1 / -1; }
+
+    /* ── UTILITY ROW ── */
+    .util-row { display: flex; gap: 10px; }
+    .util-btn {
+      flex: 1; background: #fff;
+      border: 1px solid #e2e8f0; border-radius: 10px;
+      padding: 12px 6px; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+      font-size: 11px; color: #64748b; font-weight: 600;
+      text-decoration: none; transition: background .12s, color .12s;
     }
+    .util-btn:hover { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+    .util-btn .u-icon { font-size: 20px; }
 
-    /* Stats row */
-    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
-    .stat-box { background: #f8fafc; border-radius: 8px; padding: 12px; text-align: center; }
-    .stat-num { font-size: 24px; font-weight: 700; color: #1e3a5f; }
-    .stat-label { font-size: 11px; color: #888; margin-top: 2px; }
-
-    /* History table */
-    .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .history-table th { text-align: left; padding: 8px 10px; background: #f8fafc; color: #666; font-weight: 600; border-bottom: 1px solid #e8e8e8; }
-    .history-table td { padding: 8px 10px; border-bottom: 1px solid #f0f0f0; }
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
-    .badge-practice  { background: #dcfce7; color: #166534; }
-    .badge-competitive { background: #ffedd5; color: #9a3412; }
-    .badge-adaptive  { background: #dbeafe; color: #1e40af; }
-    .badge-official  { background: #f3e8ff; color: #6b21a8; }
-
-    /* Weakness */
+    /* ── WEAKNESS ── */
     .weak-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-    .weak-label { font-size: 12px; color: #444; width: 160px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .weak-bar-bg { flex: 1; height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
+    .weak-label { font-size: 12px; color: #444; width: 140px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .weak-bar-bg { flex: 1; height: 7px; background: #f0f0f0; border-radius: 4px; overflow: hidden; }
     .weak-bar-fill { height: 100%; border-radius: 4px; background: #3b82f6; }
-    .weak-bar-fill.warn { background: #f59e0b; }
+    .weak-bar-fill.warn   { background: #f59e0b; }
     .weak-bar-fill.danger { background: #ef4444; }
-    .weak-pct { font-size: 12px; color: #666; width: 36px; text-align: right; }
+    .weak-pct { font-size: 12px; color: #888; width: 36px; text-align: right; }
 
+    /* ── HISTORY TABLE ── */
+    .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .history-table th { text-align: left; padding: 7px 8px; background: #f8fafc; color: #888; font-weight: 600; border-bottom: 1px solid #e8e8e8; }
+    .history-table td { padding: 7px 8px; border-bottom: 1px solid #f0f0f0; }
+    .badge { display: inline-block; padding: 2px 7px; border-radius: 99px; font-size: 10px; font-weight: 600; }
+    .badge-practice    { background: #dcfce7; color: #166534; }
+    .badge-competitive { background: #ffedd5; color: #9a3412; }
+    .badge-adaptive    { background: #dbeafe; color: #1e40af; }
+    .badge-official    { background: #f3e8ff; color: #6b21a8; }
+
+    /* ── MISC ── */
     .empty-msg { font-size: 13px; color: #aaa; font-style: italic; text-align: center; padding: 16px 0; }
+    .section-badge { display: inline-block; background: #eff6ff; color: #1e40af; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 99px; margin-left: 8px; vertical-align: middle; }
+
+    /* Profile form (kept for compat) */
+    .form-group { margin-bottom: 10px; }
+    .form-group label { font-size: 11px; color: #94a3b8; display: block; margin-bottom: 2px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .profile-value-box { padding: 7px 10px; background: #f8fafc; border-radius: 6px; font-size: 13px; color: #1e293b; min-height: 32px; font-weight: 500; }
   </style>
 </head>
 <body>
 
-<!-- Impersonation banner — แสดงเมื่อ admin กำลังทดสอบในฐานะ user อื่น -->
-<div id="impersonate-banner" style="display:none;background:#f59e0b;color:#1c1917;padding:8px 20px;font-size:13px;font-weight:600;align-items:center;justify-content:space-between;gap:12px">
+<!-- Impersonation banner -->
+<div id="impersonate-banner" style="display:none;background:#f59e0b;color:#1c1917;padding:8px 24px;font-size:13px;font-weight:600;align-items:center;justify-content:space-between;gap:12px">
   <span id="impersonate-label">⚠️ กำลังทดสอบในฐานะ: <strong id="impersonate-username"></strong></span>
   <button onclick="exitImpersonate()" style="background:#1c1917;color:#fef3c7;border:none;border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer">
     ออกโหมดทดสอบ → Admin
@@ -131,7 +213,7 @@
 </div>
 
 <!-- Announcement popup -->
-<div id="ann-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:none;align-items:center;justify-content:center;padding:16px">
+<div id="ann-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:center;justify-content:center;padding:16px">
   <div style="background:#fff;border-radius:14px;max-width:480px;width:100%;padding:28px;box-shadow:0 8px 32px rgba(0,0,0,.18);position:relative">
     <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:6px">📢 ประกาศ</div>
     <div id="ann-title" style="font-size:18px;font-weight:700;margin-bottom:10px"></div>
@@ -144,82 +226,94 @@
   </div>
 </div>
 
-<div class="container">
+<!-- ═══════════════════════════════ PAGE ═══════════════════════════════ -->
+<div class="page">
+
+  <!-- Welcome -->
   <div class="welcome">
     <h2 id="welcome-name">กำลังโหลด...</h2>
     <p id="welcome-sub"></p>
   </div>
 
-  <!-- Character card -->
-  <div class="card" id="char-card" style="display:none;margin-bottom:16px">
-    <div style="display:flex;align-items:center;gap:14px">
-      <div id="char-icon" style="font-size:36px;line-height:1"></div>
-      <div style="flex:1">
-        <div style="font-weight:700;font-size:15px" id="char-name"></div>
-        <div style="font-size:12px;color:#888;margin:4px 0" id="char-xp"></div>
-        <div style="background:#f0f0f0;border-radius:99px;height:6px">
-          <div id="char-bar" style="background:#7c3aed;height:6px;border-radius:99px;width:0%;transition:width .4s"></div>
-        </div>
+  <!-- Stats strip (shown by JS when data exists) -->
+  <div class="stats-strip" id="stats-row" style="display:none">
+    <div class="stat-box">
+      <div style="font-size:24px">🏅</div>
+      <div>
+        <div class="stat-num" id="stat-total">0</div>
+        <div class="stat-label">ครั้งที่สอบ</div>
+      </div>
+    </div>
+    <div class="stat-box">
+      <div style="font-size:24px">✅</div>
+      <div>
+        <div class="stat-num" id="stat-avg">—</div>
+        <div class="stat-label">คะแนนเฉลี่ย</div>
+      </div>
+    </div>
+    <div class="stat-box">
+      <div style="font-size:24px">⭐</div>
+      <div>
+        <div class="stat-num" id="stat-best">—</div>
+        <div class="stat-label">สูงสุด</div>
       </div>
     </div>
   </div>
 
-  <!-- Daily Mission card -->
-  <div class="card" id="mission-card" style="margin-bottom:16px;display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <div class="card-title" style="margin:0">ภารกิจวันนี้</div>
-      <div id="mission-points" style="font-size:13px;color:#888"></div>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px">
-      <div style="flex:1">
-        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
-          <span id="mission-label">ทำโจทย์ 0/10 ข้อ</span>
-          <span id="mission-status"></span>
+  <!-- Main 2-column layout -->
+  <div class="main-grid">
+
+    <!-- ═══ LEFT COLUMN ═══ -->
+    <div class="left-col">
+
+      <!-- Character card (shown by JS) -->
+      <div class="card" id="char-card" style="display:none">
+        <div class="char-row">
+          <div id="char-icon" class="char-icon-big"></div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:15px" id="char-name"></div>
+            <div style="font-size:12px;color:#94a3b8;margin:4px 0" id="char-xp"></div>
+            <div class="char-xp-bar-bg">
+              <div id="char-bar" class="char-xp-bar-fill"></div>
+            </div>
+          </div>
         </div>
-        <div style="background:#f0f0f0;border-radius:99px;height:8px">
-          <div id="mission-bar" style="background:#3b82f6;height:8px;border-radius:99px;width:0%;transition:width .4s"></div>
+      </div>
+
+      <!-- Mission card (shown by JS) -->
+      <div id="mission-card" style="display:none">
+        <div class="mission-card-inner">
+          <div class="mission-top">
+            <div>
+              <div class="mission-title">🎯 ภารกิจวันนี้</div>
+              <div id="mission-points" class="mission-pts"></div>
+            </div>
+            <button class="mission-go-btn" onclick="location.href='mission.html'">▶ เริ่มทำ</button>
+          </div>
+          <div class="mission-progress-bg">
+            <div id="mission-bar" class="mission-progress-fill" style="background:#34d399;width:0%"></div>
+          </div>
+          <div class="mission-bottom">
+            <span id="mission-label" class="mission-count">ทำโจทย์ 0/10 ข้อ</span>
+            <span id="mission-status" class="mission-status-text"></span>
+          </div>
+          <!-- Ticket balance -->
+          <div id="ticket-row" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.15);display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:13px;color:#bfdbfe">
+              🎟️ ตั๋วแข่งขัน
+              <span id="ticket-balance" style="font-weight:700;color:#fff;margin-left:6px">—</span> ใบ
+            </div>
+            <div style="font-size:12px;color:#93c5fd">
+              ใช้แล้ววันนี้ <span id="ticket-used">—</span>/5 ใบ
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-    <!-- Ticket balance -->
-    <div id="ticket-row" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between">
-      <div style="font-size:13px;color:#444">
-        🎟️ ตั๋วแข่งขัน
-        <span id="ticket-balance" style="font-weight:700;color:#1e3a5f;margin-left:6px">—</span> ใบ
-      </div>
-      <div style="font-size:12px;color:#888">
-        ใช้แล้ววันนี้ <span id="ticket-used">—</span>/5 ใบ
-      </div>
-    </div>
-  </div>
 
-  <!-- Stats row -->
-  <div class="stats-row" id="stats-row" style="display:none">
-    <div class="stat-box">
-      <div class="stat-num" id="stat-total">0</div>
-      <div class="stat-label">ครั้งที่สอบ</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-num" id="stat-avg">—</div>
-      <div class="stat-label">คะแนนเฉลี่ย (%)</div>
-    </div>
-    <div class="stat-box">
-      <div class="stat-num" id="stat-best">—</div>
-      <div class="stat-label">สูงสุด (%)</div>
-    </div>
-  </div>
-
-  <div class="grid2">
-    <!-- Left: Mode buttons + Weaknesses -->
-    <div style="display:flex;flex-direction:column;gap:16px">
-
+      <!-- Learning & Exam buttons -->
       <div class="card">
-        <div class="card-title">เริ่มเรียน / สอบ</div>
-        <div class="mode-grid">
-          <button class="mode-btn" style="background:#fef9c3;color:#854d0e;grid-column:1/-1" onclick="location.href='mission.html'">
-            <span class="icon">🎯</span>
-            <span class="mode-label">ภารกิจประจำวัน</span>
-          </button>
+        <div class="card-title">เรียนและสอบ</div>
+        <div class="action-3col">
           <button class="mode-btn green" onclick="location.href='practice.html'">
             <span class="icon">✏️</span>
             <span class="mode-label">ฝึกตามหัวข้อ</span>
@@ -235,103 +329,123 @@
             <span class="mode-label">สอบแข่งขัน</span>
             <span class="mode-sub">จับเวลา ใช้ตั๋ว รับ XP</span>
           </button>
-          <button class="mode-btn" style="background:#744210;color:#fefcbf;border:1px solid #975a16" onclick="location.href='saturday-quiz.html'">
+        </div>
+        <div class="action-2col">
+          <button class="mode-btn-sm sat" onclick="location.href='saturday-quiz.html'">
             <span class="icon">📝</span>
-            <span class="mode-label">สอบประจำสัปดาห์</span>
-            <span class="mode-sub">เปิดเฉพาะวันเสาร์</span>
+            <div>
+              <div class="mode-label">สอบประจำสัปดาห์</div>
+              <div class="mode-sub">เปิดเฉพาะวันเสาร์</div>
+            </div>
           </button>
-          <button class="mode-btn" style="background:#fce7f3;color:#9d174d" onclick="location.href='games.html'">
+          <button class="mode-btn-sm game" onclick="location.href='games.html'">
             <span class="icon">🎮</span>
-            <span class="mode-label">เกม</span>
-            <span class="mode-sub">Grand Prix · Time Trial</span>
+            <div>
+              <div class="mode-label">เกม</div>
+              <div class="mode-sub">Grand Prix · Time Trial</div>
+            </div>
           </button>
-          <button class="mode-btn" style="background:#0f172a;color:#fbbf24;border:1px solid #334155" onclick="location.href='leaderboard.html'">
-            <span class="icon">🏆</span>
-            <span class="mode-label">Leaderboard</span>
-          </button>
-          <button class="mode-btn" style="background:#1e293b;color:#e2e8f0;border:1px solid #334155" onclick="location.href='box.html'">
-            <span class="icon">🎁</span>
-            <span class="mode-label">กล่องรางวัล</span>
-          </button>
-          <button class="mode-btn" style="background:#eff6ff;color:#1e40af;border:1.5px solid #bfdbfe" onclick="location.href='parent-corner.html'">
-            <span class="icon">👨‍👩‍👧</span>
-            <span class="mode-label">มุมผู้ปกครอง</span>
-          </button>
-          <button class="mode-btn" id="teacher-btn" style="display:none;background:#f0fdf4;color:#166534" onclick="location.href='teacher-report.html'">
-            <span class="icon">👩‍🏫</span>
-            <span class="mode-label">รายงานครู</span>
-          </button>
-          <button class="mode-btn" id="teacher-dashboard-btn" style="display:none;background:#ebf8ff;color:#2c5282" onclick="location.href='teacher-dashboard.html'">
-            <span class="icon">📊</span>
-            <span class="mode-label">ภาพรวมห้องเรียน</span>
-          </button>
+        </div>
+        <!-- Teacher buttons (hidden, shown by JS for teacher/admin) -->
+        <div id="teacher-btns" style="display:none;margin-top:10px;display:none">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <button id="teacher-btn" style="display:none" class="mode-btn-sm" onclick="location.href='teacher-report.html'">
+              <span class="icon">👩‍🏫</span>
+              <div><div class="mode-label">รายงานครู</div></div>
+            </button>
+            <button id="teacher-dashboard-btn" style="display:none" class="mode-btn-sm" onclick="location.href='teacher-dashboard.html'">
+              <span class="icon">📊</span>
+              <div><div class="mode-label">ภาพรวมห้องเรียน</div></div>
+            </button>
+          </div>
         </div>
       </div>
 
+      <!-- Weakness card -->
       <div class="card" id="weakness-card">
         <div class="card-title">จุดอ่อน (Top 5)</div>
         <div id="weakness-content"><div class="empty-msg">ยังไม่มีข้อมูล</div></div>
       </div>
 
+      <!-- Recommend card (shown by JS) -->
       <div class="card" id="recommend-card" style="display:none">
         <div class="card-title">แนะนำให้ฝึก</div>
         <div id="recommend-content"></div>
-        <button class="btn btn-primary" style="margin-top:12px;width:100%" onclick="location.href='rally.html'">
-          ⚡ ตะลุยโจทย์
+        <button style="margin-top:12px;width:100%;padding:10px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer" onclick="location.href='rally.html'">
+          🧠 โจทย์ฝึกเฉพาะคุณ
         </button>
       </div>
 
-    </div>
+      <!-- Score section anchor (JS appends score card here) -->
+      <div id="score-anchor"></div>
 
-    <!-- Right: Profile form + History -->
-    <div style="display:flex;flex-direction:column;gap:16px">
+    </div><!-- /left-col -->
 
+    <!-- ═══ RIGHT SIDEBAR ═══ -->
+    <div class="right-col">
+
+      <!-- Profile -->
       <div class="card">
         <div class="card-title">ข้อมูลนักเรียน</div>
-        <div class="form-row">
+        <div class="form-row" style="margin-bottom:8px">
           <div class="form-group">
-            <label>ปีการศึกษา (พ.ศ.)</label>
-            <div class="profile-value" id="p-year">—</div>
+            <label>ปีการศึกษา</label>
+            <div class="profile-value-box" id="p-year">—</div>
           </div>
           <div class="form-group">
             <label>ระดับชั้น</label>
-            <div class="profile-value" id="p-grade">—</div>
+            <div class="profile-value-box" id="p-grade">—</div>
           </div>
         </div>
         <div class="form-group">
           <label>โรงเรียน</label>
-          <div class="profile-value" id="p-school">—</div>
+          <div class="profile-value-box" id="p-school">—</div>
         </div>
-        <div class="form-row">
+        <div class="form-row" style="margin-bottom:8px">
           <div class="form-group">
             <label>อำเภอ / เขต</label>
-            <div class="profile-value" id="p-district">—</div>
+            <div class="profile-value-box" id="p-district">—</div>
           </div>
           <div class="form-group">
             <label>จังหวัด</label>
-            <div class="profile-value" id="p-province">—</div>
+            <div class="profile-value-box" id="p-province">—</div>
           </div>
         </div>
         <div class="form-row">
           <div class="form-group">
             <label>ห้อง</label>
-            <div class="profile-value" id="p-classroom">—</div>
+            <div class="profile-value-box" id="p-classroom">—</div>
           </div>
           <div class="form-group">
             <label>เลขประจำตัว</label>
-            <div class="profile-value" id="p-code">—</div>
+            <div class="profile-value-box" id="p-code">—</div>
           </div>
         </div>
       </div>
 
+      <!-- Utility buttons -->
+      <div class="util-row">
+        <a href="leaderboard.html" class="util-btn">
+          <span class="u-icon">🏆</span>อันดับ
+        </a>
+        <a href="box.html" class="util-btn">
+          <span class="u-icon">🎁</span>รางวัล
+        </a>
+        <a href="parent-corner.html" class="util-btn">
+          <span class="u-icon">👨‍👩‍👧</span>ผู้ปกครอง
+        </a>
+      </div>
+
+      <!-- Exam history -->
       <div class="card">
         <div class="card-title">ประวัติการสอบ</div>
         <div id="history-content"><div class="empty-msg">ยังไม่มีประวัติ</div></div>
       </div>
 
-    </div>
-  </div>
-</div>
+    </div><!-- /right-col -->
+
+  </div><!-- /main-grid -->
+</div><!-- /page -->
 
 <script>
   let studentData = null;
@@ -461,31 +575,24 @@
     const pct = Math.round(count / m.dailyGoal * 100);
     document.getElementById('mission-label').textContent = `ทำโจทย์ ${count}/${m.dailyGoal} ข้อ`;
     document.getElementById('mission-bar').style.width = pct + '%';
-    document.getElementById('mission-bar').style.background = m.baseCompleted ? '#16a34a' : '#3b82f6';
+    document.getElementById('mission-bar').style.background = m.baseCompleted ? '#10b981' : '#60a5fa';
     document.getElementById('mission-status').innerHTML = m.baseCompleted
-      ? `<span style="color:#16a34a;font-weight:700">✅ ครบแล้ว! +${m.pointsEarnedToday} ⭐</span>`
-      : `<span style="color:#888">${m.dailyGoal - count} ข้อที่เหลือ</span>`;
+      ? `<span style="color:#6ee7b7;font-weight:700">✅ ครบแล้ว! +${m.pointsEarnedToday} ⭐</span>`
+      : `<span style="color:#bfdbfe">${m.dailyGoal - count} ข้อที่เหลือ</span>`;
     document.getElementById('mission-points').textContent = `⭐ ${m.totalPoints} คะแนนสะสม`;
   }
 
   function renderRecommendation(results) {
-    // รวม weakAttributes จากทุกผลสอบ (ทุก mode ที่มีข้อมูล)
     const tally = {};
     results.forEach(r => {
       if (!Array.isArray(r.weakAttributes)) return;
-      r.weakAttributes.forEach(tag => {
-        tally[tag] = (tally[tag] || 0) + 1;
-      });
+      r.weakAttributes.forEach(tag => { tally[tag] = (tally[tag] || 0) + 1; });
     });
-
-    // เอาเฉพาะ topic tags เรียงตามความถี่
     const topTopics = Object.entries(tally)
       .filter(([k]) => k.startsWith('topic:'))
       .sort((a, b) => b[1] - a[1])
       .slice(0, 3);
-
     if (!topTopics.length) return;
-
     const card = document.getElementById('recommend-card');
     const el = document.getElementById('recommend-content');
     el.innerHTML = topTopics.map(([tag, count], i) => {
@@ -504,18 +611,15 @@
 
   function renderWeakness(results) {
     const el = document.getElementById('weakness-content');
-    // ใช้ weakAttributes จากการสอบแบบมีเวลา (competitive/official) ล่าสุด
     const timedResult = results.find(r => r.mode === 'competitive' || r.mode === 'official');
     const tags = Array.isArray(timedResult?.weakAttributes) ? timedResult.weakAttributes : [];
     if (!tags.length) return;
-
     const grouped = {};
     tags.forEach(tag => {
       const type = tag.split(':')[0];
       if (!grouped[type]) grouped[type] = [];
       grouped[type].push(tag.replace(/^[^:]+:/, ''));
     });
-
     el.innerHTML = Object.entries(grouped).map(([type, items]) => {
       const typeLabel = { topic: 'หัวข้อ', skill: 'ทักษะ', trap: 'กับดัก' }[type] || type;
       return `<div style="margin-bottom:10px">
@@ -535,7 +639,6 @@
   function modeLabel(m) {
     return { practice: 'ฝึกหัด', competitive: 'แข่งขัน', adaptive: 'ปรับจุดอ่อน', official: 'ข้อสอบจริง' }[m] || m;
   }
-
 
   function renderCharacter(c) {
     document.getElementById('char-card').style.display = '';
@@ -564,18 +667,16 @@
   document.getElementById('ann-next').onclick = () => { annIndex++; showAnn(annIndex); };
   document.getElementById('ann-close').onclick = () => { document.getElementById('ann-overlay').style.display = 'none'; };
 
-  // ── ผลการเรียน (รวม ClassroomScoreUpload + AcademicRecord) ──────────────────
+  // ── ผลการเรียน ──────────────────────────────────────────────────────────────
   function renderScoreSection(classroomData, academicData) {
     const GRADE_LBL = { p1:'ป.1', p2:'ป.2', p3:'ป.3', p4:'ป.4', p5:'ป.5', p6:'ป.6' };
     const timeline = {};
 
-    // ใส่ข้อมูล ClassroomScoreUpload
     if (classroomData?.results) {
       for (const r of classroomData.results) {
         const key = `${r.academicYear}|${r.term || '1'}`;
         if (!timeline[key]) timeline[key] = {};
         if (r.isMulti) {
-          // multi: เก็บ subjectScores เป็น array สำหรับแสดงรายวิชา
           if (!timeline[key].multiRows) timeline[key].multiRows = [];
           const ss = r.myData?.subjectScores || {};
           for (const [subj, score] of Object.entries(ss)) {
@@ -593,16 +694,15 @@
       }
     }
 
-    // ใส่ข้อมูล AcademicRecord
     if (academicData?.records) {
       for (const [year, terms] of Object.entries(academicData.records)) {
         const sumItem = (academicData.summary || []).find(s => s.year === year);
         for (const [term, subjects] of Object.entries(terms)) {
           const key = `${year}|${term}`;
           if (!timeline[key]) timeline[key] = {};
-          timeline[key].academic  = subjects;
-          timeline[key].gradeKey  = sumItem?.grade || '';
-          timeline[key].gpa       = sumItem?.gpa ?? null;
+          timeline[key].academic = subjects;
+          timeline[key].gradeKey = sumItem?.grade || '';
+          timeline[key].gpa      = sumItem?.gpa ?? null;
         }
       }
     }
@@ -610,10 +710,8 @@
     const keys = Object.keys(timeline).sort((a, b) => b.localeCompare(a));
     if (!keys.length) return;
 
-    // สร้าง card
     const card = document.createElement('div');
     card.className = 'card';
-    card.style.marginTop = '16px';
 
     const tabsHtml = keys.map(k => {
       const [y, t] = k.split('|');
@@ -622,8 +720,7 @@
       const lbl = (g ? GRADE_LBL[g] + ' · ' : '') + y + ' ภาค ' + t + (gpa ? ` (${gpa})` : '');
       return `<button onclick="showScoreTab('${k}')" id="stab-${k.replace('|','-')}"
         style="padding:5px 13px;border:1.5px solid #e2e8f0;border-radius:20px;background:#fff;
-               color:#64748b;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;
-               transition:all .15s">${lbl}</button>`;
+               color:#64748b;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .15s">${lbl}</button>`;
     }).join('');
 
     card.innerHTML = `
@@ -634,18 +731,16 @@
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px" id="score-tabs">${tabsHtml}</div>
       <div id="score-tab-body"></div>`;
 
-    document.querySelector('.grid2').after(card);
+    document.getElementById('score-anchor').after(card);
     window._scoreTL   = timeline;
     window._scoreKeys = keys;
-    showScoreTab(keys[0]); // ล่าสุดก่อน
+    showScoreTab(keys[0]);
   }
 
   function showScoreTab(key) {
     const tl   = window._scoreTL;
     const keys = window._scoreKeys;
     if (!tl?.[key]) return;
-
-    // อัปเดต tab highlight
     keys.forEach(k => {
       const btn = document.getElementById('stab-' + k.replace('|', '-'));
       if (!btn) return;
@@ -657,8 +752,6 @@
 
     const data = tl[key];
     const agg  = data.aggregate;
-
-    // aggregate stats (rank/%) จาก ClassroomScoreUpload
     let aggHtml = '';
     if (agg) {
       const pct = Math.round(agg.myTotal / agg.fullTotal * 100);
@@ -682,24 +775,19 @@
         </div>`;
     }
 
-    // subject rows
     let rowsHtml = '';
     if (data.academic?.length) {
-      // มี AcademicRecord → แสดง mid/final/total/grade พร้อม rank ถ้ามี
       const crBySubj = {};
       for (const r of (data.classroom || [])) crBySubj[r.subject] = r;
-
       const subs = data.academic.slice(0, 10);
       rowsHtml = subs.map((s, i) => {
-        const cr    = crBySubj[s.subjectName];
-        const rank  = cr?.ranks?.['_'];
-        const total = cr?.total;
-        const gv    = parseFloat(s.gradeValue);
-        const gc    = gv >= 3.5 ? '#15803d' : gv >= 2.5 ? '#d97706' : gv >= 1 ? '#b91c1c' : '#94a3b8';
-        const gbg   = gv >= 3.5 ? '#dcfce7' : gv >= 2.5 ? '#fef3c7' : gv >= 1 ? '#fee2e2' : '#f1f5f9';
-        const pct   = s.totalScore ?? 0;
-        const bc    = pct >= 80 ? '#16a34a' : pct >= 60 ? '#f59e0b' : '#ef4444';
-        const sep   = i < subs.length - 1 ? 'border-bottom:1px solid #f8fafc' : '';
+        const cr  = crBySubj[s.subjectName];
+        const gv  = parseFloat(s.gradeValue);
+        const gc  = gv >= 3.5 ? '#15803d' : gv >= 2.5 ? '#d97706' : gv >= 1 ? '#b91c1c' : '#94a3b8';
+        const gbg = gv >= 3.5 ? '#dcfce7' : gv >= 2.5 ? '#fef3c7' : gv >= 1 ? '#fee2e2' : '#f1f5f9';
+        const pct = s.totalScore ?? 0;
+        const bc  = pct >= 80 ? '#16a34a' : pct >= 60 ? '#f59e0b' : '#ef4444';
+        const sep = i < subs.length - 1 ? 'border-bottom:1px solid #f8fafc' : '';
         return `<div style="padding:8px 0;${sep}">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
             <span style="font-size:13px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.subjectName}</span>
@@ -716,9 +804,7 @@
       if (data.academic.length > 10)
         rowsHtml += `<div style="text-align:center;padding:8px 0;font-size:12px;color:#94a3b8">
           และอีก ${data.academic.length - 10} วิชา — <a href="student-report.html" style="color:#3b82f6">ดูทั้งหมด</a></div>`;
-
     } else if (data.multiRows?.length) {
-      // multi-type upload → แสดง score + rank ต่อวิชา
       rowsHtml = data.multiRows.slice(0, 10).map((m, i) => {
         const sp  = Math.min(100, Math.round(m.score));
         const bc  = sp >= 80 ? '#16a34a' : sp >= 60 ? '#f59e0b' : '#ef4444';
@@ -735,7 +821,6 @@
         </div>`;
       }).join('');
     } else if (data.classroom?.length) {
-      // มีแค่ ClassroomScoreUpload → แสดงแบบเดิม (score/grade/rank)
       rowsHtml = data.classroom.slice(0, 8).map((r, i) => {
         const d   = r.myData;
         const rank = r.ranks?.['_'], total = r.total;
@@ -760,7 +845,6 @@
         </div>`;
       }).join('');
     }
-
     document.getElementById('score-tab-body').innerHTML = aggHtml + rowsHtml;
   }
 

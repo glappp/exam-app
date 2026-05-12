@@ -142,14 +142,24 @@ function checkAnswerTargeted(choiceIndex) {
 
 function showTargetedComplete() {
   const label = targetedTag.replace(/^[^:]+:/, '');
+
+  // บันทึก topic ที่ซ่อมสำเร็จไว้ใน localStorage
+  const repaired = JSON.parse(localStorage.getItem('repairedTopics') || '[]');
+  if (!repaired.includes(targetedTag)) repaired.push(targetedTag);
+  localStorage.setItem('repairedTopics', JSON.stringify(repaired));
+
+  const backBtn = localStorage.getItem('examResult')
+    ? `<a href="result-competitive.html" class="btn btn-primary">กลับผลสอบ</a>`
+    : `<a href="dashboard.html" class="btn btn-primary">หน้าหลัก</a>`;
+
   document.getElementById('question-area').innerHTML = `
     <div class="card" style="text-align:center;padding:32px">
       <div style="font-size:48px;margin-bottom:12px">🎉</div>
       <div class="card-title">ซ่อมสำเร็จ!</div>
       <p style="color:var(--muted)">ตอบถูกครบ 10 ข้อสำหรับ <strong>${label}</strong> แล้ว</p>
       <div style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="startTargeted()">ฝึกอีกครั้ง</button>
-        <a href="dashboard.html" class="btn btn-ghost">หน้าหลัก</a>
+        ${backBtn}
+        <button class="btn btn-ghost" onclick="startTargeted()">ฝึกอีกครั้ง</button>
       </div>
     </div>
   `;

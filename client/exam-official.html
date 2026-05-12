@@ -555,6 +555,7 @@
       });
       const result = await res.json();
       localStorage.setItem('examResult', JSON.stringify({ ...result, examMeta, questions }));
+      localStorage.removeItem('repairedTopics');
       location.href = '/result-competitive.html';
     } catch (e) {
       alert('เกิดข้อผิดพลาด กรุณาลองใหม่');

@@ -216,7 +216,7 @@ router.get('/activity-log', requireLogin, async (req, res) => {
             where: { studentProfileId: { in: profileIds } },
             orderBy: { createdAt: 'desc' },
             take: 15,
-            select: { mode: true, score: true, total: true, createdAt: true }
+            select: { mode: true, score: true, totalCount: true, createdAt: true }
           })
         : [],
       prisma.ticketLog.findMany({
@@ -243,12 +243,12 @@ router.get('/activity-log', requireLogin, async (req, res) => {
     const events = [];
 
     for (const e of examResults) {
-      const pct = e.total ? Math.round(e.score / e.total * 100) : 0;
+      const pct = e.totalCount ? Math.round(e.score / e.totalCount * 100) : 0;
       events.push({
         type: 'exam',
         icon: pct >= 80 ? '🏅' : pct >= 60 ? '✅' : '📝',
         title: `สอบ${MODE_LABEL[e.mode] || e.mode}`,
-        detail: `${e.score}/${e.total} คะแนน (${pct}%)`,
+        detail: `${e.score}/${e.totalCount} คะแนน (${pct}%)`,
         createdAt: e.createdAt
       });
     }

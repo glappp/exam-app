@@ -221,6 +221,7 @@
     }
 
     localStorage.setItem('examResult', JSON.stringify(result));
+    localStorage.removeItem('repairedTopics');
     location.href = '/result-competitive.html';
   });
 

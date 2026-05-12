@@ -311,7 +311,7 @@
             </div>
           </button>
 
-          <!-- Teacher buttons (shown by JS) -->
+          <!-- Teacher/Admin buttons (shown by JS) -->
           <button id="teacher-btn" class="mode-btn" style="display:none;border-left:3px solid #166534" onclick="location.href='teacher-report.html'">
             <span class="icon">👩‍🏫</span>
             <div><div class="mode-label">รายงานครู</div></div>
@@ -319,6 +319,13 @@
           <button id="teacher-dashboard-btn" class="mode-btn" style="display:none;border-left:3px solid #2c5282" onclick="location.href='teacher-dashboard.html'">
             <span class="icon">📊</span>
             <div><div class="mode-label">ภาพรวมห้องเรียน</div></div>
+          </button>
+          <button id="school-admin-btn" class="mode-btn" style="display:none;border-left:3px solid #0891b2" onclick="location.href='school-admin.html'">
+            <span class="icon">🏫</span>
+            <div>
+              <div class="mode-label">Admin โรงเรียน</div>
+              <div class="mode-sub">จัดการนักเรียน · อัปโหลด Roster</div>
+            </div>
           </button>
 
         </div>
@@ -449,6 +456,9 @@
       document.getElementById('teacher-btn').style.display = '';
       document.getElementById('teacher-dashboard-btn').style.display = '';
       document.getElementById('admin-link').style.display = '';
+    }
+    if (me.role === 'school_admin') {
+      document.getElementById('school-admin-btn').style.display = '';
     }
     document.getElementById('welcome-name').textContent = `สวัสดี, ${me.firstName || 'นักเรียน'} 👋`;
 

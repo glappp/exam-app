@@ -421,4 +421,43 @@ router.get('/login-logs', requireAdmin, async (req, res) => {
   }
 });
 
+// ── RewardClaim ────────────────────────────────────────────────────────────────
+
+// GET /api/admin/reward-claims
+router.get('/reward-claims', requireAdmin, async (req, res) => {
+  try {
+    const claims = await prisma.rewardClaim.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      include: { reward: { select: { name: true, description: true, type: true } } }
+    });
+    const userIds = [...new Set(claims.map(c => c.userId))];
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, username: true, firstName: true, lastName: true }
+    });
+    const userMap = Object.fromEntries(users.map(u => [u.id, u]));
+    res.json({ claims: claims.map(c => ({ ...c, user: userMap[c.userId] || null })) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PATCH /api/admin/reward-claims/:id/claim — mark as claimed
+router.patch('/reward-claims/:id/claim', requireAdmin, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const claim = await prisma.rewardClaim.findUnique({ where: { id } });
+    if (!claim) return res.status(404).json({ error: 'ไม่พบ claim' });
+    if (claim.status === 'claimed') return res.status(400).json({ error: 'claim นี้ส่งมอบแล้ว' });
+    const updated = await prisma.rewardClaim.update({
+      where: { id },
+      data: { status: 'claimed', claimedAt: new Date(), claimedBy: req.session.username || 'admin' }
+    });
+    res.json({ success: true, claim: updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

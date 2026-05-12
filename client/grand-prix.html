@@ -277,13 +277,13 @@ body{font-family:'Segoe UI',sans-serif;background:#111;color:#fff;min-height:100
 
   <div id="lobby-join-area" style="display:none">
     <div style="font-size:22px;font-weight:800;margin-bottom:16px;text-align:center">เข้าห้อง</div>
-    <div class="setup-label">รหัสห้อง 6 หลัก</div>
-    <input class="lobby-join-input" id="join-code-input" placeholder="123456" maxlength="6"
+    <div class="setup-label">รหัสห้อง 4 หลัก</div>
+    <input class="lobby-join-input" id="join-code-input" placeholder="1234" maxlength="4"
            inputmode="numeric" pattern="[0-9]*">
     <div class="setup-label" style="margin-top:12px">ชื่อของคุณ</div>
     <input class="name-input" id="join-name-input" placeholder="ชื่อเล่น" style="margin-top:4px">
     <div class="error-msg" id="join-error"></div>
-    <button class="btn-primary" onclick="submitJoin()">เข้าร่วม</button>
+    <button class="btn-primary" id="btn-join-submit" onclick="submitJoin()">เข้าร่วม</button>
     <button class="btn-secondary" onclick="showSetup()">← กลับ</button>
   </div>
 
@@ -1256,14 +1256,26 @@ function createOnlineRoom(name) {
   socket.emit('room:create', { playerName:name, tables:selectedTable });
 }
 
+let _joinTimeout = null;
 function submitJoin() {
   const code = document.getElementById('join-code-input').value.trim();
   const name = document.getElementById('join-name-input').value.trim() || 'ผู้เล่น';
-  if (!code || code.length < 6) {
-    document.getElementById('join-error').textContent = 'กรุณาใส่รหัสห้อง 6 หลัก';
+  const errEl = document.getElementById('join-error');
+  const btn   = document.getElementById('btn-join-submit');
+  if (!code || code.length < 4) {
+    errEl.textContent = 'กรุณาใส่รหัสห้อง 4 หลัก';
     return;
   }
-  socket.emit('room:join', { code, playerName:name });
+  errEl.textContent = '';
+  btn.disabled = true;
+  btn.textContent = '⏳ กำลังเชื่อมต่อ...';
+  clearTimeout(_joinTimeout);
+  _joinTimeout = setTimeout(() => {
+    btn.disabled = false;
+    btn.textContent = 'เข้าร่วม';
+    errEl.textContent = 'ไม่มีการตอบกลับจาก server — ลองใหม่อีกครั้ง';
+  }, 8000);
+  socket.emit('room:join', { code, playerName: name });
 }
 
 function hostStartGame() {
@@ -1286,8 +1298,11 @@ function bindOnlineEvents() {
   });
 
   socket.on('room:joined', ({code, mySocketId: mid}) => {
+    clearTimeout(_joinTimeout);
+    const btn = document.getElementById('btn-join-submit');
+    if (btn) { btn.disabled = false; btn.textContent = 'เข้าร่วม'; }
     mySocketId = mid;
-    myRoomCode = code;  // เก็บไว้ใช้ส่งคำตอบ (แทน lobby-code-display ที่เป็น '———')
+    myRoomCode = code;
     showPanel('panel-lobby');
     document.getElementById('lobby-join-area').style.display = 'none';
     document.getElementById('lobby-waiting-area').style.display = '';
@@ -1305,6 +1320,9 @@ function bindOnlineEvents() {
   });
 
   socket.on('room:error', ({error})=>{
+    clearTimeout(_joinTimeout);
+    const btn = document.getElementById('btn-join-submit');
+    if (btn) { btn.disabled = false; btn.textContent = 'เข้าร่วม'; }
     document.getElementById('join-error').textContent = error;
     document.getElementById('lobby-error').textContent = error;
   });

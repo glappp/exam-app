@@ -94,7 +94,7 @@ module.exports = function (io) {
 
   function createRoom(hostSocket, playerName, tables) {
     let code;
-    do { code = String(Math.floor(100000 + Math.random() * 900000)); }
+    do { code = String(Math.floor(1000 + Math.random() * 9000)); }
     while (rooms.has(code));
 
     const room = {

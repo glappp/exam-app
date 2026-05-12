@@ -54,7 +54,14 @@ app.use(cors({ credentials: true, origin: true }));
 app.use(express.json());
 app.use(session({
   store: process.env.DATABASE_URL
-    ? new pgSession({ conString: process.env.DATABASE_URL, createTableIfMissing: true })
+    ? new pgSession({
+        conString: process.env.DATABASE_URL,
+        createTableIfMissing: true,
+        pool: new (require('pg').Pool)({
+          connectionString: process.env.DATABASE_URL,
+          ssl: { rejectUnauthorized: false }
+        })
+      })
     : undefined,
   secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
   resave: false,

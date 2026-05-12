@@ -156,7 +156,8 @@ router.get('/character', requireLogin, async (req, res) => {
       classIcon: CLASS_ICON[Math.min(level, CLASS_ICON.length - 1)] || '👑',
       xpThisLevel, xpNextLevel,
       xpProgress: xp - xpThisLevel,
-      xpNeeded: xpNextLevel - xpThisLevel
+      xpNeeded: xpNextLevel - xpThisLevel,
+      currentStreak: char?.currentStreak || 0
     });
   } catch (err) {
     res.status(500).json({ error: 'โหลดตัวละครล้มเหลว' });

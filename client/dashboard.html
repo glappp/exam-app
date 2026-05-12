@@ -53,9 +53,10 @@
 
     /* ── STATS STRIP ── */
     .stats-strip {
-      display: grid; grid-template-columns: repeat(3, 1fr);
+      display: grid; grid-template-columns: repeat(4, 1fr);
       gap: 10px; margin-bottom: 18px;
     }
+    @media (max-width: 760px) { .stats-strip { grid-template-columns: repeat(2, 1fr); } }
     .stat-box {
       background: #fff; border-radius: 10px; padding: 12px 16px;
       box-shadow: 0 1px 3px rgba(0,0,0,.06);
@@ -237,18 +238,22 @@
   </div>
 
   <!-- Stats strip -->
-  <div class="stats-strip" id="stats-row" style="display:none">
+  <div class="stats-strip" id="stats-row">
     <div class="stat-box">
       <div style="font-size:22px">🏅</div>
-      <div><div class="stat-num" id="stat-total">0</div><div class="stat-label">ครั้งที่สอบ</div></div>
+      <div><div class="stat-num" id="stat-total">—</div><div class="stat-label">ครั้งที่สอบ</div></div>
     </div>
     <div class="stat-box">
       <div style="font-size:22px">✅</div>
       <div><div class="stat-num" id="stat-avg">—</div><div class="stat-label">คะแนนเฉลี่ย</div></div>
     </div>
     <div class="stat-box">
-      <div style="font-size:22px">⭐</div>
-      <div><div class="stat-num" id="stat-best">—</div><div class="stat-label">สูงสุด</div></div>
+      <div style="font-size:22px">🎟️</div>
+      <div><div class="stat-num" id="stat-ticket">—</div><div class="stat-label">ตั๋วคงเหลือ</div></div>
+    </div>
+    <div class="stat-box">
+      <div style="font-size:22px">🎁</div>
+      <div><div class="stat-num" id="stat-box">—</div><div class="stat-label">กล่องรอเปิด</div></div>
     </div>
   </div>
 
@@ -380,8 +385,21 @@
 
     </div>
 
-    <!-- ═══ RIGHT: บันทึกกิจกรรม ═══ -->
+    <!-- ═══ RIGHT: Streak + บันทึกกิจกรรม ═══ -->
     <div class="right-col">
+
+      <!-- Streak card -->
+      <div class="card" id="streak-card" style="display:none">
+        <div class="card-title">Streak วันต่อเนื่อง</div>
+        <div style="display:flex;align-items:center;gap:14px;padding:4px 0">
+          <div style="font-size:42px;line-height:1">🔥</div>
+          <div>
+            <div style="font-size:32px;font-weight:800;color:#ea580c;line-height:1" id="streak-num">0</div>
+            <div style="font-size:12px;color:#94a3b8;margin-top:3px">วันติดต่อกัน</div>
+          </div>
+        </div>
+        <div id="streak-msg" style="font-size:12px;color:#64748b;margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9"></div>
+      </div>
 
       <!-- Activity log card -->
       <div class="card">
@@ -432,17 +450,17 @@
     }
     document.getElementById('welcome-name').textContent = `สวัสดี, ${me.firstName || 'นักเรียน'} 👋`;
 
-    const [r2, r3, r7] = await Promise.all([
+    const [r2, r3, r7, rBox] = await Promise.all([
       fetch('/api/student/me',           { credentials: 'include' }),
       fetch('/api/student/daily-mission',{ credentials: 'include' }),
-      fetch('/api/tickets/balance',      { credentials: 'include' })
+      fetch('/api/tickets/balance',      { credentials: 'include' }),
+      fetch('/api/box/inventory',        { credentials: 'include' })
     ]);
     if (r2.ok) {
       studentData = await r2.json();
       applyProfile(studentData.profile);
       renderStats(studentData.examResults);
       renderHistory(studentData.examResults);
-      renderWeakness(studentData.examResults);
       renderRecommendation(studentData.examResults);
       if (studentData.profile) {
         document.getElementById('welcome-sub').textContent =
@@ -452,9 +470,15 @@
     if (r3.ok) renderMission(await r3.json());
     if (r7.ok) {
       const t = await r7.json();
+      document.getElementById('stat-ticket').textContent  = t.balance;
       document.getElementById('ticket-balance').textContent = t.balance;
       document.getElementById('ticket-used').textContent   = t.usedToday;
       document.getElementById('ticket-row').style.display  = 'flex';
+    }
+    if (rBox.ok) {
+      const b = await rBox.json();
+      const total = (b.silver || 0) + (b.gold || 0);
+      document.getElementById('stat-box').textContent = total;
     }
 
     const r6 = await fetch('/api/student/character', { credentials: 'include' });
@@ -489,12 +513,10 @@
   }
 
   function renderStats(results) {
+    document.getElementById('stat-total').textContent = results.length || 0;
     if (!results.length) return;
-    document.getElementById('stats-row').style.display = 'grid';
-    document.getElementById('stat-total').textContent  = results.length;
     const pcts = results.map(r => r.total ? Math.round(r.score / r.total * 100) : 0);
-    document.getElementById('stat-avg').textContent  = Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length) + '%';
-    document.getElementById('stat-best').textContent = Math.max(...pcts) + '%';
+    document.getElementById('stat-avg').textContent = Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length) + '%';
   }
 
   function renderHistory(results) {
@@ -538,29 +560,6 @@
     document.getElementById('recommend-card').style.display = 'block';
   }
 
-  function renderWeakness(results) {
-    const timedResult = results.find(r => r.mode==='competitive'||r.mode==='official');
-    const tags = Array.isArray(timedResult?.weakAttributes) ? timedResult.weakAttributes : [];
-    if (!tags.length) return;
-    const grouped = {};
-    tags.forEach(tag => {
-      const type = tag.split(':')[0];
-      (grouped[type] = grouped[type]||[]).push(tag.replace(/^[^:]+:/,''));
-    });
-    document.getElementById('weakness-content').innerHTML = Object.entries(grouped).map(([type,items]) => {
-      const tl = {topic:'หัวข้อ',skill:'ทักษะ',trap:'กับดัก'}[type]||type;
-      return `<div style="margin-bottom:9px">
-        <div style="font-size:10px;color:#94a3b8;font-weight:700;text-transform:uppercase;margin-bottom:5px">${tl}</div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px">
-          ${items.map(item=>`<span style="display:inline-flex;align-items:center;gap:3px;background:#fff7ed;border:1px solid #fed7aa;border-radius:99px;padding:2px 9px;font-size:11px">
-            <span style="color:#9a3412">${item}</span>
-            <a href="practice.html?mode=targeted&topic=${encodeURIComponent(type+':'+item)}" style="color:#3b82f6;font-size:10px;text-decoration:none;font-weight:600">ซ่อม</a>
-          </span>`).join('')}
-        </div>
-      </div>`;
-    }).join('');
-  }
-
   function modeLabel(m) {
     return {practice:'ฝึกหัด',competitive:'แข่งขัน',adaptive:'ปรับจุดอ่อน',official:'ข้อสอบจริง'}[m]||m;
   }
@@ -571,6 +570,13 @@
     document.getElementById('char-name').textContent   = `LV ${c.level} ${c.className}`;
     document.getElementById('char-xp').textContent     = `${c.xpProgress} / ${c.xpNeeded} XP`;
     document.getElementById('char-bar').style.width    = Math.min(Math.round(c.xpProgress/c.xpNeeded*100),100) + '%';
+
+    const streak = c.currentStreak || 0;
+    document.getElementById('streak-card').style.display = '';
+    document.getElementById('streak-num').textContent = streak;
+    const msgs = ['เริ่มสร้าง streak วันนี้เลย!','ดีมาก! ทำต่อพรุ่งนี้นะ','2 วันติดแล้ว 🎉','กำลังมาแรง! อีก '+(7-streak)+' วันได้รางวัล','เกือบถึง 7 วันแล้ว! สู้ต่อ!','แค่อีก '+(7-streak)+' วัน!','พรุ่งนี้ครบ 7 วัน!'];
+    const weekMsg = streak >= 7 ? `🏆 ครบ ${streak} วันติดต่อกัน! ยอดเยี่ยมมาก!` : (msgs[Math.min(streak, msgs.length-1)] || '');
+    document.getElementById('streak-msg').textContent = weekMsg;
   }
 
   // Announcements

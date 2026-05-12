@@ -163,15 +163,17 @@
     .weak-bar-fill.danger { background: #ef4444; }
     .weak-pct { font-size: 11px; color: #888; width: 30px; text-align: right; }
 
-    /* ── HISTORY TABLE ── */
-    .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .history-table th { text-align: left; padding: 6px 7px; background: #f8fafc; color: #888; font-weight: 600; border-bottom: 1px solid #e8e8e8; }
-    .history-table td { padding: 6px 7px; border-bottom: 1px solid #f0f0f0; }
-    .badge { display: inline-block; padding: 1px 6px; border-radius: 99px; font-size: 10px; font-weight: 600; }
-    .badge-practice    { background: #dcfce7; color: #166534; }
-    .badge-competitive { background: #ffedd5; color: #9a3412; }
-    .badge-adaptive    { background: #dbeafe; color: #1e40af; }
-    .badge-official    { background: #f3e8ff; color: #6b21a8; }
+    /* ── ACTIVITY LOG ── */
+    .activity-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid #f1f5f9;
+    }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-icon { font-size: 18px; line-height: 1; flex-shrink: 0; margin-top: 1px; }
+    .activity-body { flex: 1; min-width: 0; }
+    .activity-title  { font-size: 12px; font-weight: 600; color: #1e293b; }
+    .activity-detail { font-size: 11px; color: #64748b; margin-top: 1px; }
+    .activity-time   { font-size: 10px; color: #94a3b8; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
 
     /* ── MISC ── */
     .empty-msg { font-size: 13px; color: #aaa; font-style: italic; text-align: center; padding: 14px 0; }
@@ -460,7 +462,6 @@
       studentData = await r2.json();
       applyProfile(studentData.profile);
       renderStats(studentData.examResults);
-      renderHistory(studentData.examResults);
       renderRecommendation(studentData.examResults);
       if (studentData.profile) {
         document.getElementById('welcome-sub').textContent =
@@ -481,8 +482,10 @@
       document.getElementById('stat-box').textContent = total;
     }
 
-    const r6 = await fetch('/api/student/character', { credentials: 'include' });
-    if (r6.ok) renderCharacter(await r6.json());
+    const r6 = await fetch('/api/student/character',     { credentials: 'include' });
+    const rAl = await fetch('/api/student/activity-log', { credentials: 'include' });
+    if (r6.ok)  renderCharacter(await r6.json());
+    if (rAl.ok) renderActivityLog((await rAl.json()).events);
 
     const r4 = await fetch('/api/announcements', { credentials: 'include' });
     if (r4.ok) {
@@ -519,16 +522,30 @@
     document.getElementById('stat-avg').textContent = Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length) + '%';
   }
 
-  function renderHistory(results) {
-    if (!results.length) return;
-    const rows = results.slice(0, 10).map(r => {
-      const pct  = r.total ? Math.round(r.score / r.total * 100) : 0;
-      const date = new Date(r.createdAt).toLocaleDateString('th-TH', { day:'2-digit', month:'short', year:'2-digit' });
-      const bc   = { practice:'badge-practice', competitive:'badge-competitive', adaptive:'badge-adaptive', official:'badge-official' }[r.mode] || 'badge-practice';
-      return `<tr><td>${date}</td><td><span class="badge ${bc}">${modeLabel(r.mode)}</span></td><td>${r.score}/${r.total}</td><td>${pct}%</td></tr>`;
+  function renderActivityLog(events) {
+    if (!events || !events.length) return;
+    const now = new Date();
+    const items = events.map(e => {
+      const d = new Date(e.createdAt);
+      const diffMs = now - d;
+      const diffMin = Math.floor(diffMs / 60000);
+      const diffHr  = Math.floor(diffMs / 3600000);
+      const diffDay = Math.floor(diffMs / 86400000);
+      const timeStr = diffMin < 1    ? 'เมื่อกี้'
+                    : diffMin < 60   ? `${diffMin}น ที่แล้ว`
+                    : diffHr  < 24   ? `${diffHr}ชม ที่แล้ว`
+                    : diffDay < 7    ? `${diffDay}วัน ที่แล้ว`
+                    : d.toLocaleDateString('th-TH', { day:'2-digit', month:'short' });
+      return `<div class="activity-item">
+        <div class="activity-icon">${e.icon}</div>
+        <div class="activity-body">
+          <div class="activity-title">${e.title}</div>
+          <div class="activity-detail">${e.detail || ''}</div>
+        </div>
+        <div class="activity-time">${timeStr}</div>
+      </div>`;
     }).join('');
-    document.getElementById('history-content').innerHTML =
-      `<table class="history-table"><thead><tr><th>วันที่</th><th>โหมด</th><th>คะแนน</th><th>%</th></tr></thead><tbody>${rows}</tbody></table>`;
+    document.getElementById('history-content').innerHTML = items;
   }
 
   function renderMission(m) {
@@ -558,10 +575,6 @@
       </div>`;
     }).join('');
     document.getElementById('recommend-card').style.display = 'block';
-  }
-
-  function modeLabel(m) {
-    return {practice:'ฝึกหัด',competitive:'แข่งขัน',adaptive:'ปรับจุดอ่อน',official:'ข้อสอบจริง'}[m]||m;
   }
 
   function renderCharacter(c) {

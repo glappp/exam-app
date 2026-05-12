@@ -194,6 +194,117 @@ router.get('/daily-mission', requireLogin, async (req, res) => {
   }
 });
 
+// GET /api/student/activity-log — timeline รวม event จากหลาย table (20 รายการล่าสุด)
+router.get('/activity-log', requireLogin, async (req, res) => {
+  try {
+    const userId = req.session.userId;
+
+    const profiles = await prisma.studentProfile.findMany({
+      where: { userId },
+      select: { id: true }
+    });
+    const profileIds = profiles.map(p => p.id);
+
+    const [pointTxs, examResults, ticketLogs, boxLogs, missions] = await Promise.all([
+      prisma.pointTransaction.findMany({
+        where: { userId, type: { not: 'parent_deduct' } },
+        orderBy: { createdAt: 'desc' },
+        take: 20
+      }),
+      profileIds.length
+        ? prisma.examResult.findMany({
+            where: { studentProfileId: { in: profileIds } },
+            orderBy: { createdAt: 'desc' },
+            take: 15,
+            select: { mode: true, score: true, total: true, createdAt: true }
+          })
+        : [],
+      prisma.ticketLog.findMany({
+        where: { userId, amount: { gt: 0 } },
+        orderBy: { createdAt: 'desc' },
+        take: 10
+      }),
+      prisma.boxLog.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 10
+      }),
+      prisma.dailyMission.findMany({
+        where: { userId, baseCompleted: true },
+        orderBy: { createdAt: 'desc' },
+        take: 10
+      })
+    ]);
+
+    const MODE_LABEL = { practice: 'ฝึกหัด', competitive: 'แข่งขัน', adaptive: 'ปรับจุดอ่อน', official: 'ข้อสอบจริง' };
+    const TICKET_LABEL = { earn_mission: 'ได้ตั๋วจากภารกิจ', earn_box: 'ได้ตั๋วจากกล่อง', earn_admin: 'ได้ตั๋วจาก admin' };
+    const BOX_ICON = { silver: '📦', gold: '🎁' };
+
+    const events = [];
+
+    for (const e of examResults) {
+      const pct = e.total ? Math.round(e.score / e.total * 100) : 0;
+      events.push({
+        type: 'exam',
+        icon: pct >= 80 ? '🏅' : pct >= 60 ? '✅' : '📝',
+        title: `สอบ${MODE_LABEL[e.mode] || e.mode}`,
+        detail: `${e.score}/${e.total} คะแนน (${pct}%)`,
+        createdAt: e.createdAt
+      });
+    }
+
+    for (const t of pointTxs) {
+      if (t.type === 'exam') continue; // exam แสดงจาก examResults แล้ว
+      const icons = { streak: '🔥', weekly_bonus: '🎉', admin_adjust: '⭐' };
+      const labels = { streak: 'Streak bonus', weekly_bonus: 'โบนัสสัปดาห์', admin_adjust: 'ปรับคะแนน' };
+      events.push({
+        type: 'xp',
+        icon: icons[t.type] || '⭐',
+        title: labels[t.type] || 'ได้คะแนน',
+        detail: `+${t.amount} ⭐${t.note ? ' · ' + t.note : ''}`,
+        createdAt: t.createdAt
+      });
+    }
+
+    for (const tk of ticketLogs) {
+      events.push({
+        type: 'ticket',
+        icon: '🎟️',
+        title: TICKET_LABEL[tk.type] || 'ได้ตั๋ว',
+        detail: `+${tk.amount} ใบ`,
+        createdAt: tk.createdAt
+      });
+    }
+
+    for (const b of boxLogs) {
+      const rewardText = b.rewardAmount ? `${b.rewardAmount} ${b.rewardType === 'ticket' ? 'ตั๋ว' : 'คะแนน'}` : b.rewardType;
+      events.push({
+        type: 'box',
+        icon: BOX_ICON[b.boxType] || '🎁',
+        title: `เปิดกล่อง${b.boxType === 'gold' ? 'ทอง' : 'เงิน'}`,
+        detail: `ได้รับ: ${rewardText}`,
+        createdAt: b.createdAt
+      });
+    }
+
+    for (const m of missions) {
+      events.push({
+        type: 'mission',
+        icon: '🎯',
+        title: 'ภารกิจประจำวันสำเร็จ!',
+        detail: `ทำโจทย์ครบ ${m.questionsCount} ข้อ`,
+        createdAt: m.createdAt
+      });
+    }
+
+    events.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    res.json({ events: events.slice(0, 20) });
+  } catch (err) {
+    console.error('❌ activity-log:', err);
+    res.status(500).json({ error: 'โหลดกิจกรรมล้มเหลว' });
+  }
+});
+
 // GET /api/student/topic-stats — accuracy + pass records สำหรับ practice overview
 router.get('/topic-stats', requireLogin, async (req, res) => {
   try {

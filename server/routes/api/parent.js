@@ -100,42 +100,96 @@ router.post('/adjust', requireLogin, async (req, res) => {
   }
 })
 
-// ── POST /api/parent/redeem ───────────────────────────────────────────────────
-// Body: { rewardName: string, cost: number }
-router.post('/redeem', requireLogin, async (req, res) => {
+// ── GET /api/parent/rewards ───────────────────────────────────────────────────
+router.get('/rewards', requireLogin, async (req, res) => {
   try {
-    const userId = req.session.userId
-    const { rewardName, cost } = req.body
+    const rewards = await prisma.parentReward.findMany({
+      where:   { userId: req.session.userId },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+    })
+    res.json({ rewards })
+  } catch (err) {
+    console.error('❌ parent/rewards GET error:', err)
+    res.status(500).json({ error: 'เกิดข้อผิดพลาด' })
+  }
+})
+
+// ── POST /api/parent/rewards ──────────────────────────────────────────────────
+// Body: { emoji, name, cost }
+router.post('/rewards', requireLogin, async (req, res) => {
+  try {
+    const userId  = req.session.userId
+    const { emoji, name, cost } = req.body
 
     const costNum = parseInt(cost, 10)
-    if (!rewardName || isNaN(costNum) || costNum <= 0) {
-      return res.status(400).json({ error: 'ข้อมูลไม่ถูกต้อง' })
-    }
-    if (costNum > 9999) {
-      return res.status(400).json({ error: 'ราคาสูงเกินไป' })
-    }
+    if (!name?.trim()) return res.status(400).json({ error: 'ต้องระบุชื่อรางวัล' })
+    if (isNaN(costNum) || costNum < 1) return res.status(400).json({ error: 'ราคาต้องเป็นตัวเลขมากกว่า 0' })
+    if (costNum > 99999) return res.status(400).json({ error: 'ราคาสูงเกินไป' })
 
-    const bal = await prisma.parentPointBalance.findUnique({ where: { userId } })
+    // จำกัดไม่เกิน 30 รายการต่อผู้ใช้
+    const count = await prisma.parentReward.count({ where: { userId } })
+    if (count >= 30) return res.status(400).json({ error: 'มีรางวัลมากเกินไป (สูงสุด 30 รายการ)' })
+
+    const reward = await prisma.parentReward.create({
+      data: {
+        userId,
+        emoji: (emoji?.trim() || '🎁').slice(0, 8),
+        name:  name.trim().slice(0, 60),
+        cost:  costNum,
+      }
+    })
+    res.json({ reward })
+  } catch (err) {
+    console.error('❌ parent/rewards POST error:', err)
+    res.status(500).json({ error: 'เกิดข้อผิดพลาด' })
+  }
+})
+
+// ── DELETE /api/parent/rewards/:id ───────────────────────────────────────────
+router.delete('/rewards/:id', requireLogin, async (req, res) => {
+  try {
+    const userId = req.session.userId
+    const id     = parseInt(req.params.id, 10)
+
+    const reward = await prisma.parentReward.findFirst({ where: { id, userId } })
+    if (!reward) return res.status(404).json({ error: 'ไม่พบรายการ' })
+
+    await prisma.parentReward.delete({ where: { id } })
+    res.json({ success: true })
+  } catch (err) {
+    console.error('❌ parent/rewards DELETE error:', err)
+    res.status(500).json({ error: 'เกิดข้อผิดพลาด' })
+  }
+})
+
+// ── POST /api/parent/redeem ───────────────────────────────────────────────────
+// Body: { rewardId: number }  (ต้องเป็น ParentReward ของ user นั้น)
+router.post('/redeem', requireLogin, async (req, res) => {
+  try {
+    const userId    = req.session.userId
+    const rewardId  = parseInt(req.body.rewardId, 10)
+
+    if (isNaN(rewardId)) return res.status(400).json({ error: 'ข้อมูลไม่ถูกต้อง' })
+
+    const reward = await prisma.parentReward.findFirst({ where: { id: rewardId, userId } })
+    if (!reward) return res.status(404).json({ error: 'ไม่พบรายการรางวัล' })
+
+    const bal     = await prisma.parentPointBalance.findUnique({ where: { userId } })
     const current = bal?.balance ?? 0
-    if (current < costNum) {
+    if (current < reward.cost) {
       return res.status(400).json({
-        error: `คะแนนไม่พอ (มี ${current} pts, ต้องการ ${costNum} pts)`,
+        error: `คะแนนไม่พอ (มี ${current} pts, ต้องการ ${reward.cost} pts)`,
         balance: current,
       })
     }
 
     await awardParentPoints(
-      prisma, userId, -costNum, 'parent_redeem',
-      `แลกรางวัล: ${rewardName.trim()}`
+      prisma, userId, -reward.cost, 'parent_redeem',
+      `แลกรางวัล: ${reward.name}`
     )
 
     const newBal = await prisma.parentPointBalance.findUnique({ where: { userId } })
-    res.json({
-      success: true,
-      balance: newBal?.balance ?? 0,
-      rewardName: rewardName.trim(),
-      cost: costNum,
-    })
+    res.json({ success: true, balance: newBal?.balance ?? 0, reward })
   } catch (err) {
     console.error('❌ parent/redeem error:', err)
     res.status(500).json({ error: 'เกิดข้อผิดพลาด' })

@@ -684,6 +684,19 @@ model ParentPointLog {
   createdAt DateTime @default(now())
 }
 
+// ParentReward — รายการรางวัลที่ผู้ปกครองกำหนดเอง
+model ParentReward {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  emoji     String   @default("🎁")
+  name      String
+  cost      Int
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
 // ─── Usage Tracking ───────────────────────────────────────────────────────────
 
 // LoginLog — raw login events, ลบทุกคืนหลัง aggregate

@@ -519,10 +519,10 @@
       document.getElementById('stat-box').textContent = total;
     }
 
-    const r6 = await fetch('/api/student/character',     { credentials: 'include' });
-    const rAl = await fetch('/api/student/activity-log', { credentials: 'include' });
+    const r6  = await fetch('/api/student/character',     { credentials: 'include' });
+    const rAl = await fetch('/api/student/login-history', { credentials: 'include' });
     if (r6.ok)  renderCharacter(await r6.json());
-    if (rAl.ok) renderActivityLog((await rAl.json()).events);
+    if (rAl.ok) renderLoginHistory((await rAl.json()).logs);
 
     const r4 = await fetch('/api/announcements', { credentials: 'include' });
     if (r4.ok) {
@@ -559,30 +559,38 @@
     document.getElementById('stat-avg').textContent = Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length) + '%';
   }
 
-  function renderActivityLog(events) {
-    if (!events || !events.length) return;
+  function renderLoginHistory(logs) {
+    const el = document.getElementById('history-content');
+    if (!logs || !logs.length) {
+      el.innerHTML = '<div class="empty-msg">ยังไม่มีประวัติ</div>';
+      return;
+    }
     const now = new Date();
-    const items = events.map(e => {
-      const d = new Date(e.createdAt);
-      const diffMs = now - d;
+    el.innerHTML = logs.map((l, i) => {
+      const d   = new Date(l.loginAt);
+      const diffMs  = now - d;
       const diffMin = Math.floor(diffMs / 60000);
       const diffHr  = Math.floor(diffMs / 3600000);
       const diffDay = Math.floor(diffMs / 86400000);
-      const timeStr = diffMin < 1    ? 'เมื่อกี้'
-                    : diffMin < 60   ? `${diffMin}น ที่แล้ว`
-                    : diffHr  < 24   ? `${diffHr}ชม ที่แล้ว`
-                    : diffDay < 7    ? `${diffDay}วัน ที่แล้ว`
-                    : d.toLocaleDateString('th-TH', { day:'2-digit', month:'short' });
+      const rel = diffMin < 1   ? 'เมื่อกี้'
+                : diffMin < 60  ? `${diffMin} นาทีที่แล้ว`
+                : diffHr < 24   ? `${diffHr} ชั่วโมงที่แล้ว`
+                : diffDay < 30  ? `${diffDay} วันที่แล้ว`
+                : d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+      const abs = d.toLocaleString('th-TH', {
+        day: 'numeric', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      });
+      const isFirst = i === 0;
       return `<div class="activity-item">
-        <div class="activity-icon">${e.icon}</div>
+        <div class="activity-icon">${isFirst ? '🟢' : '🔵'}</div>
         <div class="activity-body">
-          <div class="activity-title">${e.title}</div>
-          <div class="activity-detail">${e.detail || ''}</div>
+          <div class="activity-title">เข้าสู่ระบบ</div>
+          <div class="activity-detail">${abs}</div>
         </div>
-        <div class="activity-time">${timeStr}</div>
+        <div class="activity-time">${rel}</div>
       </div>`;
     }).join('');
-    document.getElementById('history-content').innerHTML = items;
   }
 
   function renderMission(m) {

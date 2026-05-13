@@ -305,6 +305,22 @@ router.get('/activity-log', requireLogin, async (req, res) => {
   }
 });
 
+// GET /api/student/login-history — ประวัติเข้าสู่ระบบ 20 ครั้งล่าสุด
+router.get('/login-history', requireLogin, async (req, res) => {
+  try {
+    const logs = await prisma.loginLog.findMany({
+      where: { userId: req.session.userId },
+      orderBy: { loginAt: 'desc' },
+      take: 20,
+      select: { loginAt: true, ip: true }
+    });
+    res.json({ logs });
+  } catch (err) {
+    console.error('❌ login-history:', err);
+    res.status(500).json({ error: 'โหลดประวัติ login ล้มเหลว' });
+  }
+});
+
 // GET /api/student/topic-stats — accuracy + pass records สำหรับ practice overview
 router.get('/topic-stats', requireLogin, async (req, res) => {
   try {

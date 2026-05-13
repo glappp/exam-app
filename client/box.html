@@ -127,6 +127,8 @@
     .result-ticket        { color: #93c5fd; }
     .result-gold_box      { color: #fbbf24; }
     .result-reward        { color: #f9a8d4; }
+    .result-xp_card_s     { color: #6ee7b7; }
+    .result-xp_card_l     { color: #6ee7b7; }
 
     .result-reward-note {
       margin-top: 14px;
@@ -260,7 +262,8 @@ let busy = false;
 
 /* ── Icons & labels ── */
 function rewardIcon(type) {
-  return { xp:'⚡', parent_points:'⭐', ticket:'🎟️', gold_box:'🏅', reward:'🎀' }[type] || '🎁';
+  return { xp:'⚡', parent_points:'⭐', ticket:'🎟️', gold_box:'🏅', reward:'🎀',
+           xp_card_s:'🃏', xp_card_l:'🃏' }[type] || '🎁';
 }
 function rewardLabel(type, amount, name) {
   if (type === 'xp')            return `+${amount} XP`;
@@ -268,6 +271,8 @@ function rewardLabel(type, amount, name) {
   if (type === 'ticket')        return `Ticket ×${amount}`;
   if (type === 'gold_box')      return `กล่องทอง ×${amount}`;
   if (type === 'reward')        return name || 'ของรางวัลพิเศษ';
+  if (type === 'xp_card_s')     return `+${amount} XP (บัตรโบนัส)`;
+  if (type === 'xp_card_l')     return `+${amount} XP (บัตรโบนัส)`;
   return type;
 }
 function rewardSub(type) {
@@ -276,6 +281,8 @@ function rewardSub(type) {
   if (type === 'ticket')        return 'Ticket ใช้สำหรับซื้อสิทธิ์พิเศษ';
   if (type === 'gold_box')      return '🎉 โชคดี! ได้กล่องทองเพิ่มมา';
   if (type === 'reward')        return '';
+  if (type === 'xp_card_s')     return 'รับ XP ทันที! 🎉';
+  if (type === 'xp_card_l')     return 'รับ XP ทันที! 🎉';
   return '';
 }
 function fmtDate(iso) {

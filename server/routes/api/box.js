@@ -31,10 +31,11 @@ function requireAdmin(req, res, next) {
      2% → Gold Box ×1 (ให้คนไม่เก่งได้ลุ้น)
 */
 const SILVER_TABLE = [
-  { weight: 61, type: 'xp',           min: 15, max: 40 },
+  { weight: 56, type: 'xp',           min: 15, max: 40 },
   { weight: 25, type: 'parent_points', min: 5,  max: 15 },
   { weight: 12, type: 'ticket',        amount: 1 },
   { weight:  2, type: 'gold_box',      amount: 1 },
+  { weight:  5, type: 'xp_card_s',    amount: 10 },   // บัตรโบนัส +10 XP ทันที
 ]
 
 /*
@@ -46,10 +47,11 @@ const SILVER_TABLE = [
      1% → ของรางวัล (admin ตั้งเองใน Reward table)
 */
 const GOLD_TABLE = [
-  { weight: 40, type: 'xp',           min: 50,  max: 150 },
+  { weight: 35, type: 'xp',           min: 50,  max: 150 },
   { weight: 34, type: 'ticket',        amount: 2 },
   { weight: 25, type: 'parent_points', min: 15,  max: 40  },
   { weight:  1, type: 'reward'                             },
+  { weight:  5, type: 'xp_card_l',    amount: 20 },       // บัตรโบนัส +20 XP ทันที
 ]
 
 // ── Probability engine ────────────────────────────────────────────────────────
@@ -154,6 +156,11 @@ router.post('/open', requireLogin, async (req, res) => {
       rewardResult.amount = amount
       await awardTicket(prisma, userId, amount, 'earn_box',
         `เปิดกล่อง ${boxType}`)
+
+    } else if (rolled.type === 'xp_card_s' || rolled.type === 'xp_card_l') {
+      const amount = rolled.amount
+      rewardResult.amount = amount
+      await awardXP(prisma, userId, amount, 'activity')
 
     } else if (rolled.type === 'gold_box') {
       rewardResult.amount = rolled.amount

@@ -341,8 +341,11 @@
       </div>`;
   } else {
     renderResult(result);
+    // แสดง LV-up modal ถ้า level ขึ้น milestone
+    setTimeout(() => showLvUpIfMilestone(result.characterLevel), 600);
   }
 </script>
+<script src="/lv-up.js"></script>
 <script src="/feedback-widget.js"></script>
 </body>
 </html>

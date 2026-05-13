@@ -63,7 +63,25 @@
       "mcp__Claude_in_Chrome__tabs_context_mcp",
       "Bash(python -c ' *)",
       "Bash(curl -s 'http://localhost:3001/questions?page=1')",
-      "Bash(curl -s -X POST http://localhost:3001/api/submit-exam -H 'Content-Type: application/json' -d '{\"mode\":\"practice\",\"questions\":[\"__CMDSUB_OUTPUT__')"
+      "Bash(curl -s -X POST http://localhost:3001/api/submit-exam -H 'Content-Type: application/json' -d '{\"mode\":\"practice\",\"questions\":[\"__CMDSUB_OUTPUT__')",
+      "Bash(dir \"D:\\\\work\\\\Claude_sandbox\\\\exam-app\\\\.claude\\\\worktrees\\\\happy-wilson-f2ddeb\")",
+      "Bash(ls \"D:\\\\work\\\\Claude_sandbox\\\\exam-app\\\\server\\\\\" | head -10)",
+      "Bash(cp \"D:/work/Claude_sandbox/exam-app/server/.env\" \"D:/work/Claude_sandbox/exam-app/.claude/worktrees/happy-wilson-f2ddeb/server/.env\")",
+      "Bash(node -e 'const { PrismaClient } = require\\('\\\\''@prisma/client'\\\\''\\); const p = new PrismaClient\\(\\); p.user.findMany\\({ where: { role: '\\\\''student'\\\\'' }, take: 5, select: { username: true, displayName: true } }\\).then\\(r => { console.log\\(JSON.stringify\\(r\\)\\); p.$disconnect\\(\\); }\\)')",
+      "Bash(node -e 'require\\('\\\\''dotenv'\\\\''\\).config\\(\\); const { PrismaClient } = require\\('\\\\''@prisma/client'\\\\''\\); const p = new PrismaClient\\(\\); p.user.findMany\\({ where: { role: '\\\\''student'\\\\'' }, take: 5, select: { username: true, displayName: true } }\\).then\\(r => { console.log\\(JSON.stringify\\(r\\)\\); p.$disconnect\\(\\); }\\)')",
+      "Bash(node -e 'require\\('\\\\''dotenv'\\\\''\\).config\\(\\); const { PrismaClient } = require\\('\\\\''@prisma/client'\\\\''\\); const p = new PrismaClient\\(\\); p.user.findMany\\({ where: { role: '\\\\''student'\\\\'' }, take: 5, select: { username: true, firstName: true, lastName: true } }\\).then\\(r => { console.log\\(JSON.stringify\\(r\\)\\); p.$disconnect\\(\\); }\\)')",
+      "Bash(node -e 'require\\('\\\\''dotenv'\\\\''\\).config\\(\\); const { PrismaClient } = require\\('\\\\''@prisma/client'\\\\''\\); const p = new PrismaClient\\(\\); p.user.findUnique\\({ where: { username: '\\\\''a1'\\\\'' }, select: { username: true, password: true, role: true } }\\).then\\(r => { console.log\\(JSON.stringify\\(r\\)\\); p.$disconnect\\(\\); }\\)')",
+      "Bash(node -e 'require\\('\\\\''dotenv'\\\\''\\).config\\(\\); const bcrypt = require\\('\\\\''bcrypt'\\\\''\\); const hash = '\\\\''$2b$10$f9/6hgky5v6zBCxOui8iX.h9QXAVdHIgj1ywYB523Qg309gR8k5Fa'\\\\''; ['\\\\''1111'\\\\'','\\\\''a1'\\\\'','\\\\''password'\\\\'','\\\\''1234'\\\\'','\\\\''admin1234'\\\\'','\\\\''123456'\\\\''].forEach\\(p => bcrypt.compare\\(p, hash\\).then\\(m => console.log\\(p, m\\)\\)\\)')",
+      "Bash(curl -s \"http://localhost:3001/api/exam/venues\")",
+      "Bash(curl -s \"http://localhost:3001/api/exam-options?mode=official\")",
+      "Bash(node -e \"const d=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); const j=JSON.parse\\(d\\); console.log\\('grades:', j.grades\\); console.log\\('venues:', j.venues?.map\\(v=>v.label+'->grades:'+v.grades?.map\\(g=>g.grade\\).join\\(','\\)\\)\\)\")",
+      "Bash(curl -s -c /tmp/cookies.txt -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\\\\\"username\\\\\":\\\\\"test01\\\\\",\\\\\"password\\\\\":\\\\\"student01\\\\\"}')",
+      "Read(//tmp/**)",
+      "Bash(curl -s \"http://localhost:3001/api/exam-set-official/chulabhorn-p6-2565\" -H \"Cookie: $\\(curl -s -c /tmp/cookies.txt -X POST http://localhost:3001/api/auth/login -H 'Content-Type: application/json' -d '{\\\\\"username\\\\\":\\\\\"test01\\\\\",\\\\\"password\\\\\":\\\\\"student01\\\\\"}' && cat /tmp/cookies.txt)",
+      "Bash(git checkout *)",
+      "Bash(git push *)",
+      "Bash(node scripts/fill-skill-trap.js --dry-run)",
+      "Bash(node scripts/fill-skill-trap.js)"
     ]
   }
 }

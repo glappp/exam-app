@@ -708,6 +708,11 @@ function showFinalResults(data, durationSec) {
   if (isTestMode && passed && typeof loadOverview === 'function') {
     loadOverview();
   }
+
+  // แสดง LV-up modal ถ้า level ขึ้น milestone
+  if (typeof showLvUpIfMilestone === 'function') {
+    setTimeout(() => showLvUpIfMilestone(data.characterLevel), 500);
+  }
 }
 
 function openResultReview(idx) {

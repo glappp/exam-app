@@ -18,6 +18,7 @@ model School {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   users     User[]
+  subjects  SchoolSubject[]
 }
 
 model User {
@@ -66,6 +67,7 @@ model StudentProfile {
   subtopicPasses    SubtopicPass[]
   topicPasses       TopicPass[]
   adaptiveWeaknesses AdaptiveWeakness[]
+  academicScores    AcademicScore[]
 }
 
 // ─── Exam Core ────────────────────────────────────────────────────────────────
@@ -416,6 +418,40 @@ model AcademicRecord {
 
   @@index([firstName, lastName, school])
   @@index([studentCode, school])
+}
+
+// ─── Score Upload System ──────────────────────────────────────────────────────
+
+// รายวิชาต่อห้อง — template สำหรับกรอกคะแนน
+model SchoolSubject {
+  id           Int             @id @default(autoincrement())
+  schoolId     Int
+  school       School          @relation(fields: [schoolId], references: [id])
+  academicYear String          // "2568"
+  grade        String          // "ป.6"
+  classroom    String          // "1", "2", "3"
+  subjectCode  String          // "ค11101"
+  subjectName  String          // "คณิตศาสตร์"
+  sortOrder    Int             @default(0)
+  scores       AcademicScore[]
+
+  @@unique([schoolId, academicYear, grade, classroom, subjectCode])
+}
+
+// คะแนนนักเรียนต่อวิชาต่อเทอม (% 0-100 ทุก field)
+model AcademicScore {
+  id               Int            @id @default(autoincrement())
+  studentProfileId Int
+  studentProfile   StudentProfile @relation(fields: [studentProfileId], references: [id])
+  schoolSubjectId  Int
+  schoolSubject    SchoolSubject  @relation(fields: [schoolSubjectId], references: [id])
+  term             Int            // 1 | 2
+  midterm          Float?         // % midterm
+  final            Float?         // % final
+  total            Float?         // % total
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([studentProfileId, schoolSubjectId, term])
 }
 
 // ─── Invite Code ─────────────────────────────────────────────────────────────

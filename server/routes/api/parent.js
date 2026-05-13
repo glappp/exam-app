@@ -100,6 +100,48 @@ router.post('/adjust', requireLogin, async (req, res) => {
   }
 })
 
+// ── POST /api/parent/redeem ───────────────────────────────────────────────────
+// Body: { rewardName: string, cost: number }
+router.post('/redeem', requireLogin, async (req, res) => {
+  try {
+    const userId = req.session.userId
+    const { rewardName, cost } = req.body
+
+    const costNum = parseInt(cost, 10)
+    if (!rewardName || isNaN(costNum) || costNum <= 0) {
+      return res.status(400).json({ error: 'ข้อมูลไม่ถูกต้อง' })
+    }
+    if (costNum > 9999) {
+      return res.status(400).json({ error: 'ราคาสูงเกินไป' })
+    }
+
+    const bal = await prisma.parentPointBalance.findUnique({ where: { userId } })
+    const current = bal?.balance ?? 0
+    if (current < costNum) {
+      return res.status(400).json({
+        error: `คะแนนไม่พอ (มี ${current} pts, ต้องการ ${costNum} pts)`,
+        balance: current,
+      })
+    }
+
+    await awardParentPoints(
+      prisma, userId, -costNum, 'parent_redeem',
+      `แลกรางวัล: ${rewardName.trim()}`
+    )
+
+    const newBal = await prisma.parentPointBalance.findUnique({ where: { userId } })
+    res.json({
+      success: true,
+      balance: newBal?.balance ?? 0,
+      rewardName: rewardName.trim(),
+      cost: costNum,
+    })
+  } catch (err) {
+    console.error('❌ parent/redeem error:', err)
+    res.status(500).json({ error: 'เกิดข้อผิดพลาด' })
+  }
+})
+
 // ── GET /api/parent/reference ─────────────────────────────────────────────────
 // ส่ง PARENT_PTS constants ไปให้หน้า client แสดงตาราง
 router.get('/reference', requireLogin, async (req, res) => {

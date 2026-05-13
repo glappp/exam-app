@@ -225,7 +225,7 @@ router.post('/', async (req, res) => {
           data: { level: newLevel }
         });
       }
-      characterLevel = { level: newLevel, totalXp: char.totalXp + xpGain, xpGain };
+      characterLevel = { level: newLevel, totalXp: char.totalXp + xpGain, xpGain, prevLevel: char.level };
     }
 
     const TEST_MODES = ['subtopic_test', 'topic_test'];

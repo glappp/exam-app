@@ -65,19 +65,62 @@
     .stat-num   { font-size: 24px; font-weight: 800; color: #1e3a5f; line-height: 1; }
     .stat-label { font-size: 11px; color: #94a3b8; margin-top: 2px; }
 
-    /* ── 3-COLUMN GRID ── */
+    /* ── 2-COLUMN GRID ── */
     .main-grid {
       display: grid;
-      grid-template-columns: 260px 1fr 320px;
+      grid-template-columns: 1fr 340px;
       gap: 18px;
       align-items: start;
     }
-    @media (max-width: 1100px) { .main-grid { grid-template-columns: 240px 1fr; } .right-col { display: none; } }
-    @media (max-width: 760px)  { .main-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 1000px) { .main-grid { grid-template-columns: 1fr 300px; } }
+    @media (max-width: 760px)  { .main-grid { grid-template-columns: 1fr; } .right-col { display: none; } }
 
-    .left-col   { display: flex; flex-direction: column; gap: 14px; }
-    .center-col { display: flex; flex-direction: column; gap: 14px; }
-    .right-col  { display: flex; flex-direction: column; gap: 14px; }
+    .left-col  { display: flex; flex-direction: column; gap: 14px; }
+    .right-col { display: flex; flex-direction: column; gap: 14px; }
+
+    /* ── ACTION GRID (3-wide) ── */
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .action-card {
+      background: #fff; border-radius: 12px;
+      padding: 18px 10px;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      text-decoration: none; color: inherit; border: none; cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,.07);
+      transition: transform .12s, box-shadow .12s;
+      border-top: 3px solid #e2e8f0;
+    }
+    .action-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.12); }
+    .action-card .ac-icon  { font-size: 26px; line-height: 1; }
+    .action-card .ac-label { font-size: 13px; font-weight: 700; text-align: center; }
+    .action-card .ac-sub   { font-size: 10px; color: #94a3b8; text-align: center; }
+    .action-card.green  { border-top-color: #10b981; }
+    .action-card.blue   { border-top-color: #3b82f6; }
+    .action-card.orange { border-top-color: #f59e0b; }
+
+    /* ── ACTION ROW (2-wide) ── */
+    .action-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .action-sm {
+      background: #fff; border-radius: 10px;
+      padding: 13px 14px;
+      display: flex; align-items: center; gap: 10px;
+      text-decoration: none; color: inherit; border: none; cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,.07);
+      transition: transform .1s;
+      border-left: 3px solid #e2e8f0;
+    }
+    .action-sm:hover { transform: translateY(-1px); }
+    .action-sm .as-icon  { font-size: 20px; flex-shrink: 0; }
+    .action-sm .as-label { font-size: 13px; font-weight: 700; }
+    .action-sm .as-sub   { font-size: 10px; color: #94a3b8; margin-top: 1px; }
+    .action-sm.purple { border-left-color: #8b5cf6; }
+    .action-sm.pink   { border-left-color: #ec4899; }
+    .action-sm.teal   { border-left-color: #0891b2; }
+    .action-sm.forest { border-left-color: #166534; }
 
     /* ── CARD ── */
     .card {
@@ -259,102 +302,11 @@
     </div>
   </div>
 
-  <!-- 3-COLUMN GRID -->
+  <!-- 2-COLUMN GRID -->
   <div class="main-grid">
 
-    <!-- ═══ LEFT: Action buttons ═══ -->
+    <!-- ═══ LEFT: Mission + Actions + Character + Scores ═══ -->
     <div class="left-col">
-      <div class="card">
-        <div class="card-title">เรียนและสอบ</div>
-        <div class="action-stack">
-
-          <button class="mode-btn mission-style" onclick="location.href='mission.html'">
-            <span class="icon">🎯</span>
-            <div><div class="mode-label">ภารกิจประจำวัน</div></div>
-          </button>
-
-          <div class="util-divider"></div>
-
-          <button class="mode-btn green" onclick="location.href='practice.html'">
-            <span class="icon">✏️</span>
-            <div>
-              <div class="mode-label">ฝึกตามหัวข้อ</div>
-              <div class="mode-sub">เลือกเรื่องที่อยากฝึกเอง</div>
-            </div>
-          </button>
-          <button class="mode-btn blue" onclick="location.href='rally.html'">
-            <span class="icon">🧠</span>
-            <div>
-              <div class="mode-label">โจทย์ฝึกเฉพาะคุณ</div>
-              <div class="mode-sub">ระบบเลือกโจทย์ตามจุดอ่อนให้</div>
-            </div>
-          </button>
-          <button class="mode-btn orange" onclick="location.href='exam.html'">
-            <span class="icon">🏅</span>
-            <div>
-              <div class="mode-label">สอบแข่งขัน</div>
-              <div class="mode-sub">จับเวลา ใช้ตั๋ว รับ XP</div>
-            </div>
-          </button>
-          <button class="mode-btn purple" onclick="location.href='saturday-quiz.html'">
-            <span class="icon">📝</span>
-            <div>
-              <div class="mode-label">สอบประจำสัปดาห์</div>
-              <div class="mode-sub">เปิดเฉพาะวันเสาร์</div>
-            </div>
-          </button>
-          <button class="mode-btn pink" onclick="location.href='games.html'">
-            <span class="icon">🎮</span>
-            <div>
-              <div class="mode-label">เกม</div>
-              <div class="mode-sub">Grand Prix · Time Trial</div>
-            </div>
-          </button>
-
-          <!-- Teacher/Admin buttons (shown by JS) -->
-          <button id="teacher-btn" class="mode-btn" style="display:none;border-left:3px solid #166534" onclick="location.href='teacher-report.html'">
-            <span class="icon">👩‍🏫</span>
-            <div><div class="mode-label">รายงานครู</div></div>
-          </button>
-          <button id="teacher-dashboard-btn" class="mode-btn" style="display:none;border-left:3px solid #2c5282" onclick="location.href='teacher-dashboard.html'">
-            <span class="icon">📊</span>
-            <div><div class="mode-label">ภาพรวมห้องเรียน</div></div>
-          </button>
-          <button id="school-admin-btn" class="mode-btn" style="display:none;border-left:3px solid #0891b2" onclick="location.href='school-admin.html'">
-            <span class="icon">🏫</span>
-            <div>
-              <div class="mode-label">Admin โรงเรียน</div>
-              <div class="mode-sub">จัดการนักเรียน · อัปโหลด Roster</div>
-            </div>
-          </button>
-
-        </div>
-
-        <div class="util-divider" style="margin-top:10px"></div>
-        <div class="util-row" style="margin-top:10px">
-          <a href="leaderboard.html" class="util-btn"><span class="u-icon">🏆</span>อันดับ</a>
-          <a href="box.html"         class="util-btn"><span class="u-icon">🎁</span>รางวัล</a>
-          <a href="parent-corner.html" class="util-btn"><span class="u-icon">👨‍👩‍👧</span>ผู้ปกครอง</a>
-        </div>
-      </div>
-    </div>
-
-    <!-- ═══ CENTER: Mission + Character + Recommend ═══ -->
-    <div class="center-col">
-
-      <!-- Character card (shown by JS) -->
-      <div class="card" id="char-card" style="display:none">
-        <div class="char-row">
-          <div id="char-icon" style="font-size:38px;line-height:1"></div>
-          <div style="flex:1">
-            <div style="font-weight:700;font-size:15px" id="char-name"></div>
-            <div style="font-size:12px;color:#94a3b8;margin:3px 0" id="char-xp"></div>
-            <div class="char-xp-bar-bg">
-              <div id="char-bar" class="char-xp-bar-fill"></div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <!-- Mission card (shown by JS) -->
       <div id="mission-card" style="display:none">
@@ -380,21 +332,77 @@
         </div>
       </div>
 
+      <!-- Action grid (3 wide) -->
+      <div class="card">
+        <div class="card-title">เรียนและสอบ</div>
+        <div class="action-grid">
+          <a href="practice.html" class="action-card green">
+            <span class="ac-icon">✏️</span>
+            <span class="ac-label">ฝึกตามหัวข้อ</span>
+            <span class="ac-sub">เลือกเรื่องเอง</span>
+          </a>
+          <a href="rally.html" class="action-card blue">
+            <span class="ac-icon">🧠</span>
+            <span class="ac-label">โจทย์เฉพาะคุณ</span>
+            <span class="ac-sub">ระบบเลือกให้</span>
+          </a>
+          <a href="exam.html" class="action-card orange">
+            <span class="ac-icon">🏅</span>
+            <span class="ac-label">สอบแข่งขัน</span>
+            <span class="ac-sub">จับเวลา · XP</span>
+          </a>
+        </div>
+        <div class="action-row-2">
+          <a href="saturday-quiz.html" class="action-sm purple">
+            <span class="as-icon">📝</span>
+            <div><div class="as-label">สอบประจำสัปดาห์</div><div class="as-sub">เปิดเฉพาะวันเสาร์</div></div>
+          </a>
+          <a href="games.html" class="action-sm pink">
+            <span class="as-icon">🎮</span>
+            <div><div class="as-label">เกม</div><div class="as-sub">Grand Prix · Time Trial</div></div>
+          </a>
+        </div>
+
+        <!-- Teacher/Admin buttons (shown by JS) -->
+        <div id="teacher-row" style="display:none;margin-top:10px">
+          <div class="util-divider" style="margin-bottom:10px"></div>
+          <div class="action-row-2">
+            <button id="teacher-btn" class="action-sm forest" style="display:none" onclick="location.href='teacher-report.html'">
+              <span class="as-icon">👩‍🏫</span>
+              <div><div class="as-label">รายงานครู</div></div>
+            </button>
+            <button id="teacher-dashboard-btn" class="action-sm" style="display:none;border-left-color:#2c5282" onclick="location.href='teacher-dashboard.html'">
+              <span class="as-icon">📊</span>
+              <div><div class="as-label">ภาพรวมห้อง</div></div>
+            </button>
+            <button id="school-admin-btn" class="action-sm teal" style="display:none" onclick="location.href='school-admin.html'">
+              <span class="as-icon">🏫</span>
+              <div><div class="as-label">Admin โรงเรียน</div><div class="as-sub">จัดการนักเรียน</div></div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Character card (shown by JS) -->
+      <div class="card" id="char-card" style="display:none">
+        <div class="char-row">
+          <div id="char-icon" style="font-size:38px;line-height:1"></div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:15px" id="char-name"></div>
+            <div style="font-size:12px;color:#94a3b8;margin:3px 0" id="char-xp"></div>
+            <div class="char-xp-bar-bg">
+              <div id="char-bar" class="char-xp-bar-fill"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Score section anchor (JS appends here) -->
       <div id="score-anchor"></div>
 
-      <!-- Recommend card (shown by JS) -->
-      <div class="card" id="recommend-card" style="display:none">
-        <div class="card-title">แนะนำให้ฝึก</div>
-        <div id="recommend-content"></div>
-        <button style="margin-top:10px;width:100%;padding:9px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer" onclick="location.href='rally.html'">
-          🧠 โจทย์ฝึกเฉพาะคุณ
-        </button>
-      </div>
-
     </div>
 
-    <!-- ═══ RIGHT: Streak + บันทึกกิจกรรม ═══ -->
+    <!-- ═══ RIGHT: Streak + Weak Topics + Util + Activity ═══ -->
     <div class="right-col">
 
       <!-- Streak card -->
@@ -408,6 +416,24 @@
           </div>
         </div>
         <div id="streak-msg" style="font-size:12px;color:#64748b;margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9"></div>
+      </div>
+
+      <!-- Weak topics / Recommend card (shown by JS) -->
+      <div class="card" id="recommend-card" style="display:none">
+        <div class="card-title">จุดอ่อนที่ควรฝึก</div>
+        <div id="recommend-content"></div>
+        <button style="margin-top:10px;width:100%;padding:9px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer" onclick="location.href='rally.html'">
+          🧠 โจทย์ฝึกเฉพาะคุณ
+        </button>
+      </div>
+
+      <!-- Util row -->
+      <div class="card" style="padding:14px 16px">
+        <div class="util-row">
+          <a href="box.html"           class="util-btn"><span class="u-icon">🎁</span>รางวัล</a>
+          <a href="parent-corner.html" class="util-btn"><span class="u-icon">👨‍👩‍👧</span>ผู้ปกครอง</a>
+          <a href="leaderboard.html"   class="util-btn"><span class="u-icon">🏆</span>อันดับ</a>
+        </div>
       </div>
 
       <!-- Activity log card -->
@@ -455,6 +481,7 @@
     if (['admin','school_admin','teacher'].includes(me.role)) {
       document.getElementById('teacher-btn').style.display = '';
       document.getElementById('teacher-dashboard-btn').style.display = '';
+      document.getElementById('teacher-row').style.display = '';
       document.getElementById('admin-link').style.display = '';
     }
     if (me.role === 'school_admin') {

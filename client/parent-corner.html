@@ -303,36 +303,82 @@
       text-align: center;
     }
 
-    /* ── Example rewards ── */
-    .example-card {
-      background: #fffbeb;
-      border: 1.5px dashed #f59e0b;
+    /* ── Redeem catalog ── */
+    .redeem-card {
+      background: #fff;
       border-radius: 16px;
       padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.07);
     }
-    .example-card .sec-title { color: #92400e }
-    .reward-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin-top: 8px;
+    .redeem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
     }
-    .reward-chip {
-      background: #fff;
-      border: 1.5px solid #fde68a;
-      border-radius: 12px;
-      padding: 10px 16px;
-      font-size: 14px;
+    .redeem-item {
+      background: #fafafa;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 14px 12px;
+      text-align: center;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 8px;
-      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+      gap: 6px;
+      transition: border-color .15s, box-shadow .15s;
     }
-    .reward-chip .chip-pts {
-      font-weight: 700;
-      color: #b45309;
+    .redeem-item:hover { border-color: #f59e0b; box-shadow: 0 2px 8px rgba(245,158,11,.15); }
+    .redeem-item.disabled { opacity: .45; pointer-events: none; }
+    .redeem-emoji { font-size: 32px; line-height: 1; }
+    .redeem-name  { font-size: 13px; font-weight: 600; color: #1e293b; }
+    .redeem-cost  { font-size: 13px; font-weight: 700; color: #b45309; background: #fef3c7; border-radius: 20px; padding: 2px 10px; }
+    .redeem-btn {
+      width: 100%;
+      margin-top: 4px;
+      padding: 8px 0;
+      border: none;
+      border-radius: 8px;
+      background: #f59e0b;
+      color: #fff;
       font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s;
     }
+    .redeem-btn:hover { background: #d97706; }
+
+    /* ── Confirm modal ── */
+    #confirm-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 200;
+      align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    #confirm-overlay.open { display: flex; }
+    #confirm-box {
+      background: #fff;
+      border-radius: 20px;
+      max-width: 360px; width: 100%;
+      padding: 28px 24px;
+      text-align: center;
+      box-shadow: 0 12px 40px rgba(0,0,0,.2);
+      animation: pop-in .25s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes pop-in { from { transform: scale(.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    #confirm-emoji { font-size: 48px; margin-bottom: 8px; }
+    #confirm-title { font-size: 17px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
+    #confirm-sub   { font-size: 14px; color: #64748b; margin-bottom: 20px; line-height: 1.5; }
+    .confirm-btns  { display: flex; gap: 10px; }
+    .confirm-btns button {
+      flex: 1; padding: 12px; border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+    }
+    #confirm-cancel { background: #f1f5f9; color: #64748b; }
+    #confirm-ok     { background: #f59e0b; color: #fff; }
+    #confirm-ok:hover { background: #d97706; }
 
     /* ── Toast ── */
     #toast {
@@ -452,23 +498,31 @@
     </p>
   </div>
 
-  <!-- Example rewards -->
-  <div class="example-card">
-    <div class="sec-title">🎁 ตัวอย่างรางวัล (ผู้ปกครองกำหนดเอง)</div>
-    <p style="font-size:13px;color:#78350f;margin-bottom:12px">
-      ตัวอย่างแนวคิดรางวัลที่ผู้ปกครองอาจใช้ — ปรับได้ตามความเหมาะสม
+  <!-- Redeem rewards -->
+  <div class="redeem-card">
+    <div class="sec-title">🎁 แลกรางวัล</div>
+    <p style="font-size:13px;color:#64748b;margin-bottom:4px">
+      กดแลกเพื่อหักคะแนน — เป็นข้อตกลงระหว่างผู้ปกครองกับลูก
     </p>
-    <div class="reward-chips">
-      <div class="reward-chip">🎮 เล่นเกม 1 ชั่วโมง <span class="chip-pts">50 pts</span></div>
-      <div class="reward-chip">🍦 ไอศกรีม 1 อัน <span class="chip-pts">30 pts</span></div>
-      <div class="reward-chip">📺 ดูการ์ตูน 30 นาที <span class="chip-pts">20 pts</span></div>
-      <div class="reward-chip">🛒 ของเล่นชิ้นเล็ก <span class="chip-pts">150 pts</span></div>
-      <div class="reward-chip">🍕 เลือกเมนูอาหาร <span class="chip-pts">40 pts</span></div>
-      <div class="reward-chip">🏕️ ท่องเที่ยว 1 วัน <span class="chip-pts">500 pts</span></div>
+    <div class="redeem-grid" id="redeemGrid">
+      <!-- rendered by JS -->
     </div>
   </div>
 
 </div><!-- /container -->
+
+<!-- Confirm modal -->
+<div id="confirm-overlay">
+  <div id="confirm-box">
+    <div id="confirm-emoji">🎁</div>
+    <div id="confirm-title">แลกรางวัล?</div>
+    <div id="confirm-sub"></div>
+    <div class="confirm-btns">
+      <button id="confirm-cancel" onclick="closeConfirm()">ยกเลิก</button>
+      <button id="confirm-ok">✅ ยืนยันแลก</button>
+    </div>
+  </div>
+</div>
 
 <div id="toast"></div>
 
@@ -491,15 +545,17 @@ const SOURCE_LABEL = {
   auto_weekly:   '🟣 Weekly Challenge',
   auto_streak:   '🔥 Streak',
   parent_manual: '✏️ ผู้ปกครองปรับ',
+  parent_redeem: '🎁 แลกรางวัล',
   earn_box:      '📦 เปิดกล่องรางวัล',
 }
 
 function dotClass(src, amount) {
-  if (src === 'parent_manual') return 'manual'
+  if (src === 'parent_manual' || src === 'parent_redeem') return amount > 0 ? 'earn' : 'manual'
   return amount > 0 ? 'earn' : 'spend'
 }
 
 function dotEmoji(src, amount) {
+  if (src === 'parent_redeem') return '🎁'
   if (src === 'parent_manual') return amount > 0 ? '✏️' : '✂️'
   return amount > 0 ? '⬆' : '⬇'
 }
@@ -532,6 +588,7 @@ async function loadSummary() {
   document.getElementById('todayEarned2').textContent = sum.today.earned
   document.getElementById('todaySpent2').textContent  = sum.today.spent
 
+  renderRedeemGrid(sum.balance)
   renderLogs(sum.logs)
 
   const ref = await refRes.json()
@@ -612,6 +669,82 @@ async function doAdjust(sign) {
   document.getElementById('adjustNote').value = ''
   await loadSummary()
 }
+
+// ─── Reward Catalog ──────────────────────────────────────────────────────────
+const REWARDS = [
+  { emoji: '📺', name: 'ดูการ์ตูน 30 นาที',   cost: 20  },
+  { emoji: '🍦', name: 'ไอศกรีม 1 อัน',        cost: 30  },
+  { emoji: '🍕', name: 'เลือกเมนูอาหาร',       cost: 40  },
+  { emoji: '🎮', name: 'เล่นเกม 1 ชั่วโมง',   cost: 50  },
+  { emoji: '🛍️', name: 'ของเล่นชิ้นเล็ก',     cost: 100 },
+  { emoji: '🎬', name: 'ดูหนัง 1 เรื่อง',      cost: 150 },
+  { emoji: '🍔', name: 'ฟาสต์ฟู้ดมื้อพิเศษ', cost: 200 },
+  { emoji: '🏕️', name: 'ท่องเที่ยว 1 วัน',    cost: 500 },
+]
+
+let currentBalance = 0
+
+function renderRedeemGrid(balance) {
+  currentBalance = balance
+  const grid = document.getElementById('redeemGrid')
+  grid.innerHTML = REWARDS.map(r => {
+    const canAfford = balance >= r.cost
+    return `
+      <div class="redeem-item${canAfford ? '' : ' disabled'}">
+        <div class="redeem-emoji">${r.emoji}</div>
+        <div class="redeem-name">${r.name}</div>
+        <div class="redeem-cost">${r.cost} pts</div>
+        <button class="redeem-btn" onclick="openConfirm('${escHtml(r.emoji)}','${escHtml(r.name)}',${r.cost})">
+          แลก
+        </button>
+      </div>`
+  }).join('')
+}
+
+// ─── Confirm modal ────────────────────────────────────────────────────────────
+let _pendingRedeem = null
+
+function openConfirm(emoji, name, cost) {
+  _pendingRedeem = { name, cost }
+  document.getElementById('confirm-emoji').textContent = emoji
+  document.getElementById('confirm-title').textContent = name
+  document.getElementById('confirm-sub').innerHTML =
+    `หักคะแนน <strong>${cost} pts</strong><br>` +
+    `คงเหลือหลังแลก: <strong>${currentBalance - cost} pts</strong>`
+  document.getElementById('confirm-overlay').classList.add('open')
+  document.getElementById('confirm-ok').onclick = doRedeem
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open')
+  _pendingRedeem = null
+}
+
+async function doRedeem() {
+  if (!_pendingRedeem) return
+  const { name, cost } = _pendingRedeem
+  closeConfirm()
+
+  const res  = await fetch('/api/parent/redeem', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rewardName: name, cost }),
+  })
+  const data = await res.json()
+
+  if (!res.ok) {
+    showToast(data.error || 'เกิดข้อผิดพลาด', 'error')
+    return
+  }
+
+  showToast(`🎁 แลก "${name}" สำเร็จ! เหลือ ${data.balance} pts`, 'success')
+  await loadSummary()
+}
+
+// ปิด modal เมื่อคลิก overlay
+document.getElementById('confirm-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('confirm-overlay')) closeConfirm()
+})
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 loadSummary()

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สอบทีละข้อ — SchoolPL</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" defer></script>
+  <style>
+    .score-bar {
+      display: flex; align-items: center; gap: 16px;
+      background: var(--navy); color: #fff; padding: 8px 16px; border-radius: 10px;
+      margin-bottom: 16px; font-size: 14px;
+    }
+    .score-num { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .score-label { font-size: 11px; opacity: .75; }
+    .score-sep { width: 1px; height: 36px; background: rgba(255,255,255,.2); }
+    .feedback-box {
+      padding: 14px 18px; border-radius: 10px; margin-top: 14px;
+      font-size: 15px; font-weight: 600; line-height: 1.6;
+    }
+    .feedback-correct { background: #dcfce7; color: #166534; border: 1.5px solid #86efac; }
+    .feedback-wrong   { background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; }
+    .answer-section label {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 14px; border: 1.5px solid var(--border); border-radius: 7px;
+      margin-bottom: 8px; cursor: pointer; font-size: 14px; background: #fff;
+      transition: border-color .1s, background .1s;
+    }
+    .answer-section label:hover { border-color: var(--blue); background: #eff6ff; }
+    .answer-section label.correct { border-color: #16a34a; background: #dcfce7; font-weight: 600; }
+    .answer-section label.wrong   { border-color: #dc2626; background: #fee2e2; }
+    .answer-section label.disabled { pointer-events: none; }
+    .answer-section input[type=radio] { margin-top: 2px; flex-shrink: 0; }
+    .q-counter { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+    .streak-badge {
+      display: inline-block; background: #fef9c3; color: #713f12;
+      border-radius: 99px; padding: 2px 10px; font-size: 12px; font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-title">🔁 สอบทีละข้อ</span>
+  <div class="topbar-nav">
+    <button onclick="confirmStop()" style="background:none;border:none;cursor:pointer;font-size:13px;color:#555;padding:0;font-family:inherit">⏹ หยุด</button>
+  </div>
+</div>
+
+<div class="page" id="main-page">
+
+  <!-- Score strip -->
+  <div class="score-bar">
+    <div>
+      <div class="score-num" id="score-correct">0</div>
+      <div class="score-label">ตอบถูก</div>
+    </div>
+    <div class="score-sep"></div>
+    <div>
+      <div class="score-num" id="score-total">0</div>
+      <div class="score-label">ทำทั้งหมด</div>
+    </div>
+    <div class="score-sep"></div>
+    <div>
+      <div class="score-num" id="score-pct">—</div>
+      <div class="score-label">% ถูก</div>
+    </div>
+    <div style="margin-left:auto" id="streak-area"></div>
+  </div>
+
+  <!-- Question card -->
+  <div class="card" id="question-card">
+    <div style="text-align:center;padding:24px;color:var(--muted)">กำลังโหลด...</div>
+  </div>
+
+  <!-- Next button (hidden until answered) -->
+  <div id="next-area" style="margin-top:12px;display:none">
+    <button class="btn btn-primary btn-full" id="next-btn" onclick="nextQuestion()">ข้อต่อไป →</button>
+  </div>
+
+</div>
+
+<!-- Stop confirmation modal -->
+<div id="stop-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:14px;padding:28px 32px;max-width:340px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+    <div style="font-size:36px;margin-bottom:10px">⏹</div>
+    <h3 style="margin:0 0 8px;font-size:17px;color:#111">หยุดการสอบ?</h3>
+    <div id="stop-summary" style="margin:0 0 20px;color:#374151;font-size:15px;line-height:1.6"></div>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button onclick="doStop()" style="background:#1e3a5f;color:#fff;border:none;border-radius:8px;padding:10px 22px;font-size:14px;font-weight:600;cursor:pointer">หยุด</button>
+      <button onclick="closeStopModal()" style="background:#f3f4f6;color:#374151;border:none;border-radius:8px;padding:10px 22px;font-size:14px;font-weight:600;cursor:pointer">สอบต่อ</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const urlParams = new URLSearchParams(location.search);
+  const grade     = urlParams.get('grade');
+  const venue     = urlParams.get('venue');
+
+  let pool        = [];      // คำถามที่โหลดมาแต่ยังไม่ใช้
+  let current     = null;    // คำถามปัจจุบัน
+  let answered    = false;   // ตอบแล้วหรือยัง
+  let totalDone   = 0;
+  let totalRight  = 0;
+  let streak      = 0;
+  let loading     = false;
+
+  // Auth check แล้วเริ่ม
+  (async () => {
+    const res = await fetch('/api/me', { credentials: 'include' });
+    if (!res.ok) { location.href = '/login.html'; return; }
+    await refillPool();
+    nextQuestion();
+  })();
+
+  async function refillPool() {
+    if (loading) return;
+    loading = true;
+    try {
+      const params = new URLSearchParams({ mode: 'competitive' });
+      if (grade) params.set('grade', grade);
+      if (venue) params.set('venue', venue);
+      const res = await fetch(`/api/exam-set/random?${params}`, { credentials: 'include' });
+      if (!res.ok) { pool = []; return; }
+      const qs = await res.json();
+      // สุ่มใหม่เพื่อไม่ซ้ำ pattern
+      pool = qs.sort(() => Math.random() - 0.5);
+    } catch {}
+    loading = false;
+  }
+
+  async function nextQuestion() {
+    document.getElementById('next-area').style.display = 'none';
+    answered = false;
+
+    // เติม pool ถ้าใกล้หมด
+    if (pool.length < 5) {
+      refillPool();  // async แต่ไม่รอ — เติม background
+    }
+    if (pool.length === 0) {
+      // รอ refill
+      document.getElementById('question-card').innerHTML =
+        '<div style="text-align:center;padding:24px;color:var(--muted)">กำลังโหลดข้อถัดไป...</div>';
+      await refillPool();
+    }
+    if (pool.length === 0) {
+      document.getElementById('question-card').innerHTML =
+        '<div style="text-align:center;padding:24px;color:#b91c1c">ไม่พบข้อสอบในชุดที่เลือก</div>';
+      return;
+    }
+
+    current = pool.shift();
+    renderQuestion(current);
+  }
+
+  function _renderBlock(block) {
+    if (block.type === 'text') return `<div class="qb-text">${(block.value || '').replace(/\n/g, '<br>')}</div>`;
+    if (block.type === 'image') {
+      const src = /^https?:\/\//.test(block.url || '') || (block.url || '').startsWith('/') ? block.url : `/uploads/${block.url}`;
+      return `<div class="qb-img"><img src="${src}" style="max-width:min(100%,420px);max-height:300px;border-radius:8px;object-fit:contain"></div>`;
+    }
+    return '';
+  }
+
+  function renderQuestionBody(q) {
+    if (q.content && Array.isArray(q.content)) {
+      return q.content.map(block => {
+        if (block.type === 'hint') {
+          const inner = (block.content || []).map(_renderBlock).join('');
+          return `<details class="qb-hint"><summary>${block.label || 'ความรู้เพิ่มเติม'}</summary><div class="qb-hint-body">${inner}</div></details>`;
+        }
+        return _renderBlock(block);
+      }).join('');
+    }
+    const text = q.textTh || q.text || '';
+    let html = `<div class="qb-text">${text.replace(/\n/g, '<br>')}</div>`;
+    if (q.image) {
+      const src = /^https?:\/\//.test(q.image) || q.image.startsWith('/') ? q.image : `/uploads/${q.image}`;
+      html += `<div class="qb-img"><img src="${src}" style="max-width:min(100%,420px);max-height:300px;border-radius:8px;object-fit:contain"></div>`;
+    }
+    return html;
+  }
+
+  function renderQuestion(q) {
+    const bodyHtml = renderQuestionBody(q);
+    const choicesHtml = (q.choices || []).map((c, i) => `
+      <label id="lbl-${i}">
+        <input type="radio" name="answer" value="${i}">
+        ${c.image ? `<img src="/uploads/${c.image}" style="max-height:40px">` : ''}
+        ${c.textTh || ''}
+      </label>
+    `).join('');
+
+    document.getElementById('question-card').innerHTML = `
+      <div class="q-counter">ข้อที่ ${totalDone + 1}</div>
+      <div class="qb-wrap">${bodyHtml}</div>
+      <div class="answer-section" id="answer-section">${choicesHtml}</div>
+      <div id="feedback-area"></div>
+    `;
+
+    if (window.MathJax) MathJax.typesetPromise();
+
+    // click → ตอบทันที
+    document.querySelectorAll('input[name="answer"]').forEach(input => {
+      input.addEventListener('change', () => submitAnswer(parseInt(input.value)));
+    });
+  }
+
+  function submitAnswer(chosen) {
+    if (answered) return;
+    answered = true;
+    totalDone++;
+
+    const correct = current.answer;
+    const isRight = (chosen === correct);
+
+    if (isRight) {
+      totalRight++;
+      streak++;
+    } else {
+      streak = 0;
+    }
+
+    updateScoreBar();
+
+    // ล็อก choices + highlight
+    document.querySelectorAll('#answer-section label').forEach((lbl, i) => {
+      lbl.classList.add('disabled');
+      if (i === correct) lbl.classList.add('correct');
+      else if (i === chosen) lbl.classList.add('wrong');
+    });
+
+    // feedback
+    const correctText = current.choices?.[correct]?.textTh || `ข้อ ${correct + 1}`;
+    const feedbackEl = document.getElementById('feedback-area');
+    if (isRight) {
+      feedbackEl.innerHTML = `<div class="feedback-box feedback-correct">✅ ถูกต้อง!</div>`;
+    } else {
+      feedbackEl.innerHTML = `<div class="feedback-box feedback-wrong">❌ ผิด — คำตอบที่ถูกคือ: <strong>${correctText}</strong></div>`;
+    }
+
+    document.getElementById('next-area').style.display = 'block';
+    document.getElementById('next-btn').focus();
+  }
+
+  function updateScoreBar() {
+    document.getElementById('score-correct').textContent = totalRight;
+    document.getElementById('score-total').textContent   = totalDone;
+    const pct = totalDone > 0 ? Math.round(totalRight / totalDone * 100) : 0;
+    document.getElementById('score-pct').textContent = pct + '%';
+
+    const streakEl = document.getElementById('streak-area');
+    streakEl.innerHTML = streak >= 3
+      ? `<span class="streak-badge">🔥 ${streak} ข้อติด</span>`
+      : '';
+  }
+
+  // ── Stop modal ──────────────────────────────────────────────────────────────
+  function confirmStop() {
+    const pct = totalDone > 0 ? Math.round(totalRight / totalDone * 100) : 0;
+    document.getElementById('stop-summary').innerHTML =
+      `ตอบถูก <strong>${totalRight}</strong> จาก <strong>${totalDone}</strong> ข้อ (${pct}%)`;
+    document.getElementById('stop-modal').style.display = 'flex';
+  }
+  function closeStopModal() { document.getElementById('stop-modal').style.display = 'none'; }
+  function doStop() { location.href = 'exam.html'; }
+
+  // กดปุ่ม back ให้ถาม confirm
+  history.pushState(null, '', location.href);
+  window.addEventListener('popstate', () => {
+    history.pushState(null, '', location.href);
+    confirmStop();
+  });
+</script>
+<script src="/feedback-widget.js"></script>
+</body>
+</html>

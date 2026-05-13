@@ -37,20 +37,21 @@
   <div class="card">
     <!-- Filter bar -->
     <div class="filter-bar">
-      <div class="form-group">
-        <label>ประเภท</label>
-        <select id="attrType" onchange="updateAttrValueOptions()">
-          <option value="">-- ทุกประเภท --</option>
-          <option value="topic">topic</option>
-          <option value="skill">skill</option>
-          <option value="trap">trap</option>
+      <div class="form-group" style="min-width:180px">
+        <label>ชุดข้อสอบ</label>
+        <select id="sourceFilter">
+          <option value="all">-- ทุกชุด --</option>
         </select>
       </div>
-      <div class="form-group">
-        <label>ค่า attribute</label>
-        <select id="attrValue" disabled>
-          <option value="all">-- ทั้งหมด --</option>
+      <div class="form-group" style="min-width:160px">
+        <label>หัวข้อ (topic)</label>
+        <select id="topicFilter">
+          <option value="all">-- ทุกหัวข้อ --</option>
         </select>
+      </div>
+      <div class="form-group" style="min-width:120px">
+        <label>รหัส/เลขข้อ</label>
+        <input type="text" id="codeFilter" placeholder="เช่น CHB-001">
       </div>
       <div class="form-group">
         <label>ความยาก</label>
@@ -61,15 +62,8 @@
           <option value="hard">ยาก (3)</option>
         </select>
       </div>
-      <div class="form-group">
-        <label>ภาษา</label>
-        <select id="language" onchange="currentLang=this.value; renderTable()">
-          <option value="th">ไทย</option>
-          <option value="en">English</option>
-        </select>
-      </div>
       <div class="form-group" style="flex:1;min-width:160px">
-        <label>ค้นหา</label>
+        <label>ค้นหาเนื้อหา</label>
         <input type="text" id="keyword" placeholder="พิมพ์คำค้นหา...">
       </div>
       <div class="form-group" style="min-width:auto;align-self:flex-end">
@@ -107,13 +101,37 @@
     if (!res.ok) { location.href = 'login.html'; return; }
   })();
 
-  // โหลด attribute dict สำหรับ dropdown
+  // โหลด attribute dict → เติม topic dropdown
   (async () => {
     try {
       const res = await fetch('/api/attribute-dict', { credentials: 'include' });
       const list = await res.json();
       attrDict = {};
       list.forEach(a => { attrDict[a.key] = a; });
+
+      const topicSel = document.getElementById('topicFilter');
+      const topics = list.filter(a => a.key.startsWith('topic:'));
+      topics.forEach(a => {
+        const opt = document.createElement('option');
+        opt.value = a.key;
+        opt.textContent = a.th || a.key;
+        topicSel.appendChild(opt);
+      });
+    } catch {}
+  })();
+
+  // โหลด sources → เติม ชุดข้อสอบ dropdown
+  (async () => {
+    try {
+      const res = await fetch('/questions/sources', { credentials: 'include' });
+      const sources = await res.json();
+      const sel = document.getElementById('sourceFilter');
+      sources.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        sel.appendChild(opt);
+      });
     } catch {}
   })();
 
@@ -125,28 +143,12 @@
     return currentLang === 'th' ? (c.textTh || c.text || '') : (c.textEn || c.text || '');
   }
 
-  async function updateAttrValueOptions() {
-    const type = document.getElementById('attrType').value;
-    const valSelect = document.getElementById('attrValue');
-    valSelect.innerHTML = '<option value="all">-- ทั้งหมด --</option>';
-    valSelect.disabled = !type;
-    if (!type) return;
-
-    const keys = Object.keys(attrDict).filter(k => k.startsWith(type + ':'));
-    keys.forEach(k => {
-      const opt = document.createElement('option');
-      opt.value = k.split(':').slice(1).join(':');
-      opt.textContent = attrDict[k]?.th || k;
-      valSelect.appendChild(opt);
-    });
-  }
-
   function search() { fetchQuestions(1); }
 
   function resetFilters() {
-    document.getElementById('attrType').value = '';
-    document.getElementById('attrValue').innerHTML = '<option value="all">-- ทั้งหมด --</option>';
-    document.getElementById('attrValue').disabled = true;
+    document.getElementById('sourceFilter').value = 'all';
+    document.getElementById('topicFilter').value = 'all';
+    document.getElementById('codeFilter').value = '';
     document.getElementById('difficulty').value = 'all';
     document.getElementById('keyword').value = '';
     document.getElementById('needsReview').checked = false;
@@ -160,13 +162,15 @@
     const params = new URLSearchParams({ page });
     const keyword    = document.getElementById('keyword').value.trim();
     const difficulty = document.getElementById('difficulty').value;
-    const attrType   = document.getElementById('attrType').value;
-    const attrValue  = document.getElementById('attrValue').value;
+    const source     = document.getElementById('sourceFilter').value;
+    const topic      = document.getElementById('topicFilter').value;
+    const code       = document.getElementById('codeFilter').value.trim();
 
     if (keyword)    params.set('keyword', keyword);
     if (difficulty && difficulty !== 'all') params.set('difficulty', difficulty);
-    if (attrType)   params.set('attrType', attrType);
-    if (attrValue && attrValue !== 'all') params.set('attrValue', attrValue);
+    if (source && source !== 'all') params.set('source', source);
+    if (topic && topic !== 'all') { params.set('attrType', 'topic'); params.set('attrValue', topic.replace('topic:', '')); }
+    if (code)       params.set('code', code);
     if (document.getElementById('needsReview').checked) params.set('needsReview', 'true');
 
     try {
@@ -273,9 +277,11 @@
     document.getElementById('modal').style.display = 'none';
   }
 
-  document.getElementById('keyword').addEventListener('keydown', e => {
-    if (e.key === 'Enter') search();
-  });
+  document.getElementById('keyword').addEventListener('keydown', e => { if (e.key === 'Enter') search(); });
+  document.getElementById('codeFilter').addEventListener('keydown', e => { if (e.key === 'Enter') search(); });
+  document.getElementById('sourceFilter').addEventListener('change', () => search());
+  document.getElementById('topicFilter').addEventListener('change', () => search());
+  document.getElementById('difficulty').addEventListener('change', () => search());
 
   fetchQuestions(1);
 </script>

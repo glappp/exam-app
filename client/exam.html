@@ -66,7 +66,7 @@
 
       <!-- ② โหมด -->
       <div class="section-label" id="mode-label">โหมดการสอบ</div>
-      <div class="mode-cards" id="mode-cards">
+      <div class="mode-cards" id="mode-cards" style="grid-template-columns:1fr 1fr 1fr">
         <div class="mode-card active" id="card-official" onclick="selectMode('official')">
           <span class="icon">📄</span>
           <div class="label">ข้อสอบจริง</div>
@@ -76,6 +76,11 @@
           <span class="icon">⏱️</span>
           <div class="label">ฝึกสอบ (สุ่มข้อ)</div>
           <div class="desc">สุ่มข้อสอบตามชั้นและสนาม</div>
+        </div>
+        <div class="mode-card" id="card-stream" onclick="selectMode('stream')">
+          <span class="icon">🔁</span>
+          <div class="label">ทีละข้อ (ต่อเนื่อง)</div>
+          <div class="desc">สุ่มข้อทีละข้อ เห็นผลทันที ไม่จำกัดจำนวน</div>
         </div>
       </div>
 
@@ -116,7 +121,23 @@
         </div>
       </div>
 
-      <div class="form-group mt-16" style="display:flex;align-items:center;gap:8px">
+      <div class="options-panel" id="opts-stream">
+        <div class="form-row">
+          <div class="form-group">
+            <label>ระดับชั้น</label>
+            <select id="grade-stream" onchange="onGradeChange('stream')"></select>
+          </div>
+          <div class="form-group">
+            <label>สนามสอบ</label>
+            <select id="venue-stream"></select>
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:12px;color:var(--muted);line-height:1.5">
+          🔁 สุ่มข้อทีละข้อ เห็นผลทันทีหลังตอบ — ไม่จำกัดจำนวน หยุดได้ตลอดเวลา
+        </div>
+      </div>
+
+      <div class="form-group mt-16" id="timed-row" style="display:flex;align-items:center;gap:8px">
         <input type="checkbox" id="timed" style="width:auto;margin:0">
         <label for="timed" style="margin:0;font-size:14px;font-weight:500;color:var(--text)">จับเวลา</label>
       </div>
@@ -153,6 +174,8 @@
       document.getElementById(`card-${mode}`).classList.add('active');
       document.querySelectorAll('.options-panel').forEach(p => p.classList.remove('visible'));
       document.getElementById(`opts-${mode}`).classList.add('visible');
+      // โหมด stream ไม่มี timed
+      document.getElementById('timed-row').style.display = mode === 'stream' ? 'none' : 'flex';
     }
 
     // ─── Subject ──────────────────────────────────────────────────────────────
@@ -195,7 +218,9 @@
     }
 
     async function fetchOptions(mode) {
-      const res = await fetch(`/api/exam-options?mode=${mode}&subject=${currentSubject}`);
+      // stream mode ใช้ options เดียวกับ practice
+      const apiMode = mode === 'stream' ? 'practice' : mode;
+      const res = await fetch(`/api/exam-options?mode=${apiMode}&subject=${currentSubject}`);
       if (!res.ok) return;
       const data = await res.json();
       optionsData[mode] = data;
@@ -203,8 +228,8 @@
       // render subject cards ครั้งแรก (ใช้ข้อมูลจากทั้งสอง mode)
       if (data.subjects?.length) renderSubjectCards(data.subjects);
 
-      const suffix = `-${mode}`;
-      const gradeEl = document.getElementById('grade' + suffix);
+      const gradeEl = document.getElementById(`grade-${mode}`);
+      if (!gradeEl) return;
       gradeEl.innerHTML = '';
       (data.grades || []).forEach(g => {
         gradeEl.innerHTML += `<option value="${g}">${gradeLabel(g)}</option>`;
@@ -215,8 +240,10 @@
     function onGradeChange(mode) {
       const data = optionsData[mode];
       if (!data) return;
-      const grade   = document.getElementById(`grade-${mode}`).value;
+      const gradeEl = document.getElementById(`grade-${mode}`);
       const venueEl = document.getElementById(`venue-${mode}`);
+      if (!gradeEl || !venueEl) return;
+      const grade   = gradeEl.value;
       venueEl.innerHTML = '<option value="">— เลือกสนาม —</option>';
 
       const matching = (data.venues || []).filter(v =>
@@ -259,6 +286,11 @@
         if (!year)  { alert('กรุณาเลือกปีที่สอบ'); return; }
         const source = `${venue}-${grade}-${year}`;
         location.href = `exam-official.html?grade=${grade}&examType=${source}&timed=${timed}&subject=${currentSubject}`;
+      } else if (currentMode === 'stream') {
+        const grade = document.getElementById('grade-stream').value;
+        const venue = document.getElementById('venue-stream').value;
+        if (!venue) { alert('กรุณาเลือกสนามสอบ'); return; }
+        location.href = `exam-stream.html?grade=${grade}&venue=${venue}&subject=${currentSubject}`;
       } else {
         const grade = document.getElementById('grade-practice').value;
         const venue = document.getElementById('venue-practice').value;
@@ -277,7 +309,7 @@
       if (!res.ok) { location.href = 'login.html'; return; }
       const me = await res.json();
       document.getElementById('greeting').textContent = `สวัสดี, ${me.firstName || ''}`;
-      await Promise.all([fetchOptions('official'), fetchOptions('practice')]);
+      await Promise.all([fetchOptions('official'), fetchOptions('practice'), fetchOptions('stream')]);
     })();
   </script>
 <script src="/feedback-widget.js"></script>

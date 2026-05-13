@@ -3,6 +3,21 @@ const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+// ✅ ดึง source ทั้งหมด (distinct) — สำหรับ filter ชุดข้อสอบ
+router.get('/sources', async (req, res) => {
+  try {
+    const rows = await prisma.question.findMany({
+      select: { source: true },
+      distinct: ['source'],
+      orderBy: { source: 'asc' },
+    });
+    res.json(rows.map(r => r.source).filter(Boolean));
+  } catch (err) {
+    console.error('❌ ดึง sources ล้มเหลว:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ✅ ดึงโจทย์แบบ paginated + filter (สำหรับ list-questions.html)
 router.get('/', async (req, res) => {
   try {
@@ -10,9 +25,11 @@ router.get('/', async (req, res) => {
     const limit    = 20;
     const keyword  = (req.query.keyword || '').trim();
     const difficulty = req.query.difficulty;
-    const attrType   = req.query.attrType;
+    const attrType   = req.query.attrType;   // ยังรองรับ legacy
     const attrValue  = req.query.attrValue;
     const needsReview = req.query.needsReview;
+    const source     = req.query.source;     // filter ชุดข้อสอบ (exact match)
+    const code       = (req.query.code || '').trim(); // filter รหัส/เลขข้อ
 
     const where = {};
     if (keyword) where.textTh = { contains: keyword };
@@ -21,6 +38,8 @@ router.get('/', async (req, res) => {
       where.difficulty = diffMap[difficulty] || difficulty;
     }
     if (needsReview === 'true') where.needsReview = true;
+    if (source && source !== 'all') where.source = source;
+    if (code) where.code = { contains: code };
 
     // ดึงทั้งหมดที่ผ่าน where แล้วกรอง attrType/attrValue ใน JS
     let allMatching = await prisma.question.findMany({

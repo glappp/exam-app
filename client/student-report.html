@@ -309,16 +309,8 @@ async function init() {
       `<button class="term-tab${i === 0 ? ' active' : ''}" onclick="switchAcTerm('${key}', this)">${esc(termLabel(key))}</button>`
     ).join('');
 
-    // สร้าง map "year|term" → { rank, total } จาก summary.termRanks
-    const termRankIndex = {};
-    summary.forEach(sumItem => {
-      (sumItem.termRanks || []).forEach(tr => {
-        termRankIndex[`${sumItem.year}|${tr.term}`] = { rank: tr.classRank, total: tr.classCount };
-      });
-    });
-
-    window._termData = { acRecords: records, mode: 'academic', termRankIndex };
-    renderAcademicTerm(keys[0], records, termRankIndex);
+    window._termData = { acRecords: records, mode: 'academic' };
+    renderAcademicTerm(keys[0], records);
     document.getElementById('terms-section').style.display = 'block';
     return;
   }
@@ -336,26 +328,13 @@ function switchTerm(key, btn) {
 function switchAcTerm(key, btn) {
   document.querySelectorAll('.term-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  renderAcademicTerm(key, window._termData.acRecords, window._termData.termRankIndex);
+  renderAcademicTerm(key, window._termData.acRecords);
 }
 
-function renderAcademicTerm(key, records, termRankIndex) {
+function renderAcademicTerm(key, records) {
   document.getElementById('term-label').textContent = termLabel(key);
   const [year, term] = key.split('|');
   const subjects = records[year]?.[term] || [];
-
-  // Overall rank banner
-  const tr = termRankIndex?.[key];
-  const existingBanner = document.getElementById('ac-overall-rank-banner');
-  if (existingBanner) existingBanner.remove();
-  if (tr?.rank != null) {
-    const icon = tr.rank === 1 ? '🥇' : tr.rank === 2 ? '🥈' : tr.rank === 3 ? '🥉' : `#${tr.rank}`;
-    const banner = document.createElement('div');
-    banner.id = 'ac-overall-rank-banner';
-    banner.style.cssText = 'background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:8px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;font-size:13px;color:#1e40af;font-weight:600';
-    banner.innerHTML = `<span style="font-size:18px">${icon}</span><span>อันดับรวมทุกวิชา <b>${tr.rank}</b> / ${tr.total} คน ในห้อง</span>`;
-    document.getElementById('score-cards').before(banner);
-  }
 
   const labels  = subjects.map(s => s.subjectName);
   const myVals  = subjects.map(s => s.totalScore ?? 0);
@@ -391,7 +370,6 @@ function renderAcademicTerm(key, records, termRankIndex) {
         <span>ต่ำสุด <b class="mn">${cs.min}</b></span>
         ${gpct != null ? `<span style="margin-left:auto"><span class="pct-pill ${gpCls}" style="font-size:10px">ชั้น P${gpct}</span></span>` : ''}
       </div>` : ''}` : ''}
-      ${s.classRank != null && cs?.count ? `<div style="font-size:12px;color:#64748b;margin-top:4px">${s.classRank===1?'🥇':s.classRank===2?'🥈':s.classRank===3?'🥉':''}อันดับ <b style="color:#1e40af">${s.classRank}</b> / ${cs.count} คน</div>` : ''}
       <div class="bar-wrap" style="margin-top:6px">
         <div class="bar-fill" style="width:${Math.min(100, pct)}%;background:${clr}"></div>
       </div>

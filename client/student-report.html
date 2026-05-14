@@ -359,7 +359,7 @@ function renderAcademicTerm(key, records) {
       <div style="display:flex;align-items:baseline;gap:6px;margin-bottom:4px">
         <span class="big" style="color:${clr}">${total ?? '—'}</span>
         <span class="fs">/ 100</span>
-        <span style="margin-left:auto;font-weight:800;font-size:13px;color:${gcClr};background:${gcBg};padding:1px 9px;border-radius:7px">${s.gradeValue ?? '—'}</span>
+        ${s.gradeValue != null ? `<span style="margin-left:auto;font-weight:800;font-size:13px;color:${gcClr};background:${gcBg};padding:1px 9px;border-radius:7px">${s.gradeValue}</span>` : ''}
       </div>
       ${cs ? `<div class="pct-row" style="margin-bottom:2px">
         <span style="color:#64748b;font-size:11px">เฉลี่ย ${cs.mean} <span style="color:#94a3b8">±${cs.sd}</span></span>

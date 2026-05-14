@@ -185,7 +185,7 @@ router.post('/quick-quiz/submit', requireLogin, async (req, res) => {
   let xpEarned = 0
   if (earnXp) {
     xpEarned = xpGain
-    await awardXP(prisma, userId, xpEarned, 'activity')
+    await awardXP(prisma, userId, xpEarned, 'activity', 'mission', `Quick Quiz ถูก ${correct} ข้อ`)
     await awardParentPoints(prisma, userId, correct * PARENT_PTS.QUICK_QUIZ_CORRECT,
       'auto_mission', `Quick Quiz ถูก ${correct} ข้อ`)
   }
@@ -316,7 +316,7 @@ router.post('/daily/submit', requireLogin, async (req, res) => {
     (correct === 5 ? PARENT_PTS.DAILY_PERFECT : 0)
 
   // Award XP
-  if (totalXp > 0) await awardXP(prisma, userId, totalXp, 'activity')
+  if (totalXp > 0) await awardXP(prisma, userId, totalXp, 'activity', 'mission', `Daily Mission: ถูก ${correct}/5 ข้อ`)
   if (parentPts > 0) await awardParentPoints(prisma, userId, parentPts,
     'auto_mission', `Daily Mission: ถูก ${correct}/5 ข้อ`)
 
@@ -461,7 +461,7 @@ router.post('/weekly/submit', requireLogin, async (req, res) => {
   }
 
   // Award
-  if (xpEarned > 0) await awardXP(prisma, userId, xpEarned, 'activity')
+  if (xpEarned > 0) await awardXP(prisma, userId, xpEarned, 'activity', 'weekly', `Weekly Challenge ผ่าน สัปดาห์ ${weekKey}`)
   if (correct >= 8 && prevXpEarned === 0) {
     // ผ่านครั้งแรกของสัปดาห์ → ticket + parent points (Gold Box มาจาก leaderboard เท่านั้น)
     await awardTicket(prisma, userId, TICKET.WEEKLY_PASS, 'earn_mission', `Weekly Challenge ผ่าน สัปดาห์ ${weekKey}`)

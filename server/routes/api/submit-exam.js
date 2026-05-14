@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
-const { awardXP } = require('../../utils/xp-service');
+const { awardXP, logActivity } = require('../../utils/xp-service');
 const prisma = new PrismaClient();
 
 
@@ -116,7 +116,7 @@ router.post('/', async (req, res) => {
           update: { passedAt: new Date() }
         });
         if (!existing && req.session?.userId) {
-          await awardXP(prisma, req.session.userId, 30, 'permanent');
+          await awardXP(prisma, req.session.userId, 30, 'permanent', 'exam', `ผ่านหัวข้อย่อย: ${subtopicKey}`);
           milestones.newSubtopicPass = true;
           milestones.xpBonus = 30;
         }
@@ -132,10 +132,18 @@ router.post('/', async (req, res) => {
           update: { passedAt: new Date() }
         });
         if (!existing && req.session?.userId) {
-          await awardXP(prisma, req.session.userId, 80, 'permanent');
+          await awardXP(prisma, req.session.userId, 80, 'permanent', 'exam', `ผ่านหัวข้อหลัก: ${topicKey}`);
           milestones.newTopicPass = true;
           milestones.xpBonus = 80;
         }
+      }
+
+      // บันทึก score activity log
+      if (req.session?.userId) {
+        const pct = fullScore > 0 ? Math.round(score / fullScore * 100) : 0;
+        const modeLabel = { practice:'ฝึกหัด', competitive:'แข่งขัน', official:'ทดสอบ', subtopic_test:'หัวข้อย่อย', topic_test:'หัวข้อหลัก' }[mode] || mode;
+        await logActivity(prisma, req.session.userId, 'score', pct, 'exam',
+          `${modeLabel} ${correctCount}/${questions.length} ข้อ`)
       }
     }
 

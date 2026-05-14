@@ -684,6 +684,21 @@ model ParentPointLog {
   createdAt DateTime @default(now())
 }
 
+// ─── Activity Log (Student) ───────────────────────────────────────────────────
+
+// ActivityLog — บันทึกกิจกรรมของนักเรียน: XP, ticket, item, score
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String   // 'xp' | 'ticket' | 'item' | 'score'
+  amount    Int?     // จำนวน XP / ticket / คะแนน
+  source    String?  // 'mission' | 'grand_prix' | 'exam' | 'box' | 'streak' | 'weekly' | 'overflow'
+  note      String?  // ข้อความเพิ่มเติม เช่น ชื่อวิชา, ชื่อรางวัล
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
 // ─── Usage Tracking ───────────────────────────────────────────────────────────
 
 // LoginLog — raw login events, ลบทุกคืนหลัง aggregate

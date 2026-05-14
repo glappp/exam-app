@@ -17,7 +17,13 @@ const MAX_LEVEL = 20
  * @param {'activity'|'permanent'} xpType  — activity reset ทุกปี, permanent ไม่ reset
  * @returns {{ newLevel, leveledUp, ticketsFromOverflow }}
  */
-async function awardXP(prisma, userId, xpAmount, xpType = 'activity') {
+async function logActivity(prisma, userId, type, amount, source, note) {
+  try {
+    await prisma.activityLog.create({ data: { userId, type, amount, source, note } })
+  } catch (_) {}  // ไม่ให้ log error หยุด flow หลัก
+}
+
+async function awardXP(prisma, userId, xpAmount, xpType = 'activity', source = null, note = null) {
   if (xpAmount <= 0) return { newLevel: 1, leveledUp: false, ticketsFromOverflow: 0 }
 
   // upsert CharacterState
@@ -58,6 +64,9 @@ async function awardXP(prisma, userId, xpAmount, xpType = 'activity') {
       level:      Math.min(newLevel, MAX_LEVEL),
     },
   })
+
+  // บันทึก activity log
+  await logActivity(prisma, userId, 'xp', xpAmount, source, note)
 
   return { newLevel: Math.min(newLevel, MAX_LEVEL), leveledUp, ticketsFromOverflow }
 }
@@ -120,6 +129,8 @@ async function awardTicket(prisma, userId, amount, type, note) {
       data: { userId, type, amount, note },
     }),
   ])
+  // บันทึก activity log (source = type เช่น 'earn_mission', 'earn_box', 'earn_overflow')
+  await logActivity(prisma, userId, 'ticket', amount, type, note)
 }
 
 /**
@@ -161,4 +172,5 @@ module.exports = {
   awardParentPoints,
   awardDailyLogin,
   updateStreak,
+  logActivity,
 }

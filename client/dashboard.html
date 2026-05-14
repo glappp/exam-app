@@ -520,9 +520,9 @@
     }
 
     const r6  = await fetch('/api/student/character',     { credentials: 'include' });
-    const rAl = await fetch('/api/student/login-history', { credentials: 'include' });
+    const rAl = await fetch('/api/student/activity-log', { credentials: 'include' });
     if (r6.ok)  renderCharacter(await r6.json());
-    if (rAl.ok) renderLoginHistory((await rAl.json()).logs);
+    if (rAl.ok) renderActivityLog((await rAl.json()).logs);
 
     const r4 = await fetch('/api/announcements', { credentials: 'include' });
     if (r4.ok) {
@@ -559,34 +559,40 @@
     document.getElementById('stat-avg').textContent = Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length) + '%';
   }
 
-  function renderLoginHistory(logs) {
+  function renderActivityLog(logs) {
     const el = document.getElementById('history-content');
     if (!logs || !logs.length) {
-      el.innerHTML = '<div class="empty-msg">ยังไม่มีประวัติ</div>';
+      el.innerHTML = '<div class="empty-msg">ยังไม่มีกิจกรรม — ทำโจทย์หรือเปิดกล่องเพื่อสะสม XP!</div>';
       return;
     }
     const now = new Date();
-    el.innerHTML = logs.map((l, i) => {
-      const d   = new Date(l.loginAt);
-      const diffMs  = now - d;
+    const typeInfo = {
+      xp:     { icon: '⭐', color: '#fbbf24', label: 'ได้ XP',   suffix: l => l.amount != null ? `+${l.amount} XP` : '' },
+      ticket: { icon: '🎟️', color: '#a78bfa', label: 'ได้ตั๋ว',  suffix: l => l.amount != null ? `+${l.amount} ตั๋ว` : '' },
+      item:   { icon: '🎁', color: '#34d399', label: 'ได้ไอเทม', suffix: l => l.amount != null ? `×${l.amount}` : '' },
+      score:  { icon: '📝', color: '#60a5fa', label: 'ผลการทำข้อสอบ', suffix: l => l.amount != null ? `${l.amount}%` : '' },
+    };
+    el.innerHTML = logs.map(l => {
+      const d      = new Date(l.createdAt);
+      const diffMs = now - d;
       const diffMin = Math.floor(diffMs / 60000);
       const diffHr  = Math.floor(diffMs / 3600000);
       const diffDay = Math.floor(diffMs / 86400000);
-      const rel = diffMin < 1   ? 'เมื่อกี้'
-                : diffMin < 60  ? `${diffMin} นาทีที่แล้ว`
-                : diffHr < 24   ? `${diffHr} ชั่วโมงที่แล้ว`
-                : diffDay < 30  ? `${diffDay} วันที่แล้ว`
-                : d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-      const abs = d.toLocaleString('th-TH', {
-        day: 'numeric', month: 'short', year: 'numeric',
-        hour: '2-digit', minute: '2-digit'
-      });
-      const isFirst = i === 0;
+      const rel = diffMin < 1  ? 'เมื่อกี้'
+                : diffMin < 60 ? `${diffMin} นาทีที่แล้ว`
+                : diffHr  < 24 ? `${diffHr} ชั่วโมงที่แล้ว`
+                : diffDay < 30 ? `${diffDay} วันที่แล้ว`
+                : d.toLocaleDateString('th-TH', { day:'numeric', month:'short', year:'numeric' });
+      const info   = typeInfo[l.type] || { icon: '📌', color: '#94a3b8', label: l.type, suffix: () => '' };
+      const badge  = info.suffix(l);
       return `<div class="activity-item">
-        <div class="activity-icon">${isFirst ? '🟢' : '🔵'}</div>
+        <div class="activity-icon" style="font-size:18px">${info.icon}</div>
         <div class="activity-body">
-          <div class="activity-title">เข้าสู่ระบบ</div>
-          <div class="activity-detail">${abs}</div>
+          <div class="activity-title" style="display:flex;align-items:center;gap:6px">
+            <span>${info.label}</span>
+            ${badge ? `<span style="font-size:11px;font-weight:700;color:${info.color};background:${info.color}1a;padding:1px 7px;border-radius:99px">${badge}</span>` : ''}
+          </div>
+          ${l.note ? `<div class="activity-detail">${l.note}</div>` : ''}
         </div>
         <div class="activity-time">${rel}</div>
       </div>`;

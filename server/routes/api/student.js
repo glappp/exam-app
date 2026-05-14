@@ -305,6 +305,22 @@ router.get('/activity-log', requireLogin, async (req, res) => {
   }
 });
 
+// GET /api/student/activity-log — กิจกรรมล่าสุด 50 รายการ (XP, ticket, item, score)
+router.get('/activity-log', requireLogin, async (req, res) => {
+  try {
+    const logs = await prisma.activityLog.findMany({
+      where:   { userId: req.session.userId },
+      orderBy: { createdAt: 'desc' },
+      take:    50,
+      select:  { id: true, type: true, amount: true, source: true, note: true, createdAt: true }
+    });
+    res.json({ logs });
+  } catch (err) {
+    console.error('❌ activity-log:', err);
+    res.status(500).json({ error: 'โหลดประวัติกิจกรรมล้มเหลว' });
+  }
+});
+
 // GET /api/student/login-history — ประวัติเข้าสู่ระบบ 20 ครั้งล่าสุด
 router.get('/login-history', requireLogin, async (req, res) => {
   try {

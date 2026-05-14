@@ -9,7 +9,7 @@ const express = require('express')
 const router  = express.Router()
 const { PrismaClient } = require('@prisma/client')
 const prisma  = new PrismaClient()
-const { awardXP, awardTicket, awardParentPoints } = require('../../utils/xp-service')
+const { awardXP, awardTicket, awardParentPoints, logActivity } = require('../../utils/xp-service')
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
 function requireLogin(req, res, next) {
@@ -143,7 +143,7 @@ router.post('/open', requireLogin, async (req, res) => {
     if (rolled.type === 'xp') {
       const amount = randInt(rolled.min, rolled.max)
       rewardResult.amount = amount
-      await awardXP(prisma, userId, amount, 'activity')
+      await awardXP(prisma, userId, amount, 'activity', 'box', `เปิดกล่อง ${boxType}`)
 
     } else if (rolled.type === 'parent_points') {
       const amount = randInt(rolled.min, rolled.max)
@@ -160,7 +160,7 @@ router.post('/open', requireLogin, async (req, res) => {
     } else if (rolled.type === 'xp_card_s' || rolled.type === 'xp_card_l') {
       const amount = rolled.amount
       rewardResult.amount = amount
-      await awardXP(prisma, userId, amount, 'activity')
+      await awardXP(prisma, userId, amount, 'activity', 'box', `การ์ด XP จากกล่อง ${boxType}`)
 
     } else if (rolled.type === 'gold_box') {
       rewardResult.amount = rolled.amount
@@ -208,6 +208,13 @@ router.post('/open', requireLogin, async (req, res) => {
         rewardId:     rewardResult.rewardId ?? null,
       }
     })
+
+    // บันทึก ActivityLog สำหรับ item/reward ที่ยังไม่ได้ log (gold_box, reward)
+    if (rewardResult.type === 'gold_box') {
+      await logActivity(prisma, userId, 'item', rewardResult.amount, 'box', `ได้กล่องทอง ${rewardResult.amount} ใบ`)
+    } else if (rewardResult.type === 'reward') {
+      await logActivity(prisma, userId, 'item', null, 'box', rewardResult.rewardName || 'รางวัลพิเศษ')
+    }
 
     // คืน inventory ปัจจุบัน
     const newInv = await prisma.boxInventory.findUnique({ where: { userId } })

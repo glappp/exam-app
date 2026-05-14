@@ -120,6 +120,9 @@ router.get('/mine', async (req, res) => {
       const cStat = calcStats(cScores);
       const gStat = calcStats(gScores);
 
+      const classRank = cScores.length ? cScores.filter(s => s > r.totalScore).length + 1 : null;
+      const gradeRank = gScores.length ? gScores.filter(s => s > r.totalScore).length + 1 : null;
+
       grouped[r.academicYear][r.term].push({
         subjectCode: r.subjectCode,
         subjectName: r.subjectName,
@@ -127,13 +130,43 @@ router.get('/mine', async (req, res) => {
         finalScore:  r.finalScore,
         totalScore:  r.totalScore,
         gradeValue:  r.gradeValue,
+        classRank,
+        gradeRank,
         classStats:  cStat ? { ...cStat, percentile: calcPercentile(r.totalScore, cScores) } : null,
         gradeStats:  gStat ? { ...gStat, percentile: calcPercentile(r.totalScore, gScores) } : null,
       });
     }
 
-    // ── 5. summary ต่อปี (GPA) ───────────────────────────────────────────────
+    // ── 5. summary ต่อปี (GPA + overall rank per term) ──────────────────────
     const years = Object.keys(grouped).sort();
+
+    // คำนวณ rank ภาพรวม: รวม totalScore ทุกวิชาต่อ term เปรียบเทียบกับเพื่อนห้อง
+    const termRankMap = {}; // "year|term" → { myTotal, classTotal, classCount }
+    for (const r of records) {
+      const termKey = `${r.academicYear}|${r.term}`;
+      const ck = `${r.school}|${r.grade}|${r.classroom}|${r.academicYear}|${r.term}|${r.subjectName}`;
+      const cScores = classScores.get(ck) || [];
+      if (!termRankMap[termKey]) termRankMap[termKey] = { myTotal: 0, peerTotals: null, ctx: r };
+      termRankMap[termKey].myTotal += r.totalScore ?? 0;
+    }
+    // รวม totalScore ทุกวิชาต่อคนต่อ term สำหรับทุกเพื่อน
+    for (const [termKey, info] of Object.entries(termRankMap)) {
+      const { ctx } = info;
+      const peers = await prisma.academicRecord.findMany({
+        where: { school: ctx.school, grade: ctx.grade, classroom: ctx.classroom,
+                 academicYear: ctx.academicYear, term: ctx.term },
+        select: { firstName: true, lastName: true, totalScore: true }
+      });
+      const peerTotals = {};
+      for (const p of peers) {
+        const k = `${p.firstName}|${p.lastName}`;
+        peerTotals[k] = (peerTotals[k] || 0) + (p.totalScore ?? 0);
+      }
+      const allTotals = Object.values(peerTotals);
+      info.classRank  = allTotals.filter(t => t > info.myTotal).length + 1;
+      info.classCount = allTotals.length;
+    }
+
     const summary = years.map(y => {
       const allSubjects = Object.values(grouped[y]).flat();
       const grades = allSubjects.map(s => parseFloat(s.gradeValue)).filter(n => !isNaN(n));
@@ -141,7 +174,11 @@ router.get('/mine', async (req, res) => {
         ? Math.round(grades.reduce((a, b) => a + b, 0) / grades.length * 100) / 100
         : null;
       const grade  = records.find(r => r.academicYear === y)?.grade || '';
-      return { year: y, grade, gpa };
+      // รวม rank ทุก term ของปีนี้
+      const termRanks = Object.entries(termRankMap)
+        .filter(([k]) => k.startsWith(y + '|'))
+        .map(([k, v]) => ({ term: k.split('|')[1], classRank: v.classRank, classCount: v.classCount, myTotal: v.myTotal }));
+      return { year: y, grade, gpa, termRanks };
     });
 
     res.json({ records: grouped, years, summary, total: records.length });

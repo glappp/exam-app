@@ -681,6 +681,8 @@
           timeline[key].academic=subjects;
           timeline[key].gradeKey=sumItem?.grade||'';
           timeline[key].gpa=sumItem?.gpa??null;
+          const tr=sumItem?.termRanks?.find(r=>r.term===term);
+          if (tr) timeline[key].academicRank={rank:tr.classRank,total:tr.classCount};
         }
       }
     }
@@ -720,6 +722,14 @@
     });
     const data=tl[key], agg=data.aggregate;
     let aggHtml='';
+    if (data.academicRank && !agg) {
+      const ar=data.academicRank;
+      const re=ar.rank===1?'🥇':ar.rank===2?'🥈':ar.rank===3?'🥉':'#'+ar.rank;
+      aggHtml=`<div style="background:#eff6ff;border-radius:9px;padding:10px 14px;text-align:center;margin-bottom:12px">
+        <span style="font-size:22px;font-weight:800;color:#1e40af">${re}</span>
+        <span style="font-size:13px;color:#64748b;margin-left:8px">อันดับรวมทุกวิชา ${ar.rank}/${ar.total} คน</span>
+      </div>`;
+    }
     if (agg) {
       const pct=Math.round(agg.myTotal/agg.fullTotal*100);
       const pc=pct>=80?'#16a34a':pct>=60?'#d97706':'#dc2626';
@@ -739,12 +749,16 @@
         const gbg=gv>=3.5?'#dcfce7':gv>=2.5?'#fef3c7':gv>=1?'#fee2e2':'#f1f5f9';
         const pct=s.totalScore??0, bc=pct>=80?'#16a34a':pct>=60?'#f59e0b':'#ef4444';
         const sep=i<Math.min(data.academic.length,10)-1?'border-bottom:1px solid #f8fafc':'';
+        const rankLbl = s.classRank && s.classStats?.count
+          ? (s.classRank===1?'🥇':s.classRank===2?'🥈':s.classRank===3?'🥉':'')
+            + `<span style="font-size:11px;color:#94a3b8">${s.classRank}/${s.classStats.count}</span>`
+          : '';
         return `<div style="padding:7px 0;${sep}">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
             <span style="font-size:12px;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.subjectName}</span>
             <span style="font-size:10px;color:#94a3b8">กลาง <b>${s.midScore??'—'}</b> ปลาย <b>${s.finalScore??'—'}</b></span>
             <span style="font-size:13px;font-weight:700">${s.totalScore??'—'}</span>
-            <span style="font-size:11px;font-weight:800;color:${gc};background:${gbg};padding:1px 6px;border-radius:5px">${s.gradeValue??'—'}</span>
+            ${rankLbl}
           </div>
           <div style="background:#e2e8f0;border-radius:3px;height:3px"><div style="background:${bc};width:${Math.min(100,pct)}%;height:3px;border-radius:3px"></div></div>
         </div>`;

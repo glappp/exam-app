@@ -352,11 +352,12 @@ module.exports = function (io) {
       clearTimeout(room.specialTimer);
 
       const q = room.specialEvent.q;
+      const sentAt = room.specialEvent.sentAt;
       const correct = q.choices[choiceIndex] === q.correct;
       room.specialEvent = null;
 
       if (correct) {
-        const sTimeSec = room.specialEvent?.sentAt ? (Date.now() - room.specialEvent.sentAt) / 1000 : SPEED_TIME_LIMIT
+        const sTimeSec = sentAt ? (Date.now() - sentAt) / 1000 : SPEED_TIME_LIMIT
         player.score += Math.ceil(15 * speedMultiplier(sTimeSec))  // special bonus score
         applyEffect(room, player, q.type);
         broadcastRoom(room);

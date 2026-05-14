@@ -265,10 +265,20 @@ body{font-family:'Segoe UI',sans-serif;background:#111;color:#fff;min-height:100
 <!-- ─── LOBBY (Online) ──────────────────────────────────────── -->
 <section class="panel" id="panel-lobby">
 <div class="lobby-box">
+  <div id="lobby-choice-area" style="display:none;text-align:center">
+    <div style="font-size:20px;font-weight:800;margin-bottom:20px">📡 Online Mode</div>
+    <button class="btn-primary" onclick="chooseCreate()">🏠 สร้างห้องใหม่</button>
+    <button class="btn-secondary" style="margin-top:12px" onclick="chooseJoin()">🚪 เข้าห้องที่มีอยู่</button>
+    <button class="btn-back" onclick="showSetup()">← กลับ</button>
+  </div>
+
   <div id="lobby-host-area" style="display:none">
     <div class="setup-label" style="margin-bottom:4px">รหัสห้อง</div>
     <div class="lobby-code-label">แชร์โค้ดนี้ให้เพื่อน</div>
-    <div class="lobby-code" id="lobby-code-display">———</div>
+    <div style="display:flex;align-items:center;gap:10px;justify-content:center">
+      <div class="lobby-code" id="lobby-code-display">———</div>
+      <button id="btn-copy-code" onclick="copyRoomCode()" title="คัดลอกรหัส" style="background:none;border:1.5px solid #555;border-radius:8px;padding:6px 10px;color:#aaa;cursor:pointer;font-size:18px;line-height:1">📋</button>
+    </div>
     <div class="player-list" id="lobby-player-list"></div>
     <div class="error-msg" id="lobby-error"></div>
     <button class="btn-primary" id="btn-lobby-start" onclick="hostStartGame()" disabled>🏁 เริ่มเกม</button>
@@ -276,7 +286,7 @@ body{font-family:'Segoe UI',sans-serif;background:#111;color:#fff;min-height:100
   </div>
 
   <div id="lobby-join-area" style="display:none">
-    <div style="font-size:22px;font-weight:800;margin-bottom:16px;text-align:center">เข้าห้อง</div>
+    <div style="font-size:22px;font-weight:800;margin-bottom:16px;text-align:center">🚪 เข้าห้อง</div>
     <div class="setup-label">รหัสห้อง 4 หลัก</div>
     <input class="lobby-join-input" id="join-code-input" placeholder="1234" maxlength="4"
            inputmode="numeric" pattern="[0-9]*">
@@ -284,7 +294,7 @@ body{font-family:'Segoe UI',sans-serif;background:#111;color:#fff;min-height:100
     <input class="name-input" id="join-name-input" placeholder="ชื่อเล่น" style="margin-top:4px">
     <div class="error-msg" id="join-error"></div>
     <button class="btn-primary" id="btn-join-submit" onclick="submitJoin()">เข้าร่วม</button>
-    <button class="btn-secondary" onclick="showSetup()">← กลับ</button>
+    <button class="btn-secondary" onclick="backToChoice()">← กลับ</button>
   </div>
 
   <div id="lobby-waiting-area" style="display:none;text-align:center">
@@ -1210,26 +1220,57 @@ let onlineGame = null;
 let mySocketId = null;
 let myRoomCode = null;  // เก็บรหัสห้องของทั้ง host และ joiner
 
+let _pendingPlayerName = '';
+
 function showLobbyOnline(playerName) {
   showPanel('panel-lobby');
   document.getElementById('lobby-host-area').style.display = 'none';
   document.getElementById('lobby-join-area').style.display = 'none';
   document.getElementById('lobby-waiting-area').style.display = 'none';
+  document.getElementById('lobby-choice-area').style.display = '';
 
   if (window._noSocket) {
     document.getElementById('setup-error').textContent = 'ไม่สามารถเชื่อมต่อ server ได้ กรุณา refresh';
     showPanel('panel-setup'); return;
   }
 
-  // Ask: create or join?
-  const choice = confirm('กด OK = สร้างห้องใหม่\nกด Cancel = เข้าห้องที่มีอยู่');
-  if (choice) {
-    initSocket(()=>createOnlineRoom(playerName));
+  _pendingPlayerName = playerName;
+  initSocket(() => {}); // pre-connect
+}
+
+function chooseCreate() {
+  document.getElementById('lobby-choice-area').style.display = 'none';
+  if (socket && socket.connected) {
+    createOnlineRoom(_pendingPlayerName);
+  } else if (socket) {
+    socket.once('connect', () => createOnlineRoom(_pendingPlayerName));
   } else {
-    document.getElementById('lobby-join-area').style.display = '';
-    document.getElementById('join-name-input').value = playerName;
-    initSocket(()=>{});
+    initSocket(() => createOnlineRoom(_pendingPlayerName));
   }
+}
+
+function chooseJoin() {
+  document.getElementById('lobby-choice-area').style.display = 'none';
+  document.getElementById('lobby-join-area').style.display = '';
+  document.getElementById('join-name-input').value = _pendingPlayerName;
+}
+
+function backToChoice() {
+  document.getElementById('lobby-join-area').style.display = 'none';
+  document.getElementById('join-error').textContent = '';
+  document.getElementById('lobby-choice-area').style.display = '';
+}
+
+function copyRoomCode() {
+  const code = document.getElementById('lobby-code-display').textContent;
+  const btn = document.getElementById('btn-copy-code');
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = '✅';
+    setTimeout(() => btn.textContent = '📋', 1500);
+  }).catch(() => {
+    btn.textContent = '❌';
+    setTimeout(() => btn.textContent = '📋', 1500);
+  });
 }
 
 function initSocket(cb) {
@@ -1365,7 +1406,7 @@ function bindOnlineEvents() {
     specialQ = q;
     showSpecialOverlay(q, Math.floor(timeout/1000), (pi,ci)=>{
       socket.emit('special:answer', {
-        code: document.getElementById('lobby-code-display').textContent,
+        code: myRoomCode,
         questionId: q.id, choiceIndex: ci
       });
     });

@@ -7,6 +7,7 @@ const express = require('express');
 const router  = express.Router();
 const { PrismaClient } = require('@prisma/client');
 const prisma  = new PrismaClient();
+const { getScale, resolveGrade } = require('../../utils/grade-scale');
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
@@ -106,7 +107,11 @@ router.get('/mine', async (req, res) => {
       })
     ]);
 
-    // ── 4. จัดกลุ่ม records พร้อม stats ─────────────────────────────────────
+    // ── 4. ดึง grade scale ของโรงเรียน (ใช้โรงเรียนแรกที่เจอ) ──────────────
+    const schoolName = records[0]?.school || null;
+    const gradeScale = await getScale(prisma, schoolName);
+
+    // ── 5. จัดกลุ่ม records พร้อม stats ─────────────────────────────────────
     const grouped = {};
     for (const r of records) {
       if (!grouped[r.academicYear])       grouped[r.academicYear] = {};
@@ -129,7 +134,7 @@ router.get('/mine', async (req, res) => {
         midScore:    r.midScore,
         finalScore:  r.finalScore,
         totalScore:  r.totalScore,
-        gradeValue:  r.gradeValue,
+        gradeValue:  resolveGrade(r.gradeValue, r.totalScore, gradeScale),
         classRank,
         gradeRank,
         classStats:  cStat ? { ...cStat, percentile: calcPercentile(r.totalScore, cScores) } : null,
@@ -137,7 +142,7 @@ router.get('/mine', async (req, res) => {
       });
     }
 
-    // ── 5. summary ต่อปี (GPA + overall rank per term) ──────────────────────
+    // ── 6. summary ต่อปี (GPA + overall rank per term) ──────────────────────
     const years = Object.keys(grouped).sort();
 
     // คำนวณ rank ภาพรวม: รวม totalScore ทุกวิชาต่อ term เปรียบเทียบกับเพื่อนห้อง

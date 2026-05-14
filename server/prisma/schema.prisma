@@ -684,6 +684,17 @@ model ParentPointLog {
   createdAt DateTime @default(now())
 }
 
+// ─── Grade Scale ─────────────────────────────────────────────────────────────
+
+// GradeScale — เกณฑ์เกรดต่อโรงเรียน (schoolId = null → global default)
+// ranges = JSON array เรียงจากมากไปน้อย: [{min:80,grade:"4.00"},{min:75,grade:"3.50"},...]
+model GradeScale {
+  id        Int      @id @default(autoincrement())
+  schoolId  Int?     @unique  // null = default ทั้งระบบ
+  ranges    Json
+  updatedAt DateTime @updatedAt
+}
+
 // ─── Activity Log (Student) ───────────────────────────────────────────────────
 
 // ActivityLog — บันทึกกิจกรรมของนักเรียน: XP, ticket, item, score

@@ -460,4 +460,74 @@ router.patch('/reward-claims/:id/claim', requireAdmin, async (req, res) => {
   }
 });
 
+// ─── Grade Scale ─────────────────────────────────────────────────────────────
+const { DEFAULT_RANGES } = require('../../utils/grade-scale');
+
+function requireSchoolAdmin(req, res, next) {
+  if (!req.session?.userId) return res.status(401).json({ error: 'กรุณาเข้าสู่ระบบ' });
+  if (!['admin', 'school_admin'].includes(req.session.role))
+    return res.status(403).json({ error: 'สิทธิ์ไม่เพียงพอ' });
+  next();
+}
+
+// GET /api/admin/grade-scale — ดึง scale ของโรงเรียนตัวเอง (หรือ default)
+router.get('/grade-scale', requireSchoolAdmin, async (req, res) => {
+  try {
+    let schoolId = null;
+    if (req.session.role === 'school_admin' && req.session.schoolId) {
+      schoolId = req.session.schoolId;
+    }
+    // ลอง school-specific ก่อน
+    let row = schoolId
+      ? await prisma.gradeScale.findUnique({ where: { schoolId } })
+      : null;
+    const isDefault = !row;
+    if (!row) row = await prisma.gradeScale.findFirst({ where: { schoolId: null } });
+    res.json({ ranges: row?.ranges || DEFAULT_RANGES, isDefault, schoolId });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/admin/grade-scale — บันทึก scale ของโรงเรียน
+router.put('/grade-scale', requireSchoolAdmin, async (req, res) => {
+  try {
+    const { ranges } = req.body;
+    if (!Array.isArray(ranges) || ranges.length < 2)
+      return res.status(400).json({ error: 'ranges ต้องมีอย่างน้อย 2 ช่วง' });
+    // validate: ทุก item ต้องมี min (number) และ grade (string)
+    for (const r of ranges) {
+      if (typeof r.min !== 'number' || !r.grade)
+        return res.status(400).json({ error: 'รูปแบบ ranges ไม่ถูกต้อง' });
+    }
+
+    let schoolId = null;
+    if (req.session.role === 'school_admin' && req.session.schoolId) {
+      schoolId = req.session.schoolId;
+    }
+
+    await prisma.$executeRawUnsafe(`
+      INSERT INTO "GradeScale" ("schoolId", ranges, "updatedAt")
+      VALUES ($1, $2::jsonb, NOW())
+      ON CONFLICT ("schoolId") DO UPDATE SET ranges = $2::jsonb, "updatedAt" = NOW()
+    `, schoolId, JSON.stringify(ranges));
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /api/admin/grade-scale — รีเซ็ตกลับเป็น default
+router.delete('/grade-scale', requireSchoolAdmin, async (req, res) => {
+  try {
+    if (req.session.role !== 'school_admin' || !req.session.schoolId)
+      return res.status(400).json({ error: 'ใช้ได้เฉพาะ school_admin เท่านั้น' });
+    await prisma.gradeScale.deleteMany({ where: { schoolId: req.session.schoolId } });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

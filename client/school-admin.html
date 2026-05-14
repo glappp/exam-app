@@ -44,6 +44,7 @@
       <button class="tab-btn" onclick="switchTab('promote')">ขยับชั้น</button>
       <button class="tab-btn" onclick="switchTab('subjects')">📚 รายวิชา</button>
       <button class="tab-btn" onclick="switchTab('scores')">📊 กรอกคะแนน</button>
+      <button class="tab-btn" onclick="switchTab('gradescale');loadGradeScale()">🎓 เกณฑ์เกรด</button>
     </div>
 
     <!-- รายชื่อนักเรียน -->
@@ -217,6 +218,20 @@
       </div>
     </div>
 
+    <!-- เกณฑ์เกรด -->
+    <div class="tab-panel card" id="tab-gradescale">
+      <p class="sec-title">🎓 เกณฑ์การให้เกรด</p>
+      <p style="font-size:13px;color:#64748b;margin-bottom:14px">ระบบจะใช้เกณฑ์นี้คำนวณเกรด <b>อัตโนมัติ</b> เมื่อไฟล์คะแนนที่อัปโหลดไม่มีคอลัมน์เกรด</p>
+      <div id="gs-notice" style="display:none;background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:8px 12px;font-size:12px;color:#78350f;margin-bottom:12px"></div>
+      <div id="gs-rows" style="margin-bottom:12px"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="gsAddRow()" style="font-size:13px">+ เพิ่มช่วง</button>
+        <button class="btn btn-primary" onclick="gsSave()" style="font-size:13px">💾 บันทึก</button>
+        <button class="btn" onclick="gsReset()" style="font-size:13px;color:#dc2626;border-color:#dc2626">↺ รีเซ็ตเป็น default</button>
+      </div>
+      <div id="gs-msg" style="font-size:13px;margin-top:8px"></div>
+    </div>
+
   </div>
 
   <script>
@@ -225,7 +240,7 @@
     let promoteStudents = [];
     let scoreGrid = { subjects: [], students: [], records: {}, term: 1 };
 
-    const TABS = ['students','roster','promote','subjects','scores'];
+    const TABS = ['students','roster','promote','subjects','scores','gradescale'];
     function switchTab(name) {
       document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', TABS[i] === name));
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${name}`));
@@ -662,6 +677,81 @@
     }
 
     init();
+
+    // ── Grade Scale ────────────────────────────────────────────────────────────
+    let gsRanges = [];
+
+    async function loadGradeScale() {
+      const r = await fetch('/api/admin/grade-scale', { credentials: 'include' });
+      if (!r.ok) return;
+      const d = await r.json();
+      gsRanges = d.ranges.slice().sort((a, b) => b.min - a.min);
+      const notice = document.getElementById('gs-notice');
+      if (d.isDefault) {
+        notice.style.display = 'block';
+        notice.textContent = 'ขณะนี้ใช้เกณฑ์ default ของระบบ — แก้ไขแล้วบันทึกเพื่อตั้งค่าเฉพาะโรงเรียนนี้';
+      } else {
+        notice.style.display = 'none';
+      }
+      renderGsRows();
+    }
+
+    function renderGsRows() {
+      const sorted = gsRanges.slice().sort((a, b) => b.min - a.min);
+      document.getElementById('gs-rows').innerHTML = `
+        <div style="display:grid;grid-template-columns:120px 100px 40px;gap:6px;font-size:12px;font-weight:700;color:#64748b;padding:0 0 4px">
+          <span>คะแนนตั้งแต่ (%)</span><span>เกรด</span><span></span>
+        </div>
+        ${sorted.map((r, i) => `
+        <div style="display:grid;grid-template-columns:120px 100px 40px;gap:6px;align-items:center;padding:4px 0;border-bottom:1px solid #f1f5f9">
+          <input type="number" min="0" max="100" value="${r.min}"
+            style="padding:5px 8px;border:1.5px solid #cbd5e1;border-radius:6px;font-size:13px;width:100%"
+            onchange="gsRanges[${i}].min=+this.value">
+          <input type="text" value="${r.grade}" placeholder="4.00"
+            style="padding:5px 8px;border:1.5px solid #cbd5e1;border-radius:6px;font-size:13px;width:100%"
+            onchange="gsRanges[${i}].grade=this.value.trim()">
+          <button onclick="gsRemoveRow(${i})" style="background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;padding:0">×</button>
+        </div>`).join('')}`;
+    }
+
+    function gsAddRow() {
+      gsRanges.push({ min: 0, grade: '' });
+      gsRanges.sort((a, b) => b.min - a.min);
+      renderGsRows();
+    }
+
+    function gsRemoveRow(i) {
+      if (gsRanges.length <= 2) { document.getElementById('gs-msg').textContent = 'ต้องมีอย่างน้อย 2 ช่วง'; return; }
+      gsRanges.splice(i, 1);
+      renderGsRows();
+    }
+
+    async function gsSave() {
+      const msg = document.getElementById('gs-msg');
+      // sync values จาก DOM ก่อน (กรณี user กด save โดยไม่ได้ blur)
+      document.querySelectorAll('#gs-rows input[type=number]').forEach((el, i) => { gsRanges[i] && (gsRanges[i].min = +el.value); });
+      document.querySelectorAll('#gs-rows input[type=text]').forEach((el, i) => { gsRanges[i] && (gsRanges[i].grade = el.value.trim()); });
+      const r = await fetch('/api/admin/grade-scale', {
+        method: 'PUT', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ranges: gsRanges })
+      });
+      const d = await r.json();
+      if (d.success) {
+        msg.style.color = '#16a34a'; msg.textContent = '✅ บันทึกแล้ว';
+        document.getElementById('gs-notice').style.display = 'none';
+      } else {
+        msg.style.color = '#dc2626'; msg.textContent = d.error || 'เกิดข้อผิดพลาด';
+      }
+      setTimeout(() => msg.textContent = '', 3000);
+    }
+
+    async function gsReset() {
+      if (!confirm('รีเซ็ตกลับเป็นเกณฑ์ default ของระบบ?')) return;
+      const r = await fetch('/api/admin/grade-scale', { method: 'DELETE', credentials: 'include' });
+      const d = await r.json();
+      if (d.success) { await loadGradeScale(); document.getElementById('gs-msg').style.color='#16a34a'; document.getElementById('gs-msg').textContent='รีเซ็ตแล้ว'; setTimeout(()=>document.getElementById('gs-msg').textContent='',3000); }
+    }
   </script>
 </body>
 </html>

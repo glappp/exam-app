@@ -1340,11 +1340,13 @@ function leaveLobby() {
 }
 
 function onlineKeyDown(e) {
-  if (!onlineGame?.currentQ) return;
-  const myIdx = onlineGame.players?.findIndex(p => p.socketId === socket.id) ?? -1;
+  const myIdx = onlineGame?.players?.findIndex(p => p.socketId === socket.id) ?? -1;
   if (myIdx < 0) return;
   const ci = KEY_ROWS[myIdx].indexOf(e.code);
-  if (ci >= 0) { e.preventDefault(); submitOnlineAnswer(ci); }
+  if (ci < 0) return;
+  e.preventDefault();
+  if (specialActive && specialQ) { submitSpecialChoice(ci); return; }
+  if (onlineGame?.currentQ) { submitOnlineAnswer(ci); }
 }
 
 function bindOnlineEvents() {

@@ -1418,6 +1418,7 @@ function bindOnlineEvents() {
   socket.on('effect:swap', ({p1,p2,pos1,pos2})=>{ renderOnlineTrack(); });
   socket.on('special:event', ({q,timeout})=>{
     specialBuzzed = false;
+    specialActive = true;
     specialQ = q;
     showSpecialOverlay(q, Math.floor(timeout/1000), (pi,ci)=>{
       socket.emit('special:answer', {
@@ -1427,9 +1428,11 @@ function bindOnlineEvents() {
     });
   });
   socket.on('special:timeout', ()=>{
+    specialActive = false; specialQ = null;
     closeSpecialOverlay(null,false,'⏰ หมดเวลา!');
   });
   socket.on('special:resolved', ({winnerId,winnerName,correct,type})=>{
+    specialActive = false; specialQ = null;
     closeSpecialOverlay(null, correct, correct?`✅ ${esc(winnerName)} ตอบถูก!`:`❌ ตอบผิด`);
   });
   socket.on('game:over', ({winner, rankings})=>{

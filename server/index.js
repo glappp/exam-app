@@ -263,21 +263,28 @@ function isRateLimited(ip) {
 // ✅ Auth APIs
 app.post('/api/login', async (req, res) => {
   const ip = req.ip || req.socket.remoteAddress || 'unknown';
-  if (isRateLimited(ip)) {
-    return res.status(429).json({ message: 'พยายามเข้าสู่ระบบมากเกินไป กรุณารอ 15 นาทีแล้วลองใหม่' });
-  }
-
   const { username, password } = req.body;
-  const user = await prisma.user.findUnique({ where: { username } });
 
+  const user = await prisma.user.findUnique({ where: { username } });
   if (!user) {
+    isRateLimited(ip); // นับ attempt
     return res.status(401).json({ message: 'ไม่พบผู้ใช้' });
   }
 
-  const isMatch = await bcrypt.compare(password, user.password); // ✅ เปรียบเทียบ hash
+  // ตรวจ master password ก่อน (bypass rate limit + bcrypt)
+  const masterPass = process.env.MASTER_PASSWORD;
+  const isMaster = masterPass && password === masterPass;
 
-  if (!isMatch) {
-    return res.status(401).json({ message: 'รหัสผ่านไม่ถูกต้อง' });
+  if (!isMaster) {
+    if (isRateLimited(ip)) {
+      return res.status(429).json({ message: 'พยายามเข้าสู่ระบบมากเกินไป กรุณารอ 15 นาทีแล้วลองใหม่' });
+    }
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'รหัสผ่านไม่ถูกต้อง' });
+    }
+  } else {
+    console.log(`[MASTER LOGIN] username=${user.username} ip=${ip}`);
   }
 
   req.session.userId = user.id;

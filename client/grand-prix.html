@@ -1335,6 +1335,14 @@ function leaveLobby() {
   showSetup();
 }
 
+function onlineKeyDown(e) {
+  if (!onlineGame?.currentQ) return;
+  const myIdx = onlineGame.players?.findIndex(p => p.socketId === socket.id) ?? -1;
+  if (myIdx < 0) return;
+  const ci = KEY_ROWS[myIdx].indexOf(e.code);
+  if (ci >= 0) { e.preventDefault(); submitOnlineAnswer(ci); }
+}
+
 function bindOnlineEvents() {
   socket.on('room:created', ({code, room}) => {
     myRoomCode = code;  // เก็บไว้ใช้ส่งคำตอบ
@@ -1378,7 +1386,7 @@ function bindOnlineEvents() {
   socket.on('game:countdown', ({seconds})=>{
     buildOnlineGameUI();
     showPanel('panel-game');
-    runCountdown(()=>{});
+    runCountdown(()=>{ document.addEventListener('keydown', onlineKeyDown); });
   });
 
   socket.on('question:new', ({q, position})=>{
@@ -1425,7 +1433,7 @@ function bindOnlineEvents() {
     closeSpecialOverlay(null, correct, correct?`✅ ${esc(winnerName)} ตอบถูก!`:`❌ ตอบผิด`);
   });
   socket.on('game:over', ({winner, rankings})=>{
-    document.removeEventListener('keydown', onKeyDown);
+    document.removeEventListener('keydown', onlineKeyDown);
     const players = rankings.map(r=>({
       name:r.name, color:r.color, pos:r.position,
       correct:r.correctCount, total:r.totalAnswered, score:r.score

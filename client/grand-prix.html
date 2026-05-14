@@ -1264,13 +1264,20 @@ function backToChoice() {
 function copyRoomCode() {
   const code = document.getElementById('lobby-code-display').textContent;
   const btn = document.getElementById('btn-copy-code');
-  navigator.clipboard.writeText(code).then(() => {
-    btn.textContent = '✅';
-    setTimeout(() => btn.textContent = '📋', 1500);
-  }).catch(() => {
-    btn.textContent = '❌';
-    setTimeout(() => btn.textContent = '📋', 1500);
-  });
+  const done = () => { btn.textContent = '✅'; setTimeout(() => btn.textContent = '📋', 1500); };
+  const fail = () => { btn.textContent = '❌'; setTimeout(() => btn.textContent = '📋', 1500); };
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(done).catch(() => {
+      // fallback: execCommand
+      const ta = document.createElement('textarea');
+      ta.value = code; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy') ? done() : fail();
+      document.body.removeChild(ta);
+    });
+  } else {
+    fail();
+  }
 }
 
 function initSocket(cb) {

@@ -868,8 +868,7 @@ function showSpecialOverlay(q, seconds, callback) {
 }
 
 function submitSpecialChoice(ci) {
-  console.log('[SP] click ci='+ci+' active='+specialActive+' q='+!!specialQ);
-  if (!specialQ || !specialActive) { console.log('[SP] blocked'); return; }
+  if (!specialQ || !specialActive) return;
   clearInterval(specialTimerInterval);
   // ในโหมด local ให้นับ buzz player
   const pi = specialBuzzPlayer >= 0 ? specialBuzzPlayer : 0;
@@ -1423,7 +1422,6 @@ function bindOnlineEvents() {
   });
   socket.on('effect:swap', ({p1,p2,pos1,pos2})=>{ renderOnlineTrack(); });
   socket.on('special:event', ({q,timeout})=>{
-    console.log('[SP] special:event received, choices=', q?.choices, 'timeout=', timeout);
     specialBuzzed = false;
     specialActive = true;
     specialQ = q;
